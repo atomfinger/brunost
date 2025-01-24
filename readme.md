@@ -1,6 +1,6 @@
 # Brunost
 
-## Velkomen til Brunost – programmeringsspråket med smak av Noreg! 🧀
+## Velkomen til Brunost – programmeringsspråket med smak av Noreg! 🇳🇴
 
 Brunost er ikkje berre ein klassisk del av den norske frukosten
 – men også eit toppmoderne programmeringsspråk. Designa for nynorskentusiastar
