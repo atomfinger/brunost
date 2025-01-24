@@ -122,7 +122,7 @@ prøv {
 }
 ```
 
-For å kaste ein feil så kan man bruke `kast` etterfulgt av en streng:
+For å kaste ein feil så kan man bruke `kast` etterfulgt av ein streng:
 
 ```brunost
 gjer delTal(teljartal, nemnar) {
@@ -138,4 +138,26 @@ prøv {
 } fang (feil) {
   terminal.skriv("Feil oppstod: " + feil)
 }
+```
+
+### Modular
+
+Brunost støttar modular. For å laga eit program som bruker fleire filer,
+så må ein bruka modular. Ein kan spesifisera ein modul ved å bruka `modul`
+nøkkelordet etterfølgd av modul namnet:
+
+```brunost
+modul matte {
+  gjer leggTil(nummerEin, nummerTo) {
+    gjevTilbake nummerEin + nummerTo
+  }
+}
+```
+
+For å importera ein modul så kan ein bruka `bruk` nøkkelordet
+etterfølgt av namnet på modulen:
+
+```brunost
+bruk matte
+fast resultat er matte.leggTil(5, 7)
 ```
