@@ -1,4 +1,5 @@
 const std = @import("std");
+const brunost_parser = @import("Brunost_Parser.zig");
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
@@ -14,6 +15,24 @@ pub fn main() !void {
     try stdout.print("Run `zig build test` to run the tests.\n", .{});
 
     try bw.flush(); // don't forget to flush!
+}
+
+pub fn runFile(
+    allocator: std.mem.Allocator,
+    file_name: [:0]const u8,
+) !void {
+    const source_file = try std.fs.cwd().openFile(file_name, .{ .lock = .exclusive });
+    defer source_file.close();
+    const source_file_size = (try source_file.stat()).size;
+    const source = try source_file.readToEndAllocOptions(
+        allocator,
+        source_file_size,
+        null,
+        @alignOf(u8),
+        0,
+    );
+    defer allocator.free(source);
+    brunost_parser.parse(source, file_name, allocator);
 }
 
 test "simple test" {
