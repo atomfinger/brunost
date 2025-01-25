@@ -67,12 +67,12 @@ tall er 20 //Greit
 
 ### Løkker
 
-For å iterera ei liste så kan man bruke `for kvar` syntaksen:
+For å iterera ei liste så kan man bruke `forKvart` syntaksen:
 
 ```brunost
 fast tall er [1, 2, 3, 4]
-for kvart nummer i tall {
-  terminal.skriv(i.teStreng())
+forKvart nummer i tall {
+  terminal.skriv(nummer)
 }
 ```
 
@@ -82,7 +82,7 @@ hvis man ønskjer usann:
 
 ```brunost
 endreleg tall er 1
-medan (tall < 20) er sant gjer {
+medan (tall < 20) erSameSom sant gjer {
   terminal.skriv(tall)
   tall er tall + 1
 }
