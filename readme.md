@@ -31,6 +31,12 @@ hallo()
 Med Brunost får du eit språk som smakar tradisjon, luktar innovasjon,
 og er garantert fri for palmeolje. La oss kode saman – den nynorske måten! 🚀
 
+### Dette er igangverande arbeid! 👷🏻‍♂️
+
+Brunost er eit språk som blir aktivt jobba på, og er ikkje klar for bruk.
+Førebels er det berre språkdefinisjonen som eksisterer.
+Språktolkaren er endå under utvikling.
+
 ## Språkspesifikasjon
 
 ### Definere variablar
