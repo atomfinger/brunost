@@ -31,11 +31,59 @@ hallo()
 Med Brunost får du eit språk som smakar tradisjon, luktar innovasjon,
 og er garantert fri for palmeolje. La oss kode saman – den nynorske måten! 🚀
 
-### Dette er igangverande arbeid! 👷🏻‍♂️
+### Status: Igangverande arbeid! 👷🏻‍♂️
 
-Brunost er eit språk som blir aktivt jobba på, og er ikkje klar for bruk.
-Førebels er det berre språkdefinisjonen som eksisterer.
-Språktolkaren er endå under utvikling.
+Brunost er eit språk som blir aktivt utvikla. Ein grunnleggjande tolk er no under arbeid i Zig.
+
+**Implementert til no:**
+- **Lexer/Tokenizer:** Kan kjenne att dei fleste nøkkelord, literalar (nummer, strengar, boolske verdiar), og operatorar definert i språkspesifikasjonen.
+- **Parser:** Kan parse variabledeklarasjonar (`fast`, `endreleg`). Grunnleggjande AST-strukturar er på plass. Mykje av uttrykksparsing og andre statement-typar er framleis under utvikling.
+- **Evaluator/Runtime:**
+    - Kan evaluere literalar (nummer, strengar, boolske verdiar).
+    - Kan handtere variabeldeklarasjonar (ved å lagre verdiar i eit miljø).
+    - Kan slå opp identifikatorar (variabelnamn) i miljøet.
+    - Grunnleggjande objekt-system og miljø-struktur for å handtere verdiar og skop.
+- **CLI:** Ein enkel kommandolinje-applikasjon kan ta i mot ei `.brunost`-fil, parse ho, og (avgrensa) evaluere ho.
+
+**Kva som manglar (mellom anna):**
+- Fullstendig parsing og evaluering av alle uttrykk (operatorar, funksjonskall, lister, etc.).
+- Parsing og evaluering av kontrollflyt-strukturar (`viss`, `medan`, `forKvart`).
+- Funksjonsdefinisjonar og funksjonskall.
+- Feilhandtering (`prøv`, `fang`, `kast`).
+- Modular (`modul`, `bruk`).
+- Innebygde funksjonar (som `terminal.skriv`).
+
+## Korleis bygge og køyre
+
+Du treng [Zig](https://ziglang.org/download/) installert (versjon 0.11.0 eller nyare anbefalast).
+
+1.  **Bygg prosjektet:**
+    ```bash
+    zig build
+    ```
+    Dette kompilerer kjeldekoda og lagar ein køyrbar fil i `./zig-out/bin/brunost`.
+
+2.  **Køyr eit Brunost-skript:**
+    Lag ei fil med etternamnet `.brunost`, t.d. `test.brunost`:
+    ```brunost
+    fast helsing er "Hei frå Brunost!";
+    // For augeblikket vil ikkje terminal.skriv fungere:
+    // terminal.skriv(helsing);
+
+    fast nummer er 123;
+    // Du kan teste variabeloppslag, men ikkje komplekse uttrykk enno.
+    ```
+    Køyr skriptet med:
+    ```bash
+    ./zig-out/bin/brunost test.brunost
+    ```
+    Førebels vil programmet parse fila, og evaluatoren vil handtere dei enkle variabeldeklarasjonane og literaloppslaga som er implementert. Forventa output vil hovudsakleg vere debug-meldingar frå kompilatoren/tolken.
+
+3.  **Køyr testar:**
+    ```bash
+    zig build test
+    ```
+    Dette køyrer alle einingstestar for lexer, parser, evaluator, etc.
 
 ## Språkspesifikasjon
 
