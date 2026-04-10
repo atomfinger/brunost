@@ -1,0 +1,17 @@
+endreleg verdi er 1
+
+viss (verdi er 1) er sant gjer {
+  terminal.skriv("ein")
+} ellers viss (verdi er 2) er sant gjer {
+  terminal.skriv("to")
+} ellers {
+  terminal.skriv("anna")
+}
+
+endreleg tal er 10
+
+viss (tal > 5) er sant gjer {
+  terminal.skriv("stort")
+} ellers {
+  terminal.skriv("lite")
+}

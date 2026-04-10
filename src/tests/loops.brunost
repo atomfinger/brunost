@@ -1,0 +1,12 @@
+// forKvart-løkke
+fast liste er [1, 2, 3]
+forKvart nummer i liste {
+  terminal.skriv(nummer)
+}
+
+// medan-løkke
+endreleg teller er 1
+medan (teller < 4) erSameSom sant gjer {
+  terminal.skriv(teller)
+  teller er teller + 1
+}

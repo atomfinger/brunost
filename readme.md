@@ -34,8 +34,37 @@ og er garantert fri for palmeolje. La oss kode saman – den nynorske måten! �
 ### Dette er igangverande arbeid! 👷🏻‍♂️
 
 Brunost er eit språk som blir aktivt jobba på, og er ikkje klar for bruk.
-Førebels er det berre språkdefinisjonen som eksisterer.
-Språktolkaren er endå under utvikling.
+Enkle einfilsskript fungerer. Modular er endå ikkje støtta.
+
+## Bygging og bruk
+
+**Krav:** [Zig](https://ziglang.org/) 0.15 eller nyare.
+
+### Bygg
+
+```sh
+zig build
+```
+
+### Køyr eit skript
+
+```sh
+zig build run -- mittskript.brunost
+```
+
+Eller bruk den kompilerte binærfila direkte:
+
+```sh
+./zig-out/bin/brunost mittskript.brunost
+```
+
+### Køyr testar
+
+```sh
+zig build test
+```
+
+Testane er snapshot-testar som køyrer `.brunost`-skript og samanliknar utdata med venta resultat. Skriptene ligg i `src/tests/`.
 
 ## Språkspesifikasjon
 

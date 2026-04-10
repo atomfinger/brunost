@@ -1,0 +1,12 @@
+gjer leggSaman(a, b) {
+  gjevTilbake a + b
+}
+
+fast resultat er leggSaman(3, 7)
+terminal.skriv(resultat)
+
+gjer helsing(namn) {
+  gjevTilbake "Hei, " + namn + "!"
+}
+
+terminal.skriv(helsing("Ola"))

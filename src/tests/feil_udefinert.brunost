@@ -1,0 +1,2 @@
+// Brukar ein variabel som ikkje er definert
+terminal.skriv(spøkelse)

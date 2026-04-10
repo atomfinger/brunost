@@ -1,43 +1,82 @@
 const std = @import("std");
-const brunost_parser = @import("Brunost_Parser.zig");
+const token = @import("token.zig");
+const parser = @import("parser.zig");
+const interpreter = @import("interpreter.zig");
+
+// In Zig 0.15, std.io.getStdOut/Err() are removed.
+// Use std.fs.File.stdout()/stderr() with GenericWriter to get an AnyWriter.
+const FileWriter = std.io.GenericWriter(std.fs.File, std.fs.File.WriteError, std.fs.File.write);
+
+fn stdout_writer() std.io.AnyWriter {
+    return (FileWriter{ .context = std.fs.File.stdout() }).any();
+}
+
+fn stderr_writer() std.io.AnyWriter {
+    return (FileWriter{ .context = std.fs.File.stderr() }).any();
+}
+
+fn describe_error(err: anyerror) []const u8 {
+    return switch (err) {
+        // Tolkarfeil
+        error.ImmutableAssignment => "Kan ikkje endra ein uforanderleg variabel (deklarert med 'fast')",
+        error.UndefinedVariable => "Variabelen er ikkje definert",
+        error.TypeError => "Typefeil: operasjonen støttar ikkje desse typane",
+        error.DivisionByZero => "Kan ikkje dela på null",
+        error.IndexOutOfBounds => "Indeks er utanfor grensa til lista",
+        error.UnknownBuiltin => "Ukjend innebygd funksjon",
+        // Parserfeil
+        error.UnexpectedToken => "Uventa teikn i koden",
+        error.ExpectedIdentifier => "Forventa eit namn her",
+        error.ExpectedAssign => "Forventa 'er'",
+        error.ExpectedBoolVal => "Forventa 'sant' eller 'usant'",
+        error.ExpectedDo => "Forventa 'gjer'",
+        error.ExpectedIn => "Forventa 'i'",
+        error.ExpectedOpenParen => "Forventa '('",
+        error.ExpectedCloseParen => "Forventa ')'",
+        error.ExpectedOpenBrace => "Forventa '{'",
+        error.ExpectedCloseBrace => "Forventa '}'",
+        error.ExpectedCloseBracket => "Forventa ']'",
+        error.InvalidInteger => "Ugyldig heiltal",
+        // Generelt
+        error.OutOfMemory => "Minnet er tomt",
+        else => @errorName(err),
+    };
+}
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var args = std.process.args();
+    _ = args.skip(); // argv[0]
+    const filename = args.next() orelse {
+        stderr_writer().print("Bruk: brunost <fil.brunost>\n", .{}) catch {};
+        std.process.exit(1);
+    };
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    const source = std.fs.cwd().readFileAlloc(alloc, filename, 10 * 1024 * 1024) catch |err| {
+        stderr_writer().print("Feil: Kunne ikkje lesa fila '{s}': {s}\n", .{ filename, describe_error(err) }) catch {};
+        std.process.exit(1);
+    };
+    defer alloc.free(source);
 
-    try bw.flush(); // don't forget to flush!
+    run(alloc, source, stdout_writer()) catch |err| {
+        stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
+        std.process.exit(1);
+    };
 }
 
-pub fn runFile(
-    allocator: std.mem.Allocator,
-    file_name: [:0]const u8,
-) !void {
-    const source_file = try std.fs.cwd().openFile(file_name, .{ .lock = .exclusive });
-    defer source_file.close();
-    const source_file_size = (try source_file.stat()).size;
-    const source = try source_file.readToEndAllocOptions(
-        allocator,
-        source_file_size,
-        null,
-        @alignOf(u8),
-        0,
-    );
-    defer allocator.free(source);
-    brunost_parser.parse(source, file_name, allocator);
-}
+pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWriter) !void {
+    var arena = std.heap.ArenaAllocator.init(alloc);
+    defer arena.deinit();
+    const arena_alloc = arena.allocator();
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+    const lexer = token.Lexer.init(source);
+    var p = parser.Parser.init(lexer, arena_alloc);
+    const program = try p.parse_program();
+
+    var interp = interpreter.Interpreter.init(alloc, output);
+    defer interp.deinit();
+    _ = try interp.eval(program, &interp.global);
 }

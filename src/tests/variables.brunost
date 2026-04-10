@@ -1,0 +1,16 @@
+// Uforanderlege variablar
+fast x er 10
+terminal.skriv(x)
+
+// Foranderlege variablar
+endreleg y er 5
+y er y + x
+terminal.skriv(y)
+
+// Strengar
+fast helsing er "Hei"
+terminal.skriv(helsing)
+
+// Boolsk
+fast erSant er sant
+terminal.skriv(erSant)

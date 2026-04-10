@@ -1,0 +1,14 @@
+// Addisjon
+terminal.skriv(3 + 4)
+
+// Subtraksjon
+terminal.skriv(10 - 3)
+
+// Multiplikasjon
+terminal.skriv(6 * 7)
+
+// Divisjon
+terminal.skriv(20 / 4)
+
+// Operatorprioritet
+terminal.skriv(2 + 3 * 4)
