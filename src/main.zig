@@ -3,8 +3,6 @@ const token = @import("token.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
 
-// In Zig 0.15, std.io.getStdOut/Err() are removed.
-// Use std.fs.File.stdout()/stderr() with GenericWriter to get an AnyWriter.
 const FileWriter = std.io.GenericWriter(std.fs.File, std.fs.File.WriteError, std.fs.File.write);
 
 fn stdout_writer() std.io.AnyWriter {

@@ -244,10 +244,6 @@ pub const Parser = struct {
         return self.alloc_node(.{ .block = .{ .statements = try stmts.toOwnedSlice(self.arena) } });
     }
 
-    // -------------------------------------------------------------------------
-    // Expression parsing (Pratt)
-    // -------------------------------------------------------------------------
-
     fn infix_precedence(tok: token.token_types) u8 {
         return switch (tok) {
             .assign => 1, // er as equality in expression context
@@ -324,7 +320,7 @@ pub const Parser = struct {
             .identifier => {
                 const name = self.curr.literal;
                 self.advance();
-                // member access: terminal.skriv(...)
+                // member access
                 if (self.curr.type == .dot) {
                     self.advance();
                     if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
@@ -336,7 +332,6 @@ pub const Parser = struct {
                     }
                     return ParseError.UnexpectedToken;
                 }
-                // function call: foo(...)
                 if (self.curr.type == .lparen) {
                     const callee = try self.alloc_node(.{ .identifier = .{ .name = name } });
                     const args = try self.parse_call_args();
