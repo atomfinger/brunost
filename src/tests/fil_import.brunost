@@ -1,0 +1,5 @@
+bruk terminal
+bruk hjelp.rekning
+
+terminal.skriv(rekning.leggSaman(3, 4))
+terminal.skriv(rekning.gonge(3, 4))

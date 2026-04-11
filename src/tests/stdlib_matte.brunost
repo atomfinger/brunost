@@ -1,0 +1,6 @@
+bruk terminal
+bruk matte
+
+terminal.skriv(matte.abs(-5))
+terminal.skriv(matte.maks(3, 7))
+terminal.skriv(matte.min(3, 7))

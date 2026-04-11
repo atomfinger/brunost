@@ -1,0 +1,13 @@
+bruk terminal
+
+modul rekning {
+  gjer dobbel(x) {
+    gjevTilbake x * 2
+  }
+  gjer kvadrat(x) {
+    gjevTilbake x * x
+  }
+}
+
+terminal.skriv(rekning.dobbel(5))
+terminal.skriv(rekning.kvadrat(4))

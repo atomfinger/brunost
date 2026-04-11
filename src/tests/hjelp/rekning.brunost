@@ -1,0 +1,7 @@
+gjer leggSaman(a, b) {
+  gjevTilbake a + b
+}
+
+gjer gonge(a, b) {
+  gjevTilbake a * b
+}

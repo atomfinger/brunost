@@ -1,0 +1,6 @@
+bruk terminal
+bruk streng
+
+fast ord er "hallo"
+terminal.skriv(streng.lengd(ord))
+terminal.skriv(streng.tilTal("42"))
