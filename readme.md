@@ -1,145 +1,105 @@
-# Brunost
 
-**Prøv det i nettlesaren:** https://atomfinger.github.io/brunost/
 
-## Velkomen til Brunost – programmeringsspråket med smak av Noreg! 🇳🇴
+<div align="center">
 
-Brunost er ikkje berre ein klassisk del av den norske frukosten
-– men også eit toppmoderne programmeringsspråk. Designa for nynorskentusiastar
-og for dei som meiner at kode ikkje berre skal vere funksjonell, men også ha ei
-eiga rytme, kombinerer Brunost enkel syntaks med ein dose norsk sjarm.
+# 𝔅𝔯𝔲𝔫𝔬𝔰𝔱
 
-Her er nokre hovudtrekk:
+### *Programmeringsspråket med smak av Noreg*
 
-- Streng politikk for strenger:
-  Ingen andre språk i strenger eller variabel namn – berre nynorsk er godt nok!
-- Smidige løkker og logiske vilkår:
-  Skriv kode som flyt like fint som ein fjord i kveldssol.
-- Feilhåndtering som er enkel, men smørbar:
-  kast feilar, og fang dei i ein hyggjeleg prøv-blokk.
-- Fast eller endreleg?:
-  Kontroll over dataen din med klåre nøkkelord – ingen unødig rot.
+[![Prøv Brunost nettlesaren](https://img.shields.io/badge/Prøv%20Brunost%20i%20nettlesaren-5C4033?style=for-the-badge&logoColor=white)](https://atomfinger.github.io/brunost/)
 
-Prøv sjølv:
+
+</div>
+
+---
+
+[![Bygg-status](https://img.shields.io/github/actions/workflow/status/atomfinger/brunost/ci.yml?style=flat-square&label=Bygg&logo=github)](https://github.com/atomfinger/brunost/actions)
+[![Under arbeid](https://img.shields.io/badge/status-under%20arbeid-orange?style=flat-square)](https://github.com/atomfinger/brunost)
+[![Palmeolje-fri](https://img.shields.io/badge/palmeolje-fri-green?style=flat-square)](https://github.com/atomfinger/brunost)
+
+
+## Kva er Brunost?
+
+Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje berre skal vere funksjonell — han skal ha *sjel*. Inspirert av den klassiske norske frukostopplevinga kombinerer Brunost ein rein, lesbar syntaks med ekte nynorsk terminologi.
+
+Ingen framandord. Ingen rar import-hierarki. Berre kode som flyt like mjukt som brunost over ein nysteikt vaffel.
+
+> **Merk:** Brunost er under aktiv utvikling. Enkle einfilsskript fungerer godt. `prøv`/`fang` fangar berre feil kasta med `kast` — ikkje interne køyretidsfeil.
+
+---
+
+## Hovudtrekk
+
+| Eigenskap | Brunost |
+|---|---|
+| **Løkker** | `forKvart` og `medan`-syntaks som les seg naturleg |
+| **Feilhandtering** | `prøv`/`fang`-blokker for reine feilflyt |
+| **Modular** | Innebygde, brukar-definerte og fil-baserte modular |
+| **Mutabilitet** | Eksplisitt `fast`/`endreleg` — aldri uventa endringar |
+
+---
+
+## Eit smaksdøme
 
 ```python
 bruk terminal
+bruk matte
 
-gjer hallo() {
-  terminal.skriv("Velkomen til Brunost, koden sin Telemarkskanal!")
+gjer rekn(tal, faktor) {
+  viss (faktor er 0) er sant gjer {
+    kast "Kan ikkje gange med null, det er kjedeleg"
+  }
+  gjevTilbake tal * faktor
 }
 
-hallo()
+fast talrekke er [1, 2, 3, 4, 5]
+
+prøv {
+  forKvart tal i talrekke {
+    fast resultat er rekn(tal, 3)
+    terminal.skriv(resultat)
+  }
+} fang (feil) {
+  terminal.skriv("Noko gjekk gale: " + feil)
+}
 ```
 
-Med Brunost får du eit språk som smakar tradisjon, luktar innovasjon,
-og er garantert fri for palmeolje. La oss kode saman – den nynorske måten! 🚀
-
-### Dette er igangverande arbeid! 👷🏻‍♂️
-
-Brunost er eit språk som blir aktivt jobba på, og er ikkje klar for bruk.
-Enkle einfilsskript fungerer. Modular er støtta, men merk at `prøv`/`fang`
-berre fangar feil kasta med `kast` — ikkje interne køyretidsfeil.
-
-## Bygging og bruk
-
-Den enklaste måten å kome i gang er med [mise](https://mise.jdx.dev/), som handterer Zig og Python automatisk.
-
-```sh
-mise install        # installer Zig og Python
-mise run build      # bygg prosjektet
-mise run test       # køyr alle testar
-mise run demo:start # start demo-server på http://localhost:8765
-mise run demo:stop  # stopp demo-serveren
-```
-
-### Manuell oppsett
-
-**Krav:** [Zig](https://ziglang.org/) 0.15 eller nyare.
-
-```sh
-zig build                              # bygg
-zig build run -- mittskript.brunost   # køyr eit skript
-zig build test                         # køyr testar
-```
-
-Eller bruk den kompilerte binærfila direkte:
-
-```sh
-./zig-out/bin/brunost mittskript.brunost
-```
-
-Testane er snapshot-testar som køyrer `.brunost`-skript og samanliknar utdata med venta resultat. Skriptene ligg i `src/tests/`.
+---
 
 ## Språkspesifikasjon
 
-### Definere variablar
+### Variablar
 
-Uforanderlege verdiar (Immutability):
-
-Uforanderlege verdiar er variablar som ikkje kan endrast
-på etter at dei har vorte sette.
-
-Ei uforanderleg verdi spesifiseras med nøkkelordet `fast`:
+Brunost skil mellom variablar som kan endrast og dei som ikkje kan det.
 
 ```python
-fast tall er 10
-tall er 20 // Feil
-```
+// Uforanderleg — set ein gong, aldri endra
+fast fart er 88
 
-Foranderlege verdiar:
-
-Foranderlege verdiar er variablar som kan endrast på etter at dei har vorte sette.
-
-Ein foranderleg verdi spesifiseras med nøkkelordet `endreleg`:
-
-```python
-endreleg tall er 10
-tall er 20 // Greit
+// Foranderleg — kan oppdaterast fritt
+endreleg straum er 1
+straum er straum + 1
 ```
 
 ### Typar
 
-- Boolaner: `fast erNynorsk? er sant` eller `fast erBokmål? er usant`
-- Nummar: `fast tall er 10`
-- Strengar: `fast streng er "dette er ein streng"`
-- Listar: `fast liste er ["min", "liste", "av", "strengar"]`
-
-### Løkker
-
-For å iterera ei liste så kan man bruke `forKvart` syntaksen:
-
 ```python
-bruk terminal
-
-fast tal er [1, 2, 3, 4]
-forKvart nummer i tal {
-  terminal.skriv(nummer)
-}
-```
-
-Ønskjer ein å iterera så lenge ein påstand er sann, så kan man bruka
-`medan (BOOLSK) erSameSom sant gjer` eller `medan (BOOLSK) erSameSom usant gjer`
-viss man ønskjer usann:
-
-```python
-bruk terminal
-
-endreleg tall er 1
-medan (tall < 20) erSameSom sant gjer {
-  terminal.skriv(tall)
-  tall er tall + 1
-}
+fast erNynorsk?   er sant                                               // Boolsk
+fast årstal       er 1814                                               // Numerisk
+fast helsing      er "God dag, Noreg!"                                  // Streng
+fast fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
 ```
 
 ### Funksjonar
 
-For å lage funksjonar så bruker vi nøkkelordet `gjer`:
+Funksjonar definerast med `gjer` og returnerer verdi med `gjevTilbake`:
 
 ```python
-gjer leggSaman(a, b) {
-  gjevTilbake a + b
+gjer bmi(vekt, høgd) {
+  gjevTilbake vekt / (høgd * høgd)
 }
+
+fast resultat er bmi(70, 1.75)
 ```
 
 ### Vilkårsutsagn
@@ -147,117 +107,192 @@ gjer leggSaman(a, b) {
 ```python
 bruk terminal
 
-fast minVerdi er 0
+fast temperatur er -5
 
-viss (minVerdi er 1) er sant gjer {
-  terminal.skriv("Min verdi er ein")
-} ellers viss (minVerdi < 1) er usant gjer {
-  terminal.skriv("Min verdi er mindre enn ein")
+viss (temperatur < 0) er sant gjer {
+  terminal.skriv("Det er kaldt — ta på deg ull!")
+} ellers viss (temperatur < 15) er sant gjer {
+  terminal.skriv("Frisk luft, ta med jakke")
 } ellers {
-  terminal.skriv("Min verdi er høgare enn ein")
+  terminal.skriv("Norsk sommar! Nyt det medan det varar")
 }
 ```
 
-### Feilhåndtering
+### Løkker
 
-`prøv`/`fang` fangar berre feil som er kasta med `kast`:
+**For-kvar-løkke** — iterer over ei liste:
 
 ```python
 bruk terminal
 
-prøv {
-  kast "noko gjekk gale"
-} fang (feil) {
-  terminal.skriv("Feil oppstod: " + feil)
+fast fylke er ["Vestland", "Rogaland", "Troms", "Finnmark"]
+
+forKvart namn i fylke {
+  terminal.skriv("Hei frå " + namn + "!")
 }
 ```
 
-For å kaste ein feil så kan man bruke `kast` etterfulgt av ein verdi:
+**Medan-løkke** — køyr så lenge ein påstand er sann:
+
+```python
+bruk terminal
+
+endreleg teljing er 10
+
+medan (teljing > 0) erSameSom sant gjer {
+  terminal.skriv(teljing)
+  teljing er teljing - 1
+}
+```
+
+### Feilhandtering
+
+`prøv`/`fang` fangar feil kasta med `kast`:
 
 ```python
 bruk terminal
 
 gjer delTal(teljartal, nemnar) {
   viss (nemnar er 0) er sant gjer {
-    kast "Kan ikkje dele på null"
+    kast "Matematikken seier nei: kan ikkje dele på null"
   }
   gjevTilbake teljartal / nemnar
 }
 
 prøv {
-  fast resultat er delTal(10, 0)
-  terminal.skriv("Resultatet er " + resultat)
+  fast svar er delTal(42, 0)
+  terminal.skriv("Svar: " + svar)
 } fang (feil) {
   terminal.skriv("Feil oppstod: " + feil)
 }
 ```
 
-### Modular
+---
 
-Brunost støttar tre typar modular.
+## Modular
 
-#### Innebygde modular
+Brunost støttar tre typar modular for å organisere koden din.
 
-Bruk `bruk` for å importera innebygde standardbibliotekmodular:
+### Innebygde standardbibliotekmodular
 
 ```python
-bruk terminal
-bruk matte
-bruk streng
-bruk liste
+bruk terminal   // Inn- og utdata
+bruk matte      // Matematiske funksjonar
+bruk streng     // Strengmanipulasjon
+bruk liste      // Listeoperasjonar
 ```
-
-Døme:
 
 ```python
 bruk terminal
 bruk matte
 
-terminal.skriv(matte.abs(-5))   // 5
-terminal.skriv(matte.maks(3, 7)) // 7
-terminal.skriv(matte.min(3, 7))  // 3
+terminal.skriv(matte.abs(-42))    // 42
+terminal.skriv(matte.maks(7, 13)) // 13
+terminal.skriv(matte.min(7, 13))  // 7
 ```
 
-#### Brukar-definerte modular
-
-Definer ein modul inline i same fil med `modul`:
+### Brukar-definerte modular (inline)
 
 ```python
 bruk terminal
 
-modul rekning {
-  gjer leggTil(a, b) {
-    gjevTilbake a + b
+modul geometri {
+  gjer areal(breidde, høgd) {
+    gjevTilbake breidde * høgd
+  }
+
+  gjer omkrins(breidde, høgd) {
+    gjevTilbake 2 * (breidde + høgd)
   }
 }
 
-fast resultat er rekning.leggTil(5, 7)
-terminal.skriv(resultat) // 12
+terminal.skriv(geometri.areal(5, 8))    // 40
+terminal.skriv(geometri.omkrins(5, 8)) // 26
 ```
 
-#### Fil-modular
+### Fil-modular
 
-Del koden over fleire filer. Gitt `utils/rekning.brunost`:
+Del koden over fleire filer for større prosjekt.
 
+`utils/rekning.brunost`:
 ```python
 gjer leggTil(a, b) {
   gjevTilbake a + b
 }
+
+gjer trekkFrå(a, b) {
+  gjevTilbake a - b
+}
 ```
 
-Import med dotnotasjon der siste ledd blir namnerommet:
-
+`hovud.brunost`:
 ```python
 bruk terminal
 bruk utils.rekning
 
-terminal.skriv(rekning.leggTil(5, 7)) // 12
+terminal.skriv(rekning.leggTil(100, 23))   // 123
+terminal.skriv(rekning.trekkFrå(100, 23))  // 77
 ```
 
-Bruk `som` for å gje modulen eit anna namn ved namnekonflikt:
+Bruk `som` ved namnekonflikt:
 
 ```python
 bruk utils.rekning som rekn
 
 terminal.skriv(rekn.leggTil(5, 7)) // 12
 ```
+
+---
+
+## Installasjon og bygging
+
+### Tilrådd: mise
+
+[mise](https://mise.jdx.dev/) handterer alle avhengigheiter automatisk:
+
+```bash
+mise install        # Installer avhengigheiter
+mise run build      # Bygg prosjektet
+mise run test       # Køyr alle testar
+mise run demo:start # Start demo-server på http://localhost:8765
+mise run demo:stop  # Stopp demo-serveren
+```
+
+### Manuell oppsett
+
+**Krav:** [Zig](https://ziglang.org/) 0.15 eller nyare.
+
+```bash
+zig build                            # Bygg prosjektet
+zig build run -- mittskript.brunost  # Køyr eit skript
+zig build test                       # Køyr alle testar
+```
+
+Eller bruk den kompilerte binærfila direkte:
+
+```bash
+./zig-out/bin/brunost mittskript.brunost
+```
+
+Testane er snapshot-testar som køyrer `.brunost`-skript og samanliknar utdata med venta resultat. Testskripter ligg i `src/tests/`.
+
+---
+
+## Bidra
+
+Brunost er eit aktivt prosjekt og tek gjerne imot bidrag — anten det er feilrettingar, nye funksjonar, betre dokumentasjon eller fleire demoar.
+
+1. Fork repoet
+2. Lag ein ny gren: `git checkout -b mi-endring`
+3. Gjer endringane dine
+4. Send ein pull request
+
+---
+
+<div align="center">
+
+*Laga med kjærleik og altfor mykje brunost*
+
+**[Prøv Brunost i nettlesaren](https://atomfinger.github.io/brunost/)**
+
+</div>
