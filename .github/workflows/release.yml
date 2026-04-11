@@ -97,6 +97,10 @@ jobs:
             fi
           done
 
+          # WASM build
+          zig build wasm
+          cp zig-out/wasm/brunost.wasm dist/brunost.wasm
+
       - name: Lag GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

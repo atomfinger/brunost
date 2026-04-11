@@ -13,7 +13,7 @@ fn stderr_writer() std.io.AnyWriter {
     return (FileWriter{ .context = std.fs.File.stderr() }).any();
 }
 
-fn describe_error(err: anyerror) []const u8 {
+pub fn describe_error(err: anyerror) []const u8 {
     return switch (err) {
         // Tolkarfeil
         error.ImmutableAssignment => "Kan ikkje endra ein uforanderleg variabel (deklarert med 'fast')",

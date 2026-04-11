@@ -1,5 +1,7 @@
 # Brunost
 
+**Prøv det i nettlesaren:** https://atomfinger.github.io/brunost/
+
 ## Velkomen til Brunost – programmeringsspråket med smak av Noreg! 🇳🇴
 
 Brunost er ikkje berre ein klassisk del av den norske frukosten
@@ -41,30 +43,30 @@ berre fangar feil kasta med `kast` — ikkje interne køyretidsfeil.
 
 ## Bygging og bruk
 
-**Krav:** [Zig](https://ziglang.org/) 0.15 eller nyare.
-
-### Bygg
+Den enklaste måten å kome i gang er med [mise](https://mise.jdx.dev/), som handterer Zig og Python automatisk.
 
 ```sh
-zig build
+mise install        # installer Zig og Python
+mise run build      # bygg prosjektet
+mise run test       # køyr alle testar
+mise run demo:start # start demo-server på http://localhost:8765
+mise run demo:stop  # stopp demo-serveren
 ```
 
-### Køyr eit skript
+### Manuell oppsett
+
+**Krav:** [Zig](https://ziglang.org/) 0.15 eller nyare.
 
 ```sh
-zig build run -- mittskript.brunost
+zig build                              # bygg
+zig build run -- mittskript.brunost   # køyr eit skript
+zig build test                         # køyr testar
 ```
 
 Eller bruk den kompilerte binærfila direkte:
 
 ```sh
 ./zig-out/bin/brunost mittskript.brunost
-```
-
-### Køyr testar
-
-```sh
-zig build test
 ```
 
 Testane er snapshot-testar som køyrer `.brunost`-skript og samanliknar utdata med venta resultat. Skriptene ligg i `src/tests/`.

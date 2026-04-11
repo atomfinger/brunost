@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="nn">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Brunost</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: "Courier New", Courier, monospace;
+                background: #f7f5f0;
+                color: #222;
+                padding: 3rem 1rem;
+            }
+
+            .container {
+                max-width: 680px;
+                margin: 0 auto;
+            }
+
+            header {
+                margin-bottom: 2rem;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+                letter-spacing: -0.02em;
+                margin-bottom: 0.3rem;
+            }
+
+            .tagline {
+                color: #888;
+                font-size: 0.85rem;
+            }
+
+            .editor {
+                background: #1e1e1e;
+                border-radius: 6px;
+                overflow: hidden;
+                margin-bottom: 0.75rem;
+            }
+
+            .editor-bar {
+                background: #2a2a2a;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.75rem;
+                color: #666;
+                display: flex;
+                justify-content: space-between;
+            }
+
+            textarea {
+                width: 100%;
+                height: 200px;
+                background: #1e1e1e;
+                color: #d4d4d4;
+                border: none;
+                padding: 1rem;
+                font-family: inherit;
+                font-size: 0.9rem;
+                line-height: 1.6;
+                resize: vertical;
+                outline: none;
+                tab-size: 2;
+            }
+
+            .actions {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
+
+            button {
+                padding: 0.4rem 1.1rem;
+                font-family: inherit;
+                font-size: 0.85rem;
+                cursor: pointer;
+                border: 1px solid #bbb;
+                border-radius: 4px;
+                background: #fff;
+            }
+            button:hover:not(:disabled) {
+                background: #efefef;
+            }
+            button:disabled {
+                opacity: 0.35;
+                cursor: default;
+            }
+
+            .output-label {
+                font-size: 0.7rem;
+                color: #aaa;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                margin-bottom: 0.35rem;
+            }
+
+            pre {
+                background: #fff;
+                border: 1px solid #e0ddd8;
+                border-radius: 4px;
+                padding: 0.75rem 1rem;
+                min-height: 80px;
+                font-family: inherit;
+                font-size: 0.9rem;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-break: break-all;
+                color: #333;
+            }
+            pre.error {
+                color: #b00000;
+            }
+            pre.empty {
+                color: #ccc;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Brunost</h1>
+                <p class="tagline">
+                    Eit nynorsk programmeringsspråk — prøv det i nettlesaren
+                </p>
+            </header>
+
+            <div class="editor">
+                <div class="editor-bar">
+                    <span>skript.brunost</span>
+                    <span id="status">lastar…</span>
+                </div>
+                <textarea id="code" spellcheck="false">
+bruk terminal
+
+fast kvadrat er gjer(n) {
+  gjevTilbake n * n
+}
+
+forKvart n i [1, 2, 3, 4, 5] {
+  terminal.skriv(kvadrat(n))
+}</textarea
+                >
+            </div>
+
+            <div class="actions">
+                <button id="run" disabled>Køyr</button>
+            </div>
+
+            <div class="output-label">utdata</div>
+            <pre id="output" class="empty">(ingen utdata endå)</pre>
+        </div>
+
+        <script>
+            let wasm = null;
+            let mem = null;
+
+            WebAssembly.instantiateStreaming(fetch("./brunost.wasm"), {
+                env: {},
+            })
+                .then((r) => {
+                    wasm = r.instance.exports;
+                    mem = new Uint8Array(wasm.memory.buffer);
+                    document.getElementById("status").textContent = "klar";
+                    document.getElementById("run").disabled = false;
+                })
+                .catch((err) => {
+                    document.getElementById("status").textContent =
+                        "feil: kunne ikkje lasta";
+                    console.error(err);
+                });
+
+            document.getElementById("run").addEventListener("click", () => {
+                const encoded = new TextEncoder().encode(
+                    document.getElementById("code").value,
+                );
+                mem = new Uint8Array(wasm.memory.buffer);
+                const srcPtr = wasm.get_source_buf_ptr();
+                mem.set(encoded, srcPtr);
+                wasm.evaluate(srcPtr, encoded.length);
+                mem = new Uint8Array(wasm.memory.buffer);
+                const out = new TextDecoder().decode(
+                    mem.subarray(
+                        wasm.get_output_ptr(),
+                        wasm.get_output_ptr() + wasm.get_output_len(),
+                    ),
+                );
+                const el = document.getElementById("output");
+                el.className = wasm.get_output_is_error()
+                    ? "error"
+                    : out === ""
+                      ? "empty"
+                      : "";
+                el.textContent = out || "(ingen utdata)";
+            });
+
+            document.getElementById("code").addEventListener("keydown", (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter")
+                    document.getElementById("run").click();
+                if (e.key === "Tab") {
+                    e.preventDefault();
+                    const s = e.target.selectionStart;
+                    e.target.value =
+                        e.target.value.slice(0, s) +
+                        "  " +
+                        e.target.value.slice(e.target.selectionEnd);
+                    e.target.selectionStart = e.target.selectionEnd = s + 2;
+                }
+            });
+        </script>
+    </body>
+</html>

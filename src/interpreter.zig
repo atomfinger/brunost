@@ -382,6 +382,9 @@ pub const Interpreter = struct {
     }
 
     fn load_file_module(self: *Interpreter, segments: [][]const u8) EvalError!Value {
+        // Filesystem is unavailable in WASM builds — comptime-eliminated, not a runtime branch.
+        if (comptime @import("builtin").cpu.arch == .wasm32) return EvalError.ModuleNotFound;
+
         if (self.base_dir.len == 0) return EvalError.ModuleNotFound;
 
         // Build path: base_dir/seg0/.../segN.brunost

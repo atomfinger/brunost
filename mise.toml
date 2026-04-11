@@ -1,0 +1,25 @@
+[tools]
+zig = "0.15.2"
+python = "3"
+
+[tasks.build]
+description = "Compile the interpreter"
+run = "zig build"
+
+[tasks."build:wasm"]
+description = "Compile the WebAssembly target"
+run = "zig build wasm && cp zig-out/wasm/brunost.wasm brunost.wasm"
+
+[tasks.test]
+description = "Run all tests with output"
+depends = ["build"]
+run = "zig build test --summary all 2>&1"
+
+[tasks."demo:start"]
+description = "Start the brunost demo HTML server on http://localhost:8765"
+depends = ["build:wasm"]
+run = "python3 -m http.server 8765"
+
+[tasks."demo:stop"]
+description = "Stop the brunost demo HTML server"
+run = "pkill -f 'http.server 8765' || true"
