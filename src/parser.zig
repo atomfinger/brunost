@@ -72,6 +72,8 @@ pub const Parser = struct {
             .try_op => self.parse_try(),
             .throw_op => self.parse_throw(),
             .function => self.parse_fn_decl(),
+            .import_op => self.parse_import(),
+            .module_op => self.parse_module_decl(),
             else => self.parse_assign_or_expr(),
         };
     }
@@ -196,6 +198,52 @@ pub const Parser = struct {
             .iterator_name = iter_name,
             .iterable = iterable,
             .body = body,
+        } });
+    }
+
+    fn parse_import(self: *Parser) ParseError!*ast.Node {
+        self.advance(); // consume bruk
+        var segments: std.ArrayList([]const u8) = .{};
+        if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+        try segments.append(self.arena, self.curr.literal);
+        self.advance();
+        while (self.curr.type == .dot) {
+            self.advance(); // consume .
+            if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+            try segments.append(self.arena, self.curr.literal);
+            self.advance();
+        }
+        var alias: ?[]const u8 = null;
+        if (self.curr.type == .as_op) {
+            self.advance(); // consume som
+            if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+            alias = self.curr.literal;
+            self.advance();
+        }
+        return self.alloc_node(.{ .import_stmt = .{
+            .segments = try segments.toOwnedSlice(self.arena),
+            .alias = alias,
+        } });
+    }
+
+    fn parse_module_decl(self: *Parser) ParseError!*ast.Node {
+        self.advance(); // consume modul
+        if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+        const name = self.curr.literal;
+        self.advance();
+        if (self.curr.type != .lbrace) return ParseError.ExpectedOpenBrace;
+        self.advance();
+        var functions: std.ArrayList(*ast.Node) = .{};
+        while (self.curr.type != .rbrace and self.curr.type != .eof) {
+            if (self.curr.type != .function) return ParseError.UnexpectedToken;
+            const fn_node = try self.parse_fn_decl();
+            try functions.append(self.arena, fn_node);
+        }
+        if (self.curr.type != .rbrace) return ParseError.ExpectedCloseBrace;
+        self.advance();
+        return self.alloc_node(.{ .module_decl = .{
+            .name = name,
+            .functions = try functions.toOwnedSlice(self.arena),
         } });
     }
 

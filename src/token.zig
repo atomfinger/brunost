@@ -42,6 +42,9 @@ pub const token_types = enum {
     try_op, // prøv
     catch_op, // fang
     throw_op, // kast
+    import_op, // bruk
+    module_op, // modul
+    as_op, // som
 };
 
 pub const Token = struct {
@@ -73,6 +76,9 @@ pub const Token = struct {
             .{ "pr\xc3\xb8v", .try_op }, // prøv in UTF-8
             .{ "fang", .catch_op },
             .{ "kast", .throw_op },
+            .{ "bruk", .import_op },
+            .{ "modul", .module_op },
+            .{ "som", .as_op },
         });
         return map.get(identifier);
     }

@@ -20,7 +20,9 @@ Her er nokre hovudtrekk:
 
 Prøv sjølv:
 
-```brunost
+```python
+bruk terminal
+
 gjer hallo() {
   terminal.skriv("Velkomen til Brunost, koden sin Telemarkskanal!")
 }
@@ -34,7 +36,8 @@ og er garantert fri for palmeolje. La oss kode saman – den nynorske måten! �
 ### Dette er igangverande arbeid! 👷🏻‍♂️
 
 Brunost er eit språk som blir aktivt jobba på, og er ikkje klar for bruk.
-Enkle einfilsskript fungerer. Modular er endå ikkje støtta.
+Enkle einfilsskript fungerer. Modular er støtta, men merk at `prøv`/`fang`
+berre fangar feil kasta med `kast` — ikkje interne køyretidsfeil.
 
 ## Bygging og bruk
 
@@ -77,20 +80,20 @@ på etter at dei har vorte sette.
 
 Ei uforanderleg verdi spesifiseras med nøkkelordet `fast`:
 
-```brunost
+```python
 fast tall er 10
-tall er 20 //Feil
+tall er 20 // Feil
 ```
 
 Foranderlege verdiar:
 
 Foranderlege verdiar er variablar som kan endrast på etter at dei har vorte sette.
 
-Ein foranderleg verdi spesifiseras med nøkkelordet `enderleg`:
+Ein foranderleg verdi spesifiseras med nøkkelordet `endreleg`:
 
-```brunost
+```python
 endreleg tall er 10
-tall er 20 //Greit
+tall er 20 // Greit
 ```
 
 ### Typar
@@ -104,18 +107,22 @@ tall er 20 //Greit
 
 For å iterera ei liste så kan man bruke `forKvart` syntaksen:
 
-```brunost
-fast tall er [1, 2, 3, 4]
-forKvart nummer i tall {
+```python
+bruk terminal
+
+fast tal er [1, 2, 3, 4]
+forKvart nummer i tal {
   terminal.skriv(nummer)
 }
 ```
 
 Ønskjer ein å iterera så lenge ein påstand er sann, så kan man bruka
-`medan (BOOLSK) det er sant` eller `medan (BOOLSK) det er usant`
-hvis man ønskjer usann:
+`medan (BOOLSK) erSameSom sant gjer` eller `medan (BOOLSK) erSameSom usant gjer`
+viss man ønskjer usann:
 
-```brunost
+```python
+bruk terminal
+
 endreleg tall er 1
 medan (tall < 20) erSameSom sant gjer {
   terminal.skriv(tall)
@@ -125,17 +132,21 @@ medan (tall < 20) erSameSom sant gjer {
 
 ### Funksjonar
 
-For å lage funksjoner så bruker vi nøkkelordet `gjer`:
+For å lage funksjonar så bruker vi nøkkelordet `gjer`:
 
-```brunost
+```python
 gjer leggSaman(a, b) {
- gjevTilbake a + b
+  gjevTilbake a + b
 }
 ```
 
-### Vilkår utsagn
+### Vilkårsutsagn
 
-```brunost
+```python
+bruk terminal
+
+fast minVerdi er 0
+
 viss (minVerdi er 1) er sant gjer {
   terminal.skriv("Min verdi er ein")
 } ellers viss (minVerdi < 1) er usant gjer {
@@ -147,19 +158,23 @@ viss (minVerdi er 1) er sant gjer {
 
 ### Feilhåndtering
 
-For å handtera feil så bruker me `prøv` og `fang`:
+`prøv`/`fang` fangar berre feil som er kasta med `kast`:
 
-```brunost
+```python
+bruk terminal
+
 prøv {
-  terminal.skriv(10 / 0)
+  kast "noko gjekk gale"
 } fang (feil) {
   terminal.skriv("Feil oppstod: " + feil)
 }
 ```
 
-For å kaste ein feil så kan man bruke `kast` etterfulgt av ein streng:
+For å kaste ein feil så kan man bruke `kast` etterfulgt av ein verdi:
 
-```brunost
+```python
+bruk terminal
+
 gjer delTal(teljartal, nemnar) {
   viss (nemnar er 0) er sant gjer {
     kast "Kan ikkje dele på null"
@@ -177,22 +192,70 @@ prøv {
 
 ### Modular
 
-Brunost støttar modular. For å laga eit program som bruker fleire filer,
-så må ein bruka modular. Ein kan spesifisera ein modul ved å bruka `modul`
-nøkkelordet etterfølgd av modul namnet:
+Brunost støttar tre typar modular.
 
-```brunost
-modul matte {
-  gjer leggTil(nummerEin, nummerTo) {
-    gjevTilbake nummerEin + nummerTo
+#### Innebygde modular
+
+Bruk `bruk` for å importera innebygde standardbibliotekmodular:
+
+```python
+bruk terminal
+bruk matte
+bruk streng
+bruk liste
+```
+
+Døme:
+
+```python
+bruk terminal
+bruk matte
+
+terminal.skriv(matte.abs(-5))   // 5
+terminal.skriv(matte.maks(3, 7)) // 7
+terminal.skriv(matte.min(3, 7))  // 3
+```
+
+#### Brukar-definerte modular
+
+Definer ein modul inline i same fil med `modul`:
+
+```python
+bruk terminal
+
+modul rekning {
+  gjer leggTil(a, b) {
+    gjevTilbake a + b
   }
+}
+
+fast resultat er rekning.leggTil(5, 7)
+terminal.skriv(resultat) // 12
+```
+
+#### Fil-modular
+
+Del koden over fleire filer. Gitt `utils/rekning.brunost`:
+
+```python
+gjer leggTil(a, b) {
+  gjevTilbake a + b
 }
 ```
 
-For å importera ein modul så kan ein bruka `bruk` nøkkelordet
-etterfølgt av namnet på modulen:
+Import med dotnotasjon der siste ledd blir namnerommet:
 
-```brunost
-bruk matte
-fast resultat er matte.leggTil(5, 7)
+```python
+bruk terminal
+bruk utils.rekning
+
+terminal.skriv(rekning.leggTil(5, 7)) // 12
+```
+
+Bruk `som` for å gje modulen eit anna namn ved namnekonflikt:
+
+```python
+bruk utils.rekning som rekn
+
+terminal.skriv(rekn.leggTil(5, 7)) // 12
 ```

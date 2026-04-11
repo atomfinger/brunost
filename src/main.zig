@@ -22,6 +22,9 @@ fn describe_error(err: anyerror) []const u8 {
         error.DivisionByZero => "Kan ikkje dela på null",
         error.IndexOutOfBounds => "Indeks er utanfor grensa til lista",
         error.UnknownBuiltin => "Ukjend innebygd funksjon",
+        error.UnknownModule => "Ukjend innebygd modul",
+        error.ModuleNameCollision => "Modulnamn-konflikt — bruk 'som' for å gje modulen eit anna namn",
+        error.ModuleNotFound => "Kunne ikkje finna modulfila",
         // Parserfeil
         error.UnexpectedToken => "Uventa teikn i koden",
         error.ExpectedIdentifier => "Forventa eit namn her",
@@ -59,13 +62,14 @@ pub fn main() !void {
     };
     defer alloc.free(source);
 
-    run(alloc, source, stdout_writer()) catch |err| {
+    const base_dir = std.fs.path.dirname(filename) orelse ".";
+    run(alloc, source, stdout_writer(), base_dir) catch |err| {
         stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
         std.process.exit(1);
     };
 }
 
-pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWriter) !void {
+pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWriter, base_dir: []const u8) !void {
     var arena = std.heap.ArenaAllocator.init(alloc);
     defer arena.deinit();
     const arena_alloc = arena.allocator();
@@ -74,7 +78,7 @@ pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWrite
     var p = parser.Parser.init(lexer, arena_alloc);
     const program = try p.parse_program();
 
-    var interp = interpreter.Interpreter.init(alloc, output);
+    var interp = interpreter.Interpreter.init(alloc, output, base_dir);
     defer interp.deinit();
     _ = try interp.eval(program, &interp.global);
 }

@@ -14,6 +14,8 @@ pub const Node = union(enum) {
     try_stmt: TryStmt,
     throw_stmt: ThrowStmt,
     fn_decl: FnDecl,
+    import_stmt: ImportStmt,
+    module_decl: ModuleDecl,
     // Expressions
     integer_lit: IntegerLit,
     string_lit: StringLit,
@@ -132,4 +134,16 @@ pub const MemberCall = struct {
     object: []const u8,
     member: []const u8,
     args: []*Node,
+};
+
+/// bruk ekstra.noe (som noko)
+pub const ImportStmt = struct {
+    segments: [][]const u8,
+    alias: ?[]const u8,
+};
+
+/// modul name { gjer ... }
+pub const ModuleDecl = struct {
+    name: []const u8,
+    functions: []*Node,
 };

@@ -1,3 +1,5 @@
+bruk terminal
+
 gjer hallo() {
   terminal.skriv("Hei, verd!")
 }

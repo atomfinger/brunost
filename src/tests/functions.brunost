@@ -1,3 +1,5 @@
+bruk terminal
+
 gjer leggSaman(a, b) {
   gjevTilbake a + b
 }

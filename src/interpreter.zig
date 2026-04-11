@@ -1,5 +1,11 @@
 const std = @import("std");
 const ast = @import("ast.zig");
+const token_mod = @import("token.zig");
+const parser_mod = @import("parser.zig");
+const stdlib_terminal = @import("stdlib/terminal.zig");
+const stdlib_matte = @import("stdlib/matte.zig");
+const stdlib_streng = @import("stdlib/streng.zig");
+const stdlib_liste = @import("stdlib/liste.zig");
 
 pub const EvalError = error{
     TypeError,
@@ -8,6 +14,9 @@ pub const EvalError = error{
     DivisionByZero,
     IndexOutOfBounds,
     UnknownBuiltin,
+    UnknownModule,
+    ModuleNameCollision,
+    ModuleNotFound,
     OutOfMemory,
 };
 
@@ -22,12 +31,19 @@ pub const Function = struct {
     env: *Environment,
 };
 
+pub const ModuleMember = struct {
+    name: []const u8,
+    value: Value,
+};
+
 pub const Value = union(enum) {
     integer: i64,
     string: []const u8,
     boolean: bool,
     list: []Value,
     function: Function,
+    module: []ModuleMember,
+    builtin_fn: *const fn (args: []const Value, interp: *Interpreter) EvalError!Value,
     null_val: void,
 
     pub fn is_truthy(self: Value) bool {
@@ -37,7 +53,7 @@ pub const Value = union(enum) {
             .string => |s| s.len > 0,
             .list => |l| l.len > 0,
             .null_val => false,
-            .function => true,
+            .function, .module, .builtin_fn => true,
         };
     }
 
@@ -81,6 +97,29 @@ pub const Value = union(enum) {
                 break :blk buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory;
             },
             .function => "<funksjon>",
+            .module => "<modul>",
+            .builtin_fn => "<innebygd-funksjon>",
+        };
+    }
+
+    pub fn as_int(self: Value) EvalError!i64 {
+        return switch (self) {
+            .integer => |n| n,
+            else => EvalError.TypeError,
+        };
+    }
+
+    pub fn as_str(self: Value) EvalError![]const u8 {
+        return switch (self) {
+            .string => |s| s,
+            else => EvalError.TypeError,
+        };
+    }
+
+    pub fn as_list(self: Value) EvalError![]Value {
+        return switch (self) {
+            .list => |l| l,
+            else => EvalError.TypeError,
         };
     }
 };
@@ -128,29 +167,36 @@ pub const Environment = struct {
 
 pub const Interpreter = struct {
     alloc: std.mem.Allocator,
-    /// Arena for all runtime-allocated strings (to_string results, concatenations).
-    /// Freed all at once in deinit(), avoiding per-string tracking.
     str_arena: std.heap.ArenaAllocator,
     global: Environment,
     signal: ?Signal,
     output: std.io.AnyWriter,
+    base_dir: []const u8,
+    module_envs: std.ArrayList(*Environment),
 
-    pub fn init(alloc: std.mem.Allocator, output: std.io.AnyWriter) Interpreter {
+    pub fn init(alloc: std.mem.Allocator, output: std.io.AnyWriter, base_dir: []const u8) Interpreter {
         return .{
             .alloc = alloc,
             .str_arena = std.heap.ArenaAllocator.init(alloc),
             .global = Environment.init(alloc, null),
             .signal = null,
             .output = output,
+            .base_dir = base_dir,
+            .module_envs = .{},
         };
     }
 
     pub fn deinit(self: *Interpreter) void {
+        for (self.module_envs.items) |env| {
+            env.deinit();
+            self.alloc.destroy(env);
+        }
+        self.module_envs.deinit(self.alloc);
         self.global.deinit();
         self.str_arena.deinit();
     }
 
-    fn str_alloc(self: *Interpreter) std.mem.Allocator {
+    pub fn str_alloc(self: *Interpreter) std.mem.Allocator {
         return self.str_arena.allocator();
     }
 
@@ -168,6 +214,8 @@ pub const Interpreter = struct {
             .while_stmt => |w| self.eval_while(w, env),
             .foreach_stmt => |f| self.eval_foreach(f, env),
             .try_stmt => |t| self.eval_try(t, env),
+            .import_stmt => |s| self.eval_import(s, env),
+            .module_decl => |m| self.eval_module_decl(m, env),
             .integer_lit => |i| Value{ .integer = i.value },
             .string_lit => |s| Value{ .string = s.value },
             .bool_lit => |b| Value{ .boolean = b.value },
@@ -293,6 +341,96 @@ pub const Interpreter = struct {
         return Value{ .null_val = {} };
     }
 
+    fn eval_import(self: *Interpreter, stmt: ast.ImportStmt, env: *Environment) EvalError!Value {
+        const effective_name = stmt.alias orelse stmt.segments[stmt.segments.len - 1];
+
+        if (env.store.contains(effective_name)) return EvalError.ModuleNameCollision;
+
+        const mod = if (stmt.segments.len == 1)
+            self.make_builtin_module(stmt.segments[0]) catch |e| switch (e) {
+                EvalError.UnknownModule => blk: {
+                    if (self.base_dir.len == 0) return EvalError.UnknownModule;
+                    break :blk try self.load_file_module(stmt.segments);
+                },
+                else => return e,
+            }
+        else
+            try self.load_file_module(stmt.segments);
+
+        try env.define(effective_name, .{ .value = mod, .mutable = false });
+
+        return Value{ .null_val = {} };
+    }
+
+    fn eval_module_decl(self: *Interpreter, decl: ast.ModuleDecl, env: *Environment) EvalError!Value {
+        var members: std.ArrayList(ModuleMember) = .{};
+        for (decl.functions) |fn_node| {
+            const f = fn_node.fn_decl;
+            members.append(self.str_alloc(), .{
+                .name = f.name,
+                .value = .{ .function = .{ .params = f.params, .body = f.body, .env = env } },
+            }) catch return EvalError.OutOfMemory;
+        }
+        const mod = Value{ .module = members.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory };
+        try env.define(decl.name, .{ .value = mod, .mutable = false });
+        return Value{ .null_val = {} };
+    }
+
+    fn make_builtin_module(self: *Interpreter, name: []const u8) EvalError!Value {
+        const alloc = self.str_alloc();
+        if (std.mem.eql(u8, name, "terminal")) return stdlib_terminal.make(alloc) else if (std.mem.eql(u8, name, "matte")) return stdlib_matte.make(alloc) else if (std.mem.eql(u8, name, "streng")) return stdlib_streng.make(alloc) else if (std.mem.eql(u8, name, "liste")) return stdlib_liste.make(alloc) else return EvalError.UnknownModule;
+    }
+
+    fn load_file_module(self: *Interpreter, segments: [][]const u8) EvalError!Value {
+        if (self.base_dir.len == 0) return EvalError.ModuleNotFound;
+
+        // Build path: base_dir/seg0/.../segN.brunost
+        var path_parts: std.ArrayList([]const u8) = .{};
+        path_parts.append(self.str_alloc(), self.base_dir) catch return EvalError.OutOfMemory;
+        for (segments) |seg| {
+            path_parts.append(self.str_alloc(), seg) catch return EvalError.OutOfMemory;
+        }
+        const joined = std.fs.path.join(self.str_alloc(), path_parts.items) catch return EvalError.OutOfMemory;
+        const path = std.fmt.allocPrint(self.str_alloc(), "{s}.brunost", .{joined}) catch return EvalError.OutOfMemory;
+
+        const source = std.fs.cwd().readFileAlloc(
+            self.str_alloc(),
+            path,
+            std.math.maxInt(usize)
+        ) catch return EvalError.ModuleNotFound;
+
+        const lexer = token_mod.Lexer.init(source);
+        var p = parser_mod.Parser.init(lexer, self.str_alloc());
+        const program = p.parse_program() catch return EvalError.ModuleNotFound;
+
+        const mod_env = self.alloc.create(Environment) catch return EvalError.OutOfMemory;
+        mod_env.* = Environment.init(self.alloc, null);
+        self.module_envs.append(self.alloc, mod_env) catch return EvalError.OutOfMemory;
+
+        const saved_signal = self.signal;
+        self.signal = null;
+        _ = self.eval(program, mod_env) catch |e| {
+            self.signal = saved_signal;
+            return e;
+        };
+        self.signal = saved_signal;
+
+        var members: std.ArrayList(ModuleMember) = .{};
+        var it = mod_env.store.iterator();
+        while (it.next()) |entry| {
+            switch (entry.value_ptr.value) {
+                .function, .module => {
+                    members.append(self.str_alloc(), .{
+                        .name = entry.key_ptr.*,
+                        .value = entry.value_ptr.value,
+                    }) catch return EvalError.OutOfMemory;
+                },
+                else => {},
+            }
+        }
+        return Value{ .module = members.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory };
+    }
+
     fn eval_list(self: *Interpreter, l: ast.ListLit, env: *Environment) EvalError!Value {
         var items: std.ArrayList(Value) = .{};
         for (l.elements) |elem| {
@@ -334,7 +472,6 @@ pub const Interpreter = struct {
                 else => return EvalError.TypeError,
             }
         }
-        // Arithmetic
         const a = switch (left) {
             .integer => |n| n,
             else => return EvalError.TypeError,
@@ -368,6 +505,26 @@ pub const Interpreter = struct {
         return EvalError.TypeError;
     }
 
+    fn call_function(self: *Interpreter, func: Function, args: []const Value) EvalError!Value {
+        if (args.len != func.params.len) return EvalError.TypeError;
+        var call_env = Environment.init(self.alloc, func.env);
+        defer call_env.deinit();
+        for (func.params, args) |param, arg_val| {
+            try call_env.define(param, .{ .value = arg_val, .mutable = false });
+        }
+        _ = try self.eval(func.body, &call_env);
+        if (self.signal) |sig| {
+            switch (sig) {
+                .return_val => |v| {
+                    self.signal = null;
+                    return v;
+                },
+                else => {},
+            }
+        }
+        return Value{ .null_val = {} };
+    }
+
     fn eval_call(self: *Interpreter, expr: ast.CallExpr, env: *Environment) EvalError!Value {
         const callee_val = try self.eval(expr.callee, env);
         const func = switch (callee_val) {
@@ -395,13 +552,24 @@ pub const Interpreter = struct {
     }
 
     fn eval_member_call(self: *Interpreter, expr: ast.MemberCall, env: *Environment) EvalError!Value {
-        if (std.mem.eql(u8, expr.object, "terminal") and std.mem.eql(u8, expr.member, "skriv")) {
-            if (expr.args.len != 1) return EvalError.TypeError;
-            const val = try self.eval(expr.args[0], env);
-            const str = try val.to_string(self.str_alloc());
-            self.output.print("{s}\n", .{str}) catch return EvalError.OutOfMemory;
-            return Value{ .null_val = {} };
+        const entry = env.get(expr.object) orelse return EvalError.UndefinedVariable;
+        const members = switch (entry.value) {
+            .module => |m| m,
+            else => return EvalError.TypeError,
+        };
+        const member_val = for (members) |m| {
+            if (std.mem.eql(u8, m.name, expr.member)) break m.value;
+        } else return EvalError.UndefinedVariable;
+        var args: std.ArrayList(Value) = .{};
+        for (expr.args) |arg_node| {
+            const v = try self.eval(arg_node, env);
+            args.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
         }
-        return EvalError.UnknownBuiltin;
+        const args_slice = args.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory;
+        return switch (member_val) {
+            .builtin_fn => |f| f(args_slice, self),
+            .function => |f| self.call_function(f, args_slice),
+            else => EvalError.TypeError,
+        };
     }
 };
