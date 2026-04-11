@@ -1,13 +1,13 @@
 bruk terminal
 
 // Uforanderlege variablar
-fast x er 10
-terminal.skriv(x)
+fast fyrste er 10
+terminal.skriv(fyrste)
 
 // Foranderlege variablar
-endreleg y er 5
-y er y + x
-terminal.skriv(y)
+endreleg andre er 5
+andre er andre + fyrste
+terminal.skriv(andre)
 
 // Strengar
 fast helsing er "Hei"

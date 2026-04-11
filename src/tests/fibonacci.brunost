@@ -1,16 +1,16 @@
 bruk terminal
 
-gjer fib(n) {
-    viss (n erSameEllerMindreEnn 1) er sant gjer {
-        gjevTilbake n
+gjer rekke(grense) {
+    viss (grense < 2) er sant gjer {
+        gjevTilbake grense
     }
-    gjevTilbake fib(n - 1) + fib(n - 2)
+    gjevTilbake rekke(grense - 1) + rekke(grense - 2)
 }
 
-terminal.skriv(fib(0))
-terminal.skriv(fib(1))
-terminal.skriv(fib(2))
-terminal.skriv(fib(3))
-terminal.skriv(fib(4))
-terminal.skriv(fib(5))
-terminal.skriv(fib(6))
+terminal.skriv(rekke(0))
+terminal.skriv(rekke(1))
+terminal.skriv(rekke(2))
+terminal.skriv(rekke(3))
+terminal.skriv(rekke(4))
+terminal.skriv(rekke(5))
+terminal.skriv(rekke(6))

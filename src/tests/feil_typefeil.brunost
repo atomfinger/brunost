@@ -1,3 +1,3 @@
-// Prøver å leggja saman eit tal og ein boolsk verdi
-fast x er 5 + sant
-terminal.skriv(x)
+// Prøver å gjera matematikk med ein bolsk verdi
+fast fyrste er 5 + sant
+terminal.skriv(fyrste)

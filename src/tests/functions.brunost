@@ -1,7 +1,7 @@
 bruk terminal
 
-gjer leggSaman(a, b) {
-  gjevTilbake a + b
+gjer leggSaman(fyrste, andre) {
+  gjevTilbake fyrste + andre
 }
 
 fast resultat er leggSaman(3, 7)

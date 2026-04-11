@@ -1,7 +1,7 @@
-gjer leggSaman(a, b) {
-  gjevTilbake a + b
+gjer leggSaman(fyrste, andre) {
+  gjevTilbake fyrste + andre
 }
 
-gjer gonge(a, b) {
-  gjevTilbake a * b
+gjer gonge(fyrste, andre) {
+  gjevTilbake fyrste * andre
 }

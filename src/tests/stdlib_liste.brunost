@@ -1,9 +1,10 @@
 bruk terminal
 bruk liste
 
-fast l er [10, 20, 30]
-terminal.skriv(liste.lengd(l))
-terminal.skriv(liste.fyrste(l))
-terminal.skriv(liste.siste(l))
-fast lNy er liste.leggTil(l, 40)
-terminal.skriv(liste.lengd(lNy))
+fast minListe er [10, 20, 30]
+terminal.skriv(liste.lengd(minListe))
+terminal.skriv(liste.fyrste(minListe))
+terminal.skriv(liste.siste(minListe))
+
+fast nyListe er liste.leggTil(minListe, 40)
+terminal.skriv(liste.lengd(nyListe))

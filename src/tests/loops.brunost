@@ -7,8 +7,8 @@ forKvart nummer i liste {
 }
 
 // medan-løkke
-endreleg teller er 1
-medan (teller < 4) erSameSom sant gjer {
-  terminal.skriv(teller)
-  teller er teller + 1
+endreleg teljar er 1
+medan (teljar < 4) erSameSom sant gjer {
+  terminal.skriv(teljar)
+  teljar er teljar + 1
 }

@@ -1,11 +1,11 @@
 bruk terminal
 
 modul rekning {
-  gjer dobbel(x) {
-    gjevTilbake x * 2
+  gjer dobbel(tal) {
+    gjevTilbake tal * 2
   }
-  gjer kvadrat(x) {
-    gjevTilbake x * x
+  gjer kvadrat(tal) {
+    gjevTilbake tal * tal
   }
 }
 

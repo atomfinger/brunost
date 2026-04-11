@@ -1,6 +1,7 @@
 const std = @import("std");
 const token = @import("token.zig");
 const ast = @import("ast.zig");
+const nynorsk = @import("nynorsk.zig");
 
 pub const ParseError = error{
     UnexpectedToken,
@@ -16,6 +17,7 @@ pub const ParseError = error{
     ExpectedCloseBracket,
     InvalidInteger,
     OutOfMemory,
+    NotNynorsk,
 };
 
 pub const Parser = struct {
@@ -82,6 +84,7 @@ pub const Parser = struct {
         self.advance(); // consume fast / endreleg
         if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
         const name = self.curr.literal;
+        if (!nynorsk.isValidIdentifier(name)) return ParseError.NotNynorsk;
         self.advance();
         try self.expect(.assign); // er
         const value = try self.parse_expr(0);
@@ -104,11 +107,13 @@ pub const Parser = struct {
         self.advance(); // consume gjer
         if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
         const name = self.curr.literal;
+        if (!nynorsk.isValidIdentifier(name)) return ParseError.NotNynorsk;
         self.advance();
         try self.expect(.lparen);
         var params: std.ArrayList([]const u8) = .{};
         while (self.curr.type != .rparen and self.curr.type != .eof) {
             if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+            if (!nynorsk.isValidIdentifier(self.curr.literal)) return ParseError.NotNynorsk;
             try params.append(self.arena, self.curr.literal);
             self.advance();
             if (self.curr.type == .comma) self.advance();
