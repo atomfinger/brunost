@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Bygg og slipp
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.0
+
+      - name: Rekn ut ny versjon
+        id: version
+        run: |
+          CURRENT=$(grep -oP '\.version = "\K[^"]+' build.zig.zon)
+          echo "Current version: $CURRENT"
+
+          MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT" | cut -d. -f3)
+
+          case "${{ inputs.bump }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Oppdater build.zig.zon
+        run: |
+          sed -i 's/\.version = "[^"]*"/.version = "${{ steps.version.outputs.new_version }}"/' build.zig.zon
+
+      - name: Commit og tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add build.zig.zon
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
+          git push origin main
+          git push origin "v${{ steps.version.outputs.new_version }}"
+
+      - name: Bygg binærar
+        run: |
+          declare -A TARGETS=(
+            ["x86_64-linux-gnu"]="brunost-linux-x86_64"
+            ["aarch64-linux-gnu"]="brunost-linux-aarch64"
+            ["x86_64-macos"]="brunost-macos-x86_64"
+            ["aarch64-macos"]="brunost-macos-aarch64"
+            ["x86_64-windows"]="brunost-windows-x86_64.exe"
+          )
+
+          mkdir -p dist
+
+          for TRIPLE in "${!TARGETS[@]}"; do
+            OUTPUT="${TARGETS[$TRIPLE]}"
+            echo "Building $TRIPLE -> $OUTPUT"
+            zig build -Dtarget="$TRIPLE" -Doptimize=ReleaseSafe
+            if [[ "$TRIPLE" == *"windows"* ]]; then
+              cp zig-out/bin/brunost.exe "dist/$OUTPUT"
+            else
+              cp zig-out/bin/brunost "dist/$OUTPUT"
+            fi
+          done
+
+      - name: Lag GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.new_version }}" \
+            --title "v${{ steps.version.outputs.new_version }}" \
+            --generate-notes \
+            dist/*
