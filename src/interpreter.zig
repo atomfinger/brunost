@@ -6,6 +6,7 @@ const stdlib_terminal = @import("stdlib/terminal.zig");
 const stdlib_matte = @import("stdlib/matte.zig");
 const stdlib_streng = @import("stdlib/streng.zig");
 const stdlib_liste = @import("stdlib/liste.zig");
+const stdlib_prosess = @import("stdlib/prosess.zig");
 
 pub const EvalError = error{
     TypeError,
@@ -378,7 +379,7 @@ pub const Interpreter = struct {
 
     fn make_builtin_module(self: *Interpreter, name: []const u8) EvalError!Value {
         const alloc = self.str_alloc();
-        if (std.mem.eql(u8, name, "terminal")) return stdlib_terminal.make(alloc) else if (std.mem.eql(u8, name, "matte")) return stdlib_matte.make(alloc) else if (std.mem.eql(u8, name, "streng")) return stdlib_streng.make(alloc) else if (std.mem.eql(u8, name, "liste")) return stdlib_liste.make(alloc) else return EvalError.UnknownModule;
+        if (std.mem.eql(u8, name, "terminal")) return stdlib_terminal.make(alloc) else if (std.mem.eql(u8, name, "matte")) return stdlib_matte.make(alloc) else if (std.mem.eql(u8, name, "streng")) return stdlib_streng.make(alloc) else if (std.mem.eql(u8, name, "liste")) return stdlib_liste.make(alloc) else if (std.mem.eql(u8, name, "prosess")) return stdlib_prosess.make(alloc) else return EvalError.UnknownModule;
     }
 
     fn load_file_module(self: *Interpreter, segments: [][]const u8) EvalError!Value {

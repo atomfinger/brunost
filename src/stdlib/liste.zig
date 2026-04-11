@@ -11,6 +11,8 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
         .{ .name = "leggTil", .value = .{ .builtin_fn = legg_til } },
         .{ .name = "fyrste",  .value = .{ .builtin_fn = fyrste } },
         .{ .name = "siste",   .value = .{ .builtin_fn = siste } },
+        .{ .name = "hent",    .value = .{ .builtin_fn = hent } },
+        .{ .name = "oppdater",.value = .{ .builtin_fn = oppdater } },
     });
     return Value{ .module = members };
 }
@@ -41,4 +43,24 @@ fn siste(args: []const Value, _: *Interpreter) EvalError!Value {
     const l = try args[0].as_list();
     if (l.len == 0) return EvalError.IndexOutOfBounds;
     return l[l.len - 1];
+}
+
+fn hent(args: []const Value, _: *Interpreter) EvalError!Value {
+    if (args.len != 2) return EvalError.TypeError;
+    const l = try args[0].as_list();
+    const idx = try args[1].as_int();
+    if (idx < 0 or idx >= l.len) return EvalError.IndexOutOfBounds;
+    return l[@intCast(idx)];
+}
+
+fn oppdater(args: []const Value, interp: *Interpreter) EvalError!Value {
+    if (args.len != 3) return EvalError.TypeError;
+    const l = try args[0].as_list();
+    const idx = try args[1].as_int();
+    if (idx < 0 or idx >= l.len) return EvalError.IndexOutOfBounds;
+    
+    const new_list = interp.str_alloc().alloc(Value, l.len) catch return EvalError.OutOfMemory;
+    @memcpy(new_list, l);
+    new_list[@intCast(idx)] = args[2];
+    return Value{ .list = new_list };
 }
