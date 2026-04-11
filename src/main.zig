@@ -49,7 +49,8 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
 
-    var args = std.process.args();
+    var args = try std.process.argsWithAllocator(alloc);
+    defer args.deinit();
     _ = args.skip(); // argv[0]
     const filename = args.next() orelse {
         stderr_writer().print("Bruk: brunost <fil.brunost>\n", .{}) catch {};
