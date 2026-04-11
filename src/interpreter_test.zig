@@ -77,6 +77,12 @@ test "brukar modul" {
     try std.testing.expectEqualStrings("10\n16\n", out);
 }
 
+test "modulus" {
+    const out = try run_script(@embedFile("tests/modulus.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("1\n", out);
+}
+
 test "fil-import: bruk hjelp.rekning som rekn" {
     var buf: std.ArrayList(u8) = .{};
     defer buf.deinit(std.testing.allocator);

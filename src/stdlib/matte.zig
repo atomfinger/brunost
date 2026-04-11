@@ -20,6 +20,7 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
         .{ .name = "maks", .value = .{ .builtin_fn = maks } },
         .{ .name = "min",  .value = .{ .builtin_fn = min } },
         .{ .name = "tilfeldig", .value = .{ .builtin_fn = tilfeldig } },
+        .{ .name = "modulus", .value = .{ .builtin_fn = modulus } },
     });
     return Value{ .module = members };
 }
@@ -54,4 +55,11 @@ fn tilfeldig(args: []const Value, _: *Interpreter) EvalError!Value {
     }
     const result = prng_state.random().intRangeAtMost(i64, minVal, maxVal);
     return Value{ .integer = result };
+}
+
+fn modulus(args: []const Value, _: *Interpreter) EvalError!Value {
+    if (args.len != 2) return EvalError.TypeError;
+    const firstArg = try args[0].as_int();
+    const secondArg = try args[1].as_int();
+    return Value{ .integer = @rem(firstArg, secondArg) };
 }
