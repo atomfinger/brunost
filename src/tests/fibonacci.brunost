@@ -1,0 +1,16 @@
+bruk terminal
+
+gjer fib(n) {
+    viss (n erSameEllerMindreEnn 1) er sant gjer {
+        gjevTilbake n
+    }
+    gjevTilbake fib(n - 1) + fib(n - 2)
+}
+
+terminal.skriv(fib(0))
+terminal.skriv(fib(1))
+terminal.skriv(fib(2))
+terminal.skriv(fib(3))
+terminal.skriv(fib(4))
+terminal.skriv(fib(5))
+terminal.skriv(fib(6))

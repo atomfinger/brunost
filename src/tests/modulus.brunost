@@ -1,0 +1,4 @@
+bruk terminal
+bruk matte
+
+terminal.skriv(matte.modulus(5, 2))

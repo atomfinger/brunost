@@ -491,6 +491,8 @@ pub const Interpreter = struct {
         }
         if (std.mem.eql(u8, expr.op, "<")) return Value{ .boolean = a < b };
         if (std.mem.eql(u8, expr.op, ">")) return Value{ .boolean = a > b };
+        if (std.mem.eql(u8, expr.op, "<=")) return Value{ .boolean = a <= b };
+        if (std.mem.eql(u8, expr.op, ">=")) return Value{ .boolean = a >= b };
         return EvalError.TypeError;
     }
 

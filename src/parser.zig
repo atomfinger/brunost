@@ -294,8 +294,8 @@ pub const Parser = struct {
 
     fn infix_precedence(tok: token.token_types) u8 {
         return switch (tok) {
-            .assign => 1, // er as equality in expression context
-            .ltag, .rtag => 2,
+            .assign, .equal => 1, // er / erSameSom as equality in expression context
+            .ltag, .rtag, .lt, .gt, .lte, .gte => 2,
             .plus, .minus => 3,
             .asterisk, .fslash => 4,
             else => 0,
@@ -317,8 +317,10 @@ pub const Parser = struct {
                 .minus => "-",
                 .asterisk => "*",
                 .fslash => "/",
-                .ltag => "<",
-                .rtag => ">",
+                .ltag, .lt => "<",
+                .rtag, .gt => ">",
+                .lte => "<=",
+                .gte => ">=",
                 else => op_tok.literal,
             };
             left = try self.alloc_node(.{ .infix_expr = .{ .op = op_str, .left = left, .right = right } });

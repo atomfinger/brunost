@@ -59,6 +59,24 @@ test "stdlib matte" {
     try std.testing.expectEqualStrings("5\n7\n3\n", out);
 }
 
+test "comparisons" {
+    const out = try run_script(@embedFile("tests/comparisons.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("sant\nsant\nsant\nsant\nsant\nsant\nusant\nusant\nusant\nusant\n", out);
+}
+
+test "fizzbuzz" {
+    const out = try run_script(@embedFile("tests/fizzbuzz.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz\n", out);
+}
+
+test "fibonacci" {
+    const out = try run_script(@embedFile("tests/fibonacci.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("0\n1\n1\n2\n3\n5\n8\n", out);
+}
+
 test "stdlib streng" {
     const out = try run_script(@embedFile("tests/stdlib_streng.brunost"));
     defer std.testing.allocator.free(out);

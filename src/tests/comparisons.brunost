@@ -1,0 +1,13 @@
+bruk terminal
+
+// Nynorsk comparison operators
+terminal.skriv(10 erStørreEnn 5)
+terminal.skriv(5 erMindreEnn 10)
+terminal.skriv(10 erSameEllerStørreEnn 10)
+terminal.skriv(15 erSameEllerStørreEnn 10)
+terminal.skriv(5 erSameEllerMindreEnn 5)
+terminal.skriv(3 erSameEllerMindreEnn 5)
+terminal.skriv(5 erStørreEnn 10)
+terminal.skriv(10 erMindreEnn 5)
+terminal.skriv(10 erSameEllerStørreEnn 15)
+terminal.skriv(5 erSameEllerMindreEnn 3)

@@ -109,9 +109,9 @@ bruk terminal
 
 fast temperatur er -5
 
-viss (temperatur < 0) er sant gjer {
+viss (temperatur erMindreEnn 0) er sant gjer {
   terminal.skriv("Det er kaldt — ta på deg ull!")
-} ellers viss (temperatur < 15) er sant gjer {
+} ellers viss (temperatur erMindreEnn 15) er sant gjer {
   terminal.skriv("Frisk luft, ta med jakke")
 } ellers {
   terminal.skriv("Norsk sommar! Nyt det medan det varar")
@@ -139,7 +139,7 @@ bruk terminal
 
 endreleg teljing er 10
 
-medan (teljing > 0) erSameSom sant gjer {
+medan (teljing erStørreEnn 0) erSameSom sant gjer {
   terminal.skriv(teljing)
   teljing er teljing - 1
 }

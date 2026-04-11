@@ -26,6 +26,10 @@ pub const token_types = enum {
     rbracket,
     ltag,
     rtag,
+    gt,
+    lt,
+    gte,
+    lte,
     // keywords
     equal, // erSameSom
     function, // gjer
@@ -79,6 +83,10 @@ pub const Token = struct {
             .{ "bruk", .import_op },
             .{ "modul", .module_op },
             .{ "som", .as_op },
+            .{ "erSt\xc3\xb8rreEnn", .gt }, // erStørreEnn
+            .{ "erMindreEnn", .lt },
+            .{ "erSameEllerSt\xc3\xb8rreEnn", .gte }, // erSameEllerStørreEnn
+            .{ "erSameEllerMindreEnn", .lte },
         });
         return map.get(identifier);
     }
