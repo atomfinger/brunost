@@ -1,5 +1,6 @@
 const std = @import("std");
 const main = @import("main.zig");
+const matte = @import("stdlib/matte.zig");
 
 // Source scratch buffer — JS writes brunost code here before calling evaluate().
 var source_buf: [512 * 1024]u8 = undefined;
@@ -32,6 +33,12 @@ export fn get_output_len() usize {
 /// Returns 1 if the last evaluate() call produced an error, 0 if it succeeded.
 export fn get_output_is_error() i32 {
     return if (output_is_error) 1 else 0;
+}
+
+/// Seed the PRNG used by matte.tilfeldig(). Call this with entropy from JS
+/// (e.g. crypto.getRandomValues) before running scripts that use tilfeldig().
+export fn seed_prng(seed: u64) void {
+    matte.seed_prng(seed);
 }
 
 /// Evaluate brunost source code. Write the source into get_source_buf_ptr() first,
