@@ -3,11 +3,9 @@ name: Validate README Brunost Snippets
 on:
   push:
     paths:
-      - "README.md"
       - "readme.md"
   pull_request:
     paths:
-      - "README.md"
       - "readme.md"
 
 jobs:
@@ -49,7 +47,7 @@ jobs:
           inside {
             print >> filename
           }
-          ' README.md
+          ' readme.md
 
       - name: Vis snutter
         run: |
