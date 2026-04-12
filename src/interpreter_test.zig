@@ -1,5 +1,6 @@
 const std = @import("std");
 const main = @import("main.zig");
+const parser = @import("parser.zig");
 
 fn run_script(source: []const u8) ![]u8 {
     var buf: std.ArrayList(u8) = .{};
@@ -15,6 +16,26 @@ fn expect_error(source: []const u8, expected: anyerror) !void {
         expected,
         main.run(std.testing.allocator, source, buf.writer(std.testing.allocator).any(), ""),
     );
+}
+
+fn expect_parse_error(source: []const u8, expected: parser.ParseError) !main.RunContext {
+    var buf: std.ArrayList(u8) = .{};
+    defer buf.deinit(std.testing.allocator);
+
+    var context: main.RunContext = .{};
+    try std.testing.expectError(
+        error.ParseFailed,
+        main.run_with_context(
+            std.testing.allocator,
+            source,
+            buf.writer(std.testing.allocator).any(),
+            "",
+            &context,
+        ),
+    );
+    try std.testing.expect(context.parse_diagnostic != null);
+    try std.testing.expectEqual(expected, context.parse_diagnostic.?.err);
+    return context;
 }
 
 test "hello world" {
@@ -146,7 +167,26 @@ test "feil: typefeil aritmetikk" {
 }
 
 test "feil: ugyldig syntaks" {
-    try expect_error(@embedFile("tests/feil_parse.brunost"), error.ExpectedIdentifier);
+    _ = try expect_parse_error(@embedFile("tests/feil_parse.brunost"), error.ExpectedIdentifier);
+}
+
+test "feil: parse diagnostic includes offending identifier" {
+    const context = try expect_parse_error("fast foo er 1", error.NotNynorsk);
+    const diagnostic = context.parse_diagnostic.?;
+    try std.testing.expectEqualStrings("foo", diagnostic.literal);
+    try std.testing.expectEqual(@as(usize, 1), diagnostic.line);
+    try std.testing.expectEqual(@as(usize, 6), diagnostic.column);
+}
+
+test "identifiers with æøå from dictionary are accepted" {
+    const out = try run_script(
+        \\fast ære er 1
+        \\fast høgd er 30
+        \\fast år er 2026
+        \\
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("", out);
 }
 
 test "feil: ukjend modul" {

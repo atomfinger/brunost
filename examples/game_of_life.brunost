@@ -1,0 +1,121 @@
+
+bruk liste
+bruk terminal
+bruk matte
+bruk prosess
+
+fast breidde er 60
+fast høgd er 30
+
+// Skapar ei liste med tilfeldige 1-ar og 0-ar
+gjer lagBrett() {
+    endreleg brett er []
+    endreleg rad er 0
+    medan (rad erMindreEnn høgd) erSameSom sant gjer {
+        endreleg rekkje er []
+        endreleg kolonne er 0
+        medan (kolonne erMindreEnn breidde) erSameSom sant gjer {
+            rekkje er liste.leggTil(rekkje, matte.tilfeldig(0, 1))
+            kolonne er kolonne + 1
+        }
+        brett er liste.leggTil(brett, rekkje)
+        rad er rad + 1
+    }
+    gjevTilbake brett
+}
+
+gjer hentCelle(brett, kolonne, rad) {
+    viss (kolonne erMindreEnn 0) er sant gjer {
+        gjevTilbake 0
+    }
+    viss (kolonne erSameEllerStørreEnn breidde) er sant gjer {
+        gjevTilbake 0
+    }
+    viss (rad erMindreEnn 0) er sant gjer {
+        gjevTilbake 0
+    }
+    viss (rad erSameEllerStørreEnn høgd) er sant gjer {
+        gjevTilbake 0
+    }
+
+    fast rekkje er liste.hent(brett, rad)
+    gjevTilbake liste.hent(rekkje, kolonne)
+}
+
+gjer telNaboTal(brett, kolonne, rad) {
+    endreleg sum er 0
+    sum er sum + hentCelle(brett, kolonne - 1, rad - 1)
+    sum er sum + hentCelle(brett, kolonne, rad - 1)
+    sum er sum + hentCelle(brett, kolonne + 1, rad - 1)
+    sum er sum + hentCelle(brett, kolonne - 1, rad)
+    sum er sum + hentCelle(brett, kolonne + 1, rad)
+    sum er sum + hentCelle(brett, kolonne - 1, rad + 1)
+    sum er sum + hentCelle(brett, kolonne, rad + 1)
+    sum er sum + hentCelle(brett, kolonne + 1, rad + 1)
+    gjevTilbake sum
+}
+
+gjer nesteGenerasjon(brett) {
+    endreleg nyttBrett er []
+    endreleg rad er 0
+    medan (rad erMindreEnn høgd) erSameSom sant gjer {
+        endreleg nyRekkje er []
+        endreleg kolonne er 0
+        medan (kolonne erMindreEnn breidde) erSameSom sant gjer {
+            fast celle er hentCelle(brett, kolonne, rad)
+            fast naboTal er telNaboTal(brett, kolonne, rad)
+
+            endreleg nyCelle er 0
+            viss (celle erSameSom 1) er sant gjer {
+                viss (naboTal erSameSom 2) er sant gjer { nyCelle er 1 }
+                viss (naboTal erSameSom 3) er sant gjer { nyCelle er 1 }
+            } ellers {
+                viss (naboTal erSameSom 3) er sant gjer { nyCelle er 1 }
+            }
+            nyRekkje er liste.leggTil(nyRekkje, nyCelle)
+            kolonne er kolonne + 1
+        }
+        nyttBrett er liste.leggTil(nyttBrett, nyRekkje)
+        rad er rad + 1
+    }
+    gjevTilbake nyttBrett
+}
+
+gjer teiknBrett(brett) {
+    terminal.tøm()
+    endreleg rad er 0
+    medan (rad erMindreEnn høgd) erSameSom sant gjer {
+        fast rekkje er liste.hent(brett, rad)
+        endreleg linje er ""
+        endreleg kolonne er 0
+        medan (kolonne erMindreEnn breidde) erSameSom sant gjer {
+            fast celle er liste.hent(rekkje, kolonne)
+            viss (celle erSameSom 1) er sant gjer {
+                linje er linje + "██"
+            } ellers {
+                linje er linje + "  "
+            }
+            kolonne er kolonne + 1
+        }
+        terminal.skriv(linje)
+        rad er rad + 1
+    }
+}
+
+gjer køyrKomeSjø(fart) {
+    endreleg brett er lagBrett()
+
+    // Vi tek berre 50 iterasjonar for testen sin del (elles går den evig i bakgrunnen)
+    endreleg omgang er 0
+    medan (omgang erMindreEnn 50) erSameSom sant gjer {
+        teiknBrett(brett)
+        brett er nesteGenerasjon(brett)
+        prosess.sov(fart)
+        omgang er omgang + 1
+    }
+}
+
+terminal.skriv("Startar Conway sitt livsspel i Brunost!")
+prosess.sov(1000)
+køyrKomeSjø(100)
+terminal.skriv("Slutt på livsspelet!")

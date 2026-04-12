@@ -38,10 +38,32 @@ pub fn describe_error(err: anyerror) []const u8 {
         error.ExpectedCloseBrace => "Forventa '}'",
         error.ExpectedCloseBracket => "Forventa ']'",
         error.InvalidInteger => "Ugyldig heiltal",
+        error.NotNynorsk => "Namnet er ikkje gyldig nynorsk",
+        error.ParseFailed => "Kunne ikkje tolka koden",
         // Generelt
         error.OutOfMemory => "Minnet er tomt",
         else => @errorName(err),
     };
+}
+
+pub const RunContext = struct {
+    parse_diagnostic: ?parser.ParseDiagnostic = null,
+};
+
+fn print_parse_error(writer: std.io.AnyWriter, diagnostic: parser.ParseDiagnostic) !void {
+    const base_message = describe_error(diagnostic.err);
+    if (diagnostic.literal.len > 0) {
+        try writer.print(
+            "Feil: {s}: '{s}' på linje {d}, kolonne {d}\n",
+            .{ base_message, diagnostic.literal, diagnostic.line, diagnostic.column },
+        );
+        return;
+    }
+
+    try writer.print(
+        "Feil: {s} ved token {s} på linje {d}, kolonne {d}\n",
+        .{ base_message, @tagName(diagnostic.token_type), diagnostic.line, diagnostic.column },
+    );
 }
 
 pub fn main() !void {
@@ -64,20 +86,43 @@ pub fn main() !void {
     defer alloc.free(source);
 
     const base_dir = std.fs.path.dirname(filename) orelse ".";
-    run(alloc, source, stdout_writer(), base_dir) catch |err| {
-        stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
+    var context: RunContext = .{};
+    run_with_context(alloc, source, stdout_writer(), base_dir, &context) catch |err| {
+        if (err == error.ParseFailed) {
+            if (context.parse_diagnostic) |diagnostic| {
+                print_parse_error(stderr_writer(), diagnostic) catch {};
+            } else {
+                stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
+            }
+        } else {
+            stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
+        }
         std.process.exit(1);
     };
 }
 
 pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWriter, base_dir: []const u8) !void {
+    var context: RunContext = .{};
+    try run_with_context(alloc, source, output, base_dir, &context);
+}
+
+pub fn run_with_context(
+    alloc: std.mem.Allocator,
+    source: []const u8,
+    output: std.io.AnyWriter,
+    base_dir: []const u8,
+    context: *RunContext,
+) !void {
     var arena = std.heap.ArenaAllocator.init(alloc);
     defer arena.deinit();
     const arena_alloc = arena.allocator();
 
     const lexer = token.Lexer.init(source);
     var p = parser.Parser.init(lexer, arena_alloc);
-    const program = try p.parse_program();
+    const program = p.parse_program() catch |err| {
+        context.parse_diagnostic = p.current_diagnostic(err);
+        return error.ParseFailed;
+    };
 
     var interp = interpreter.Interpreter.init(alloc, output, base_dir);
     defer interp.deinit();

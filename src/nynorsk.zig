@@ -3,25 +3,28 @@ const std = @import("std");
 const dictionary = @embedFile("nynorsk_words.txt");
 
 fn isWordInDict(word: []const u8) bool {
+    var latin1_buf: [256]u8 = undefined;
+    const lookup = utf8ToLatin1(word, latin1_buf[0..]) orelse return false;
+
     var low: usize = 0;
     var high: usize = dictionary.len;
 
     while (low < high) {
         const mid = low + (high - low) / 2;
-        
+
         var start = mid;
         while (start > 0 and dictionary[start - 1] != '\n') {
             start -= 1;
         }
-        
+
         var end = mid;
         while (end < dictionary.len and dictionary[end] != '\n') {
             end += 1;
         }
-        
+
         const line = dictionary[start..end];
-        
-        const cmp = std.mem.order(u8, word, line);
+
+        const cmp = std.mem.order(u8, lookup, line);
         switch (cmp) {
             .eq => return true,
             .lt => {
@@ -34,6 +37,20 @@ fn isWordInDict(word: []const u8) bool {
         }
     }
     return false;
+}
+
+fn utf8ToLatin1(word: []const u8, out: []u8) ?[]const u8 {
+    var view = std.unicode.Utf8View.init(word) catch return null;
+    var iter = view.iterator();
+    var len: usize = 0;
+
+    while (iter.nextCodepoint()) |cp| {
+        if (cp > 0xFF or len >= out.len) return null;
+        out[len] = @intCast(cp);
+        len += 1;
+    }
+
+    return out[0..len];
 }
 
 fn isUpper(cp: u21) bool {
@@ -54,15 +71,15 @@ fn toLower(cp: u21) u21 {
 pub fn isValidIdentifier(ident: []const u8) bool {
     var utf8_view = std.unicode.Utf8View.init(ident) catch return true; // fallback to true if invalid utf8
     var iter = utf8_view.iterator();
-    
+
     var segment_buf: [256]u8 = undefined;
     var seg_len: usize = 0;
-    
+
     while (iter.nextCodepoint()) |cp| {
         const upper = isUpper(cp);
         const snake = cp == '_';
         const digit = cp >= '0' and cp <= '9';
-        
+
         if (upper and seg_len > 0) {
             // camelCase boundary
             if (!isWordInDict(segment_buf[0..seg_len])) return false;
@@ -75,7 +92,7 @@ pub fn isValidIdentifier(ident: []const u8) bool {
             }
             continue; // skip the '_'
         }
-        
+
         if (!digit and !snake) {
             const lower_cp = toLower(cp);
             var byte_buf: [4]u8 = undefined;
@@ -88,10 +105,10 @@ pub fn isValidIdentifier(ident: []const u8) bool {
             }
         }
     }
-    
+
     if (seg_len > 0) {
         if (!isWordInDict(segment_buf[0..seg_len])) return false;
     }
-    
+
     return true;
 }

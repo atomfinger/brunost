@@ -54,11 +54,13 @@ pub const token_types = enum {
 pub const Token = struct {
     type: token_types,
     literal: []const u8,
+    offset: usize,
 
-    pub fn init(kind: token_types, literal: []const u8) Token {
+    pub fn init(kind: token_types, literal: []const u8, offset: usize) Token {
         return Token{
             .type = kind,
             .literal = literal,
+            .offset = offset,
         };
     }
 
@@ -182,8 +184,9 @@ pub const Lexer = struct {
 
     pub fn next_token(self: *@This()) Token {
         self.skip_whitespace();
+        const start = self.curr_position;
         const sch: []const u8 = self.curr_string();
-        var tok = Token.init(.illegal, sch);
+        var tok = Token.init(.illegal, sch, start);
         switch (self.curr_char) {
             '(' => tok.type = .lparen,
             ')' => tok.type = .rparen,

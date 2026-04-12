@@ -20,6 +20,14 @@ pub const ParseError = error{
     NotNynorsk,
 };
 
+pub const ParseDiagnostic = struct {
+    err: ParseError,
+    token_type: token.token_types,
+    literal: []const u8,
+    line: usize,
+    column: usize,
+};
+
 pub const Parser = struct {
     lexer: token.Lexer,
     curr: token.Token,
@@ -29,8 +37,8 @@ pub const Parser = struct {
     pub fn init(lexer: token.Lexer, arena: std.mem.Allocator) Parser {
         var p = Parser{
             .lexer = lexer,
-            .curr = token.Token.init(.nul, ""),
-            .peek = token.Token.init(.nul, ""),
+            .curr = token.Token.init(.nul, "", 0),
+            .peek = token.Token.init(.nul, "", 0),
             .arena = arena,
         };
         p.advance();
@@ -52,6 +60,32 @@ pub const Parser = struct {
         const n = try self.arena.create(ast.Node);
         n.* = node;
         return n;
+    }
+
+    pub fn current_diagnostic(self: *const Parser, err: ParseError) ParseDiagnostic {
+        const location = line_and_column(self.lexer.input, self.curr.offset);
+        return .{
+            .err = err,
+            .token_type = self.curr.type,
+            .literal = self.curr.literal,
+            .line = location.line,
+            .column = location.column,
+        };
+    }
+
+    fn line_and_column(source: []const u8, offset: usize) struct { line: usize, column: usize } {
+        var line: usize = 1;
+        var column: usize = 1;
+        var index: usize = 0;
+        while (index < source.len and index < offset) : (index += 1) {
+            if (source[index] == '\n') {
+                line += 1;
+                column = 1;
+            } else {
+                column += 1;
+            }
+        }
+        return .{ .line = line, .column = column };
     }
 
     pub fn parse_program(self: *Parser) ParseError!*ast.Node {
