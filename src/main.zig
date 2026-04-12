@@ -78,6 +78,11 @@ pub fn main() !void {
         stderr_writer().print("Bruk: brunost <fil.brunost>\n", .{}) catch {};
         std.process.exit(1);
     };
+    var script_args: std.ArrayList([]const u8) = .{};
+    defer script_args.deinit(alloc);
+    while (args.next()) |arg| {
+        try script_args.append(alloc, arg);
+    }
 
     const source = std.fs.cwd().readFileAlloc(alloc, filename, 10 * 1024 * 1024) catch |err| {
         stderr_writer().print("Feil: Kunne ikkje lesa fila '{s}': {s}\n", .{ filename, describe_error(err) }) catch {};
@@ -87,7 +92,7 @@ pub fn main() !void {
 
     const base_dir = std.fs.path.dirname(filename) orelse ".";
     var context: RunContext = .{};
-    run_with_context(alloc, source, stdout_writer(), base_dir, &context) catch |err| {
+    run_with_context(alloc, source, stdout_writer(), base_dir, script_args.items, &context) catch |err| {
         if (err == error.ParseFailed) {
             if (context.parse_diagnostic) |diagnostic| {
                 print_parse_error(stderr_writer(), diagnostic) catch {};
@@ -102,8 +107,18 @@ pub fn main() !void {
 }
 
 pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWriter, base_dir: []const u8) !void {
+    try run_with_args(alloc, source, output, base_dir, &.{});
+}
+
+pub fn run_with_args(
+    alloc: std.mem.Allocator,
+    source: []const u8,
+    output: std.io.AnyWriter,
+    base_dir: []const u8,
+    script_args: []const []const u8,
+) !void {
     var context: RunContext = .{};
-    try run_with_context(alloc, source, output, base_dir, &context);
+    try run_with_context(alloc, source, output, base_dir, script_args, &context);
 }
 
 pub fn run_with_context(
@@ -111,6 +126,7 @@ pub fn run_with_context(
     source: []const u8,
     output: std.io.AnyWriter,
     base_dir: []const u8,
+    script_args: []const []const u8,
     context: *RunContext,
 ) !void {
     var arena = std.heap.ArenaAllocator.init(alloc);
@@ -124,7 +140,7 @@ pub fn run_with_context(
         return error.ParseFailed;
     };
 
-    var interp = interpreter.Interpreter.init(alloc, output, base_dir);
+    var interp = interpreter.Interpreter.init(alloc, output, base_dir, script_args);
     defer interp.deinit();
     _ = try interp.eval(program, &interp.global);
 }

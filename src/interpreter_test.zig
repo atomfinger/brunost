@@ -3,9 +3,13 @@ const main = @import("main.zig");
 const parser = @import("parser.zig");
 
 fn run_script(source: []const u8) ![]u8 {
+    return run_script_with_args(source, &.{});
+}
+
+fn run_script_with_args(source: []const u8, script_args: []const []const u8) ![]u8 {
     var buf: std.ArrayList(u8) = .{};
     errdefer buf.deinit(std.testing.allocator);
-    try main.run(std.testing.allocator, source, buf.writer(std.testing.allocator).any(), "");
+    try main.run_with_args(std.testing.allocator, source, buf.writer(std.testing.allocator).any(), "", script_args);
     return buf.toOwnedSlice(std.testing.allocator);
 }
 
@@ -30,6 +34,7 @@ fn expect_parse_error(source: []const u8, expected: parser.ParseError) !main.Run
             source,
             buf.writer(std.testing.allocator).any(),
             "",
+            &.{},
             &context,
         ),
     );
@@ -195,4 +200,23 @@ test "feil: ukjend modul" {
 
 test "feil: modulnamn-konflikt" {
     try expect_error("bruk matte\nbruk matte", error.ModuleNameCollision);
+}
+
+test "terminal argument les frå script-argument" {
+    const out = try run_script_with_args(
+        \\bruk terminal
+        \\terminal.skriv(terminal.argument(0))
+        \\terminal.skriv(terminal.argument(1))
+        ,
+        &.{ "12", "34" },
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("12\n34\n", out);
+}
+
+test "terminal argument gir indeksfeil utan verdi" {
+    try expect_error(
+        \\bruk terminal
+        \\terminal.skriv(terminal.argument(0))
+    , error.IndexOutOfBounds);
 }

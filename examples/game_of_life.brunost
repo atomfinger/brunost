@@ -3,6 +3,7 @@ bruk liste
 bruk terminal
 bruk matte
 bruk prosess
+bruk streng
 
 fast breidde er 60
 fast høgd er 30
@@ -102,12 +103,11 @@ gjer teiknBrett(brett) {
     }
 }
 
-gjer køyrKomeSjø(fart) {
+gjer køyrKomeSjø(fart, iterasjon) {
     endreleg brett er lagBrett()
 
-    // Vi tek berre 50 iterasjonar for testen sin del (elles går den evig i bakgrunnen)
     endreleg omgang er 0
-    medan (omgang erMindreEnn 50) erSameSom sant gjer {
+    medan (omgang erMindreEnn iterasjon) erSameSom sant gjer {
         teiknBrett(brett)
         brett er nesteGenerasjon(brett)
         prosess.sov(fart)
@@ -115,7 +115,13 @@ gjer køyrKomeSjø(fart) {
     }
 }
 
+endreleg iterasjon er 50
+prøv {
+    iterasjon er streng.tilTal(terminal.argument(0))
+} fang (feil) {
+}
+
 terminal.skriv("Startar Conway sitt livsspel i Brunost!")
 prosess.sov(1000)
-køyrKomeSjø(100)
+køyrKomeSjø(100, iterasjon)
 terminal.skriv("Slutt på livsspelet!")

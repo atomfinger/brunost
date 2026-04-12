@@ -173,9 +173,15 @@ pub const Interpreter = struct {
     signal: ?Signal,
     output: std.io.AnyWriter,
     base_dir: []const u8,
+    script_args: []const []const u8,
     module_envs: std.ArrayList(*Environment),
 
-    pub fn init(alloc: std.mem.Allocator, output: std.io.AnyWriter, base_dir: []const u8) Interpreter {
+    pub fn init(
+        alloc: std.mem.Allocator,
+        output: std.io.AnyWriter,
+        base_dir: []const u8,
+        script_args: []const []const u8,
+    ) Interpreter {
         return .{
             .alloc = alloc,
             .str_arena = std.heap.ArenaAllocator.init(alloc),
@@ -183,6 +189,7 @@ pub const Interpreter = struct {
             .signal = null,
             .output = output,
             .base_dir = base_dir,
+            .script_args = script_args,
             .module_envs = .{},
         };
     }
