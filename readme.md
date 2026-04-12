@@ -80,7 +80,7 @@ straum er straum + 1
 ### Typar
 
 ```python
-fast erNynorsk?   er sant                                               // Boolsk
+fast erNynorsk    er sant                                               // Boolsk
 fast årstal       er 1814                                               // Numerisk
 fast helsing      er "God dag, Noreg!"                                  // Streng
 fast fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
