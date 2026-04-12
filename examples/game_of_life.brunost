@@ -1,4 +1,3 @@
-
 bruk liste
 bruk terminal
 bruk matte
@@ -26,16 +25,10 @@ gjer lagBrett() {
 }
 
 gjer hentCelle(brett, kolonne, rad) {
-    viss (kolonne erMindreEnn 0) gjer {
-        gjevTilbake 0
-    }
-    viss (kolonne erSameEllerStørreEnn breidde) gjer {
-        gjevTilbake 0
-    }
-    viss (rad erMindreEnn 0) gjer {
-        gjevTilbake 0
-    }
-    viss (rad erSameEllerStørreEnn høgd) gjer {
+    viss (kolonne erMindreEnn 0
+            eller kolonne erSameEllerStørreEnn breidde
+            eller rad erMindreEnn 0
+            eller rad erSameEllerStørreEnn høgd) gjer {
         gjevTilbake 0
     }
 
