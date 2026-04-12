@@ -1,0 +1,59 @@
+name: Validate README Brunost Snippets
+
+on:
+  push:
+    paths:
+      - "README.md"
+      - "readme.md"
+  pull_request:
+    paths:
+      - "README.md"
+      - "readme.md"
+
+jobs:
+  run-snippets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Brunost
+        run: zig build
+
+      - name: Extract code snippets
+        run: |
+          mkdir -p snippets
+
+          awk '
+          BEGIN {
+            inside=0
+            count=0
+          }
+          /^```/ {
+            if (inside == 0) {
+              inside=1
+              count++
+              filename=sprintf("snippets/snippet-%02d.brunost", count)
+              next
+            } else {
+              inside=0
+              next
+            }
+          }
+          inside {
+            print >> filename
+          }
+          ' README.md
+
+      - name: Show extracted snippets
+        run: |
+          echo "Extracted files:"
+          ls -la snippets || true
+
+      - name: Run Brunost on snippets
+        run: |
+          for file in snippets/*.brunost; do
+            echo "Running brunost on $file"
+            ./zig-out/bin/brunost "$file"
+          done

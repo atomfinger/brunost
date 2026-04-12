@@ -4,3 +4,4 @@ build/
 build-*/
 docgen_tmp/
 brunost.wasm
+.DS_Store
