@@ -8,7 +8,6 @@
 
 [![Prøv Brunost nettlesaren](https://img.shields.io/badge/Prøv%20Brunost%20i%20nettlesaren-5C4033?style=for-the-badge&logoColor=white)](https://atomfinger.github.io/brunost/)
 
-
 </div>
 
 ---
