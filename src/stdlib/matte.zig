@@ -27,12 +27,21 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
 
 fn abs(args: []const Value, _: *Interpreter) EvalError!Value {
     if (args.len != 1) return EvalError.TypeError;
-    const n = try args[0].as_int();
-    return Value{ .integer = if (n < 0) -n else n };
+    return switch (args[0]) {
+        .integer => |n| Value{ .integer = if (n < 0) -n else n },
+        .float => |n| Value{ .float = @abs(n) },
+        else => EvalError.TypeError,
+    };
 }
 
 fn maks(args: []const Value, _: *Interpreter) EvalError!Value {
     if (args.len != 2) return EvalError.TypeError;
+    const has_float = (args[0] == .float or args[1] == .float);
+    if (has_float) {
+        const a = try args[0].as_float();
+        const b = try args[1].as_float();
+        return Value{ .float = if (a > b) a else b };
+    }
     const a = try args[0].as_int();
     const b = try args[1].as_int();
     return Value{ .integer = if (a > b) a else b };
@@ -40,6 +49,12 @@ fn maks(args: []const Value, _: *Interpreter) EvalError!Value {
 
 fn min(args: []const Value, _: *Interpreter) EvalError!Value {
     if (args.len != 2) return EvalError.TypeError;
+    const has_float = (args[0] == .float or args[1] == .float);
+    if (has_float) {
+        const a = try args[0].as_float();
+        const b = try args[1].as_float();
+        return Value{ .float = if (a < b) a else b };
+    }
     const a = try args[0].as_int();
     const b = try args[1].as_int();
     return Value{ .integer = if (a < b) a else b };

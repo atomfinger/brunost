@@ -16,6 +16,7 @@ pub const ParseError = error{
     ExpectedCloseBrace,
     ExpectedCloseBracket,
     InvalidInteger,
+    InvalidFloat,
     OutOfMemory,
     NotNynorsk,
 };
@@ -358,6 +359,12 @@ pub const Parser = struct {
             .integer => {
                 const val = std.fmt.parseInt(i64, self.curr.literal, 10) catch return ParseError.InvalidInteger;
                 const node = try self.alloc_node(.{ .integer_lit = .{ .value = val } });
+                self.advance();
+                return node;
+            },
+            .float => {
+                const val = std.fmt.parseFloat(f64, self.curr.literal) catch return ParseError.InvalidFloat;
+                const node = try self.alloc_node(.{ .float_lit = .{ .value = val } });
                 self.advance();
                 return node;
             },

@@ -1,0 +1,19 @@
+bruk terminal
+
+// Desimaltal-literal
+terminal.skriv(3.14)
+
+// Addisjon
+terminal.skriv(1.5 + 2.5)
+
+// Subtraksjon
+terminal.skriv(5.5 - 2.25)
+
+// Multiplikasjon
+terminal.skriv(2.0 * 3.5)
+
+// Divisjon
+terminal.skriv(7.0 / 2.0)
+
+// Negasjon
+terminal.skriv(-1.5)

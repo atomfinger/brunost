@@ -39,6 +39,7 @@ pub const ModuleMember = struct {
 
 pub const Value = union(enum) {
     integer: i64,
+    float: f64,
     string: []const u8,
     boolean: bool,
     list: []Value,
@@ -51,6 +52,7 @@ pub const Value = union(enum) {
         return switch (self) {
             .boolean => |b| b,
             .integer => |n| n != 0,
+            .float => |n| n != 0.0,
             .string => |s| s.len > 0,
             .list => |l| l.len > 0,
             .null_val => false,
@@ -62,6 +64,12 @@ pub const Value = union(enum) {
         return switch (self) {
             .integer => |a| switch (other) {
                 .integer => |b| a == b,
+                .float => |b| @as(f64, @floatFromInt(a)) == b,
+                else => false,
+            },
+            .float => |a| switch (other) {
+                .float => |b| a == b,
+                .integer => |b| a == @as(f64, @floatFromInt(b)),
                 else => false,
             },
             .boolean => |a| switch (other) {
@@ -83,6 +91,7 @@ pub const Value = union(enum) {
     pub fn to_string(self: Value, alloc: std.mem.Allocator) EvalError![]const u8 {
         return switch (self) {
             .integer => |n| std.fmt.allocPrint(alloc, "{d}", .{n}) catch return EvalError.OutOfMemory,
+            .float => |n| std.fmt.allocPrint(alloc, "{d}", .{n}) catch return EvalError.OutOfMemory,
             .string => |s| s,
             .boolean => |b| if (b) "sant" else "usant",
             .null_val => "inkje",
@@ -106,6 +115,14 @@ pub const Value = union(enum) {
     pub fn as_int(self: Value) EvalError!i64 {
         return switch (self) {
             .integer => |n| n,
+            else => EvalError.TypeError,
+        };
+    }
+
+    pub fn as_float(self: Value) EvalError!f64 {
+        return switch (self) {
+            .float => |n| n,
+            .integer => |n| @floatFromInt(n),
             else => EvalError.TypeError,
         };
     }
@@ -225,6 +242,7 @@ pub const Interpreter = struct {
             .import_stmt => |s| self.eval_import(s, env),
             .module_decl => |m| self.eval_module_decl(m, env),
             .integer_lit => |i| Value{ .integer = i.value },
+            .float_lit => |f| Value{ .float = f.value },
             .string_lit => |s| Value{ .string = s.value },
             .bool_lit => |b| Value{ .boolean = b.value },
             .list_lit => |l| self.eval_list(l, env),
@@ -476,31 +494,53 @@ pub const Interpreter = struct {
             switch (left) {
                 .integer => |a| switch (right) {
                     .integer => |b| return Value{ .integer = a + b },
+                    .float => |b| return Value{ .float = @as(f64, @floatFromInt(a)) + b },
                     else => return EvalError.TypeError,
                 },
-                .string => |a| switch (right) {
-                    .string => |b| {
-                        const s = std.fmt.allocPrint(self.str_alloc(), "{s}{s}", .{ a, b }) catch return EvalError.OutOfMemory;
-                        return Value{ .string = s };
-                    },
-                    .integer => |b| {
-                        const b_str = std.fmt.allocPrint(self.str_alloc(), "{d}", .{b}) catch return EvalError.OutOfMemory;
-                        const s = std.fmt.allocPrint(self.str_alloc(), "{s}{s}", .{ a, b_str }) catch return EvalError.OutOfMemory;
-                        return Value{ .string = s };
-                    },
+                .float => |a| switch (right) {
+                    .float => |b| return Value{ .float = a + b },
+                    .integer => |b| return Value{ .float = a + @as(f64, @floatFromInt(b)) },
                     else => return EvalError.TypeError,
+                },
+                .string => |a| {
+                    const b_str = try right.to_string(self.str_alloc());
+                    switch (right) {
+                        .string, .integer, .float => {
+                            const s = std.fmt.allocPrint(self.str_alloc(), "{s}{s}", .{ a, b_str }) catch return EvalError.OutOfMemory;
+                            return Value{ .string = s };
+                        },
+                        else => return EvalError.TypeError,
+                    }
                 },
                 else => return EvalError.TypeError,
             }
         }
-        const a = switch (left) {
-            .integer => |n| n,
-            else => return EvalError.TypeError,
+        const both_numeric = switch (left) {
+            .integer, .float => switch (right) {
+                .integer, .float => true,
+                else => false,
+            },
+            else => false,
         };
-        const b = switch (right) {
-            .integer => |n| n,
-            else => return EvalError.TypeError,
-        };
+        if (!both_numeric) return EvalError.TypeError;
+        const has_float = (left == .float or right == .float);
+        if (has_float) {
+            const a = try left.as_float();
+            const b = try right.as_float();
+            if (std.mem.eql(u8, expr.op, "-")) return Value{ .float = a - b };
+            if (std.mem.eql(u8, expr.op, "*")) return Value{ .float = a * b };
+            if (std.mem.eql(u8, expr.op, "/")) {
+                if (b == 0.0) return EvalError.DivisionByZero;
+                return Value{ .float = a / b };
+            }
+            if (std.mem.eql(u8, expr.op, "<")) return Value{ .boolean = a < b };
+            if (std.mem.eql(u8, expr.op, ">")) return Value{ .boolean = a > b };
+            if (std.mem.eql(u8, expr.op, "<=")) return Value{ .boolean = a <= b };
+            if (std.mem.eql(u8, expr.op, ">=")) return Value{ .boolean = a >= b };
+            return EvalError.TypeError;
+        }
+        const a = left.integer;
+        const b = right.integer;
         if (std.mem.eql(u8, expr.op, "-")) return Value{ .integer = a - b };
         if (std.mem.eql(u8, expr.op, "*")) return Value{ .integer = a * b };
         if (std.mem.eql(u8, expr.op, "/")) {
@@ -522,6 +562,7 @@ pub const Interpreter = struct {
         if (std.mem.eql(u8, expr.op, "-")) {
             switch (right) {
                 .integer => |n| return Value{ .integer = -n },
+                .float => |n| return Value{ .float = -n },
                 else => return EvalError.TypeError,
             }
         }

@@ -7,6 +7,7 @@ pub const token_types = enum {
     // literals
     identifier,
     integer,
+    float,
     string,
     // operators
     assign, // er (context-dependent)
@@ -169,12 +170,19 @@ pub const Lexer = struct {
         return self.input[position..self.curr_position];
     }
 
-    pub fn read_integer(self: *@This()) []const u8 {
+    pub fn read_number(self: *@This()) struct { literal: []const u8, is_float: bool } {
         const position = self.curr_position;
         while (is_integer(self.curr_char)) {
             self.read_char();
         }
-        return self.input[position..self.curr_position];
+        if (self.curr_char == '.' and is_integer(self.peek_char())) {
+            self.read_char();
+            while (is_integer(self.curr_char)) {
+                self.read_char();
+            }
+            return .{ .literal = self.input[position..self.curr_position], .is_float = true };
+        }
+        return .{ .literal = self.input[position..self.curr_position], .is_float = false };
     }
 
     fn read_string(self: *@This()) []const u8 {
@@ -229,8 +237,9 @@ pub const Lexer = struct {
                     }
                     return tok;
                 } else if (is_integer(self.curr_char)) {
-                    tok.literal = self.read_integer();
-                    tok.type = .integer;
+                    const num = self.read_number();
+                    tok.literal = num.literal;
+                    tok.type = if (num.is_float) .float else .integer;
                     return tok;
                 } else {
                     tok.type = .illegal;
