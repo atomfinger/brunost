@@ -57,8 +57,6 @@ pub const Block = struct {
 
 pub const IfStmt = struct {
     condition: *Node,
-    /// true = er sant, false = er usant
-    expected: bool,
     consequence: *Node, // Block
     /// Either another IfStmt (else-if chain) or a Block (plain else), or null
     alternative: ?*Node,
@@ -66,8 +64,6 @@ pub const IfStmt = struct {
 
 pub const WhileStmt = struct {
     condition: *Node,
-    /// true = erSameSom sant, false = erSameSom usant
-    expected: bool,
     body: *Node, // Block
 };
 

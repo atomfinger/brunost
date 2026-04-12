@@ -286,9 +286,7 @@ pub const Interpreter = struct {
 
     fn eval_if(self: *Interpreter, stmt: ast.IfStmt, env: *Environment) EvalError!Value {
         const cond_val = try self.eval(stmt.condition, env);
-        const cond_bool = cond_val.is_truthy();
-        const take_branch = cond_bool == stmt.expected;
-        if (take_branch) {
+        if (cond_val.is_truthy()) {
             var child_env = Environment.init(self.alloc, env);
             defer child_env.deinit();
             return self.eval(stmt.consequence, &child_env);
@@ -303,8 +301,7 @@ pub const Interpreter = struct {
     fn eval_while(self: *Interpreter, stmt: ast.WhileStmt, env: *Environment) EvalError!Value {
         while (true) {
             const cond_val = try self.eval(stmt.condition, env);
-            const cond_bool = cond_val.is_truthy();
-            if (cond_bool != stmt.expected) break;
+            if (!cond_val.is_truthy()) break;
             var child_env = Environment.init(self.alloc, env);
             defer child_env.deinit();
             _ = try self.eval(stmt.body, &child_env);
@@ -457,6 +454,19 @@ pub const Interpreter = struct {
     }
 
     fn eval_infix(self: *Interpreter, expr: ast.InfixExpr, env: *Environment) EvalError!Value {
+        if (std.mem.eql(u8, expr.op, "og")) {
+            const left = try self.eval(expr.left, env);
+            if (!left.is_truthy()) return Value{ .boolean = false };
+            const right = try self.eval(expr.right, env);
+            return Value{ .boolean = right.is_truthy() };
+        }
+        if (std.mem.eql(u8, expr.op, "eller")) {
+            const left = try self.eval(expr.left, env);
+            if (left.is_truthy()) return Value{ .boolean = true };
+            const right = try self.eval(expr.right, env);
+            return Value{ .boolean = right.is_truthy() };
+        }
+
         const left = try self.eval(expr.left, env);
         const right = try self.eval(expr.right, env);
         if (std.mem.eql(u8, expr.op, "er") or std.mem.eql(u8, expr.op, "erSameSom")) {

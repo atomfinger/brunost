@@ -40,6 +40,9 @@ pub const token_types = enum {
     else_op, // ellers
     true_val, // sant
     false_val, // usant
+    not_op, // ikkje
+    and_op, // og
+    or_op, // eller
     while_loop, // medan
     foreach_loop, // forKvart
     in_op, // i
@@ -71,6 +74,9 @@ pub const Token = struct {
             .{ "gjer", .function },
             .{ "sant", .true_val },
             .{ "usant", .false_val },
+            .{ "ikkje", .not_op },
+            .{ "og", .and_op },
+            .{ "eller", .or_op },
             .{ "viss", .if_op },
             .{ "ellers", .else_op },
             .{ "gjevTilbake", .return_op },

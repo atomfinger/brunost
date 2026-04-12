@@ -46,7 +46,7 @@ bruk terminal
 bruk matte
 
 gjer rekn(tal, faktor) {
-  viss (faktor er 0) er sant gjer {
+  viss (faktor er 0) gjer {
     kast "Kan ikkje gange med null, det er kjedeleg"
   }
   gjevTilbake tal * faktor
@@ -109,9 +109,9 @@ bruk terminal
 
 fast temperatur er -5
 
-viss (temperatur erMindreEnn 0) er sant gjer {
+viss (temperatur erMindreEnn 0) gjer {
   terminal.skriv("Det er kaldt — ta på deg ull!")
-} ellers viss (temperatur erMindreEnn 15) er sant gjer {
+} ellers viss (temperatur erMindreEnn 15) gjer {
   terminal.skriv("Frisk luft, ta med jakke")
 } ellers {
   terminal.skriv("Norsk sommar! Nyt det medan det varar")
@@ -139,7 +139,7 @@ bruk terminal
 
 endreleg teljing er 10
 
-medan (teljing erStørreEnn 0) erSameSom sant gjer {
+medan (teljing erStørreEnn 0) gjer {
   terminal.skriv(teljing)
   teljing er teljing - 1
 }
@@ -153,7 +153,7 @@ medan (teljing erStørreEnn 0) erSameSom sant gjer {
 bruk terminal
 
 gjer delTal(teljartal, nemnar) {
-  viss (nemnar er 0) er sant gjer {
+  viss (nemnar er 0) gjer {
     kast "Matematikken seier nei: kan ikkje dele på null"
   }
   gjevTilbake teljartal / nemnar

@@ -1,7 +1,7 @@
 bruk terminal
 
 gjer rekke(grense) {
-    viss (grense < 2) er sant gjer {
+    viss (grense < 2) gjer {
         gjevTilbake grense
     }
     gjevTilbake rekke(grense - 1) + rekke(grense - 2)

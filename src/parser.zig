@@ -168,15 +168,6 @@ pub const Parser = struct {
         const condition = try self.parse_expr(0);
         if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
         self.advance();
-        // er sant / er usant
-        if (self.curr.type != .assign) return ParseError.ExpectedAssign;
-        self.advance();
-        const expected = switch (self.curr.type) {
-            .true_val => true,
-            .false_val => false,
-            else => return ParseError.ExpectedBoolVal,
-        };
-        self.advance();
         // gjer (the "do" keyword)
         if (self.curr.type != .function) return ParseError.ExpectedDo;
         self.advance();
@@ -192,7 +183,6 @@ pub const Parser = struct {
         }
         return self.alloc_node(.{ .if_stmt = .{
             .condition = condition,
-            .expected = expected,
             .consequence = consequence,
             .alternative = alternative,
         } });
@@ -205,21 +195,11 @@ pub const Parser = struct {
         const condition = try self.parse_expr(0);
         if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
         self.advance();
-        // erSameSom sant / erSameSom usant
-        if (self.curr.type != .equal) return ParseError.ExpectedAssign;
-        self.advance();
-        const expected = switch (self.curr.type) {
-            .true_val => true,
-            .false_val => false,
-            else => return ParseError.ExpectedBoolVal,
-        };
-        self.advance();
         if (self.curr.type != .function) return ParseError.ExpectedDo;
         self.advance();
         const body = try self.parse_block();
         return self.alloc_node(.{ .while_stmt = .{
             .condition = condition,
-            .expected = expected,
             .body = body,
         } });
     }
@@ -333,13 +313,17 @@ pub const Parser = struct {
 
     fn infix_precedence(tok: token.token_types) u8 {
         return switch (tok) {
-            .assign, .equal => 1, // er / erSameSom as equality in expression context
-            .ltag, .rtag, .lt, .gt, .lte, .gte => 2,
-            .plus, .minus => 3,
-            .asterisk, .fslash => 4,
+            .or_op => 1,
+            .and_op => 2,
+            .assign, .equal => 3, // er / erSameSom as equality in expression context
+            .ltag, .rtag, .lt, .gt, .lte, .gte => 4,
+            .plus, .minus => 5,
+            .asterisk, .fslash => 6,
             else => 0,
         };
     }
+
+    const logical_not_precedence = 2;
 
     pub fn parse_expr(self: *Parser, min_prec: u8) ParseError!*ast.Node {
         var left = try self.parse_primary();
@@ -350,6 +334,8 @@ pub const Parser = struct {
             self.advance();
             const right = try self.parse_expr(prec);
             const op_str: []const u8 = switch (op_tok.type) {
+                .or_op => "eller",
+                .and_op => "og",
                 .assign => "er",
                 .equal => "erSameSom",
                 .plus => "+",
@@ -390,11 +376,15 @@ pub const Parser = struct {
                 self.advance();
                 return node;
             },
-            .bang, .minus => {
-                const op: []const u8 = if (self.curr.type == .bang) "!" else "-";
+            .bang, .not_op => {
+                self.advance();
+                const right = try self.parse_expr(logical_not_precedence);
+                return self.alloc_node(.{ .prefix_expr = .{ .op = "!", .right = right } });
+            },
+            .minus => {
                 self.advance();
                 const right = try self.parse_primary();
-                return self.alloc_node(.{ .prefix_expr = .{ .op = op, .right = right } });
+                return self.alloc_node(.{ .prefix_expr = .{ .op = "-", .right = right } });
             },
             .lparen => {
                 self.advance();
@@ -456,4 +446,5 @@ pub const Parser = struct {
         self.advance();
         return self.alloc_node(.{ .list_lit = .{ .elements = try elements.toOwnedSlice(self.arena) } });
     }
+
 };

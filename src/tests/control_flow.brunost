@@ -2,9 +2,9 @@ bruk terminal
 
 endreleg verdi er 1
 
-viss (verdi er 1) er sant gjer {
+viss (verdi er 1) gjer {
   terminal.skriv("ein")
-} ellers viss (verdi er 2) er sant gjer {
+} ellers viss (verdi er 2) gjer {
   terminal.skriv("to")
 } ellers {
   terminal.skriv("anna")
@@ -12,7 +12,7 @@ viss (verdi er 1) er sant gjer {
 
 endreleg tal er 10
 
-viss (tal > 5) er sant gjer {
+viss (tal > 5) gjer {
   terminal.skriv("stort")
 } ellers {
   terminal.skriv("lite")

@@ -12,10 +12,10 @@ fast høgd er 30
 gjer lagBrett() {
     endreleg brett er []
     endreleg rad er 0
-    medan (rad erMindreEnn høgd) erSameSom sant gjer {
+    medan (rad erMindreEnn høgd) gjer {
         endreleg rekkje er []
         endreleg kolonne er 0
-        medan (kolonne erMindreEnn breidde) erSameSom sant gjer {
+        medan (kolonne erMindreEnn breidde) gjer {
             rekkje er liste.leggTil(rekkje, matte.tilfeldig(0, 1))
             kolonne er kolonne + 1
         }
@@ -26,16 +26,16 @@ gjer lagBrett() {
 }
 
 gjer hentCelle(brett, kolonne, rad) {
-    viss (kolonne erMindreEnn 0) er sant gjer {
+    viss (kolonne erMindreEnn 0) gjer {
         gjevTilbake 0
     }
-    viss (kolonne erSameEllerStørreEnn breidde) er sant gjer {
+    viss (kolonne erSameEllerStørreEnn breidde) gjer {
         gjevTilbake 0
     }
-    viss (rad erMindreEnn 0) er sant gjer {
+    viss (rad erMindreEnn 0) gjer {
         gjevTilbake 0
     }
-    viss (rad erSameEllerStørreEnn høgd) er sant gjer {
+    viss (rad erSameEllerStørreEnn høgd) gjer {
         gjevTilbake 0
     }
 
@@ -59,19 +59,19 @@ gjer telNaboTal(brett, kolonne, rad) {
 gjer nesteGenerasjon(brett) {
     endreleg nyttBrett er []
     endreleg rad er 0
-    medan (rad erMindreEnn høgd) erSameSom sant gjer {
+    medan (rad erMindreEnn høgd) gjer {
         endreleg nyRekkje er []
         endreleg kolonne er 0
-        medan (kolonne erMindreEnn breidde) erSameSom sant gjer {
+        medan (kolonne erMindreEnn breidde) gjer {
             fast celle er hentCelle(brett, kolonne, rad)
             fast naboTal er telNaboTal(brett, kolonne, rad)
 
             endreleg nyCelle er 0
-            viss (celle erSameSom 1) er sant gjer {
-                viss (naboTal erSameSom 2) er sant gjer { nyCelle er 1 }
-                viss (naboTal erSameSom 3) er sant gjer { nyCelle er 1 }
+            viss (celle erSameSom 1) gjer {
+                viss (naboTal erSameSom 2) gjer { nyCelle er 1 }
+                viss (naboTal erSameSom 3) gjer { nyCelle er 1 }
             } ellers {
-                viss (naboTal erSameSom 3) er sant gjer { nyCelle er 1 }
+                viss (naboTal erSameSom 3) gjer { nyCelle er 1 }
             }
             nyRekkje er liste.leggTil(nyRekkje, nyCelle)
             kolonne er kolonne + 1
@@ -85,13 +85,13 @@ gjer nesteGenerasjon(brett) {
 gjer teiknBrett(brett) {
     terminal.tøm()
     endreleg rad er 0
-    medan (rad erMindreEnn høgd) erSameSom sant gjer {
+    medan (rad erMindreEnn høgd) gjer {
         fast rekkje er liste.hent(brett, rad)
         endreleg linje er ""
         endreleg kolonne er 0
-        medan (kolonne erMindreEnn breidde) erSameSom sant gjer {
+        medan (kolonne erMindreEnn breidde) gjer {
             fast celle er liste.hent(rekkje, kolonne)
-            viss (celle erSameSom 1) er sant gjer {
+            viss (celle erSameSom 1) gjer {
                 linje er linje + "██"
             } ellers {
                 linje er linje + "  "
@@ -107,7 +107,7 @@ gjer køyrKomeSjø(fart, iterasjonar) {
     endreleg brett er lagBrett()
 
     endreleg omgang er 0
-    medan (omgang erMindreEnn iterasjonar) erSameSom sant gjer {
+    medan (omgang erMindreEnn iterasjonar) gjer {
         teiknBrett(brett)
         brett er nesteGenerasjon(brett)
         prosess.sov(fart)

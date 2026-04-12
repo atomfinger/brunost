@@ -73,6 +73,49 @@ test "control flow" {
     try std.testing.expectEqualStrings("ein\nstort\n", out);
 }
 
+test "boolean operators and simplified if/while syntax" {
+    const out = try run_script(
+        \\bruk terminal
+        \\
+        \\fast tal er -1
+        \\fast nummer er 5
+        \\
+        \\viss (ikkje tal erSameEllerStørreEnn 0) gjer {
+        \\  terminal.skriv("negativ")
+        \\}
+        \\
+        \\viss (tal erMindreEnn 0 og nummer erStørreEnn 0) gjer {
+        \\  terminal.skriv("og")
+        \\}
+        \\
+        \\viss (tal erStørreEnn 0 eller nummer erStørreEnn 0) gjer {
+        \\  terminal.skriv("eller")
+        \\}
+        \\
+        \\endreleg teljar er 0
+        \\medan (teljar erMindreEnn 2) gjer {
+        \\  terminal.skriv(teljar)
+        \\  teljar er teljar + 1
+        \\}
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("negativ\nog\neller\n0\n1\n", out);
+}
+
+test "legacy if syntax is rejected" {
+    _ = try expect_parse_error(
+        \\viss (sant) er sant gjer {
+        \\}
+    , error.ExpectedDo);
+}
+
+test "legacy while syntax is rejected" {
+    _ = try expect_parse_error(
+        \\medan (sant) erSameSom sant gjer {
+        \\}
+    , error.ExpectedDo);
+}
+
 test "loops" {
     const out = try run_script(@embedFile("tests/loops.brunost"));
     defer std.testing.allocator.free(out);
