@@ -29564,6 +29564,7 @@ destruksjonsanlegg
 destruksjonsanleggi
 destruksjonsprosess
 destruktiv
+det
 detalj
 detaljarbeid
 detaljdisponering

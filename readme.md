@@ -81,7 +81,8 @@ straum er straum + 1
 
 ```python
 fast erNynorsk    er sant                                               // Boolsk
-fast årstal       er 1814                                               // Numerisk
+fast årstal       er 1814                                               // Heiltall 
+fast graderNord   er 71.0                                               // Desimaltall
 fast helsing      er "God dag, Noreg!"                                  // Streng
 fast fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
 ```
