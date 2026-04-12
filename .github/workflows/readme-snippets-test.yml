@@ -24,27 +24,34 @@ jobs:
       - name: Bygg Brunost
         run: zig build
 
-      - name: Få kodesnuttane
+      - name: Extract code snippets
         run: |
           mkdir -p snippets
 
           awk '
           BEGIN {
             inside=0
+            skip=0
             count=0
           }
-          /^```/ {
-            if (inside == 0) {
-              inside=1
+
+          /^```python/ {
+            inside=1
+            skip = ($0 ~ /skip|ignore/)
+            if (!skip) {
               count++
               filename=sprintf("snippets/snippet-%02d.brunost", count)
-              next
-            } else {
-              inside=0
-              next
             }
+            next
           }
-          inside {
+
+          /^```/ {
+            inside=0
+            skip=0
+            next
+          }
+
+          inside && !skip {
             print >> filename
           }
           ' readme.md

@@ -133,11 +133,11 @@ forKvart namn i fylke {
 ```python
 bruk terminal
 
-endreleg teljing er 10
+endreleg teller er 10
 
-medan (teljing erStørreEnn 0) gjer {
-  terminal.skriv(teljing)
-  teljing er teljing - 1
+medan (teller erStørreEnn 0) gjer {
+  terminal.skriv(teller)
+  teller er teller - 1
 }
 ```
 
@@ -148,11 +148,11 @@ medan (teljing erStørreEnn 0) gjer {
 ```python
 bruk terminal
 
-gjer delTal(teljartal, nemnar) {
+gjer delTal(tellerTall, nemnar) {
   viss (nemnar er 0) gjer {
     kast "Matematikken seier nei: kan ikkje dele på null"
   }
-  gjevTilbake teljartal / nemnar
+  gjevTilbake tellerTall / nemnar
 }
 
 prøv {
@@ -211,7 +211,7 @@ terminal.skriv(geometri.omkrins(5, 8)) // 26
 Del koden over fleire filer for større prosjekt.
 
 `utils/rekning.brunost`:
-```python
+```python skip
 gjer leggTil(a, b) {
   gjevTilbake a + b
 }
@@ -222,7 +222,7 @@ gjer trekkFrå(a, b) {
 ```
 
 `hovud.brunost`:
-```python
+```python skip
 bruk terminal
 bruk utils.rekning
 
@@ -232,7 +232,7 @@ terminal.skriv(rekning.trekkFrå(100, 23))  // 77
 
 Bruk `som` ved namnekonflikt:
 
-```python
+```python skip
 bruk utils.rekning som rekn
 
 terminal.skriv(rekn.leggTil(5, 7)) // 12
