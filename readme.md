@@ -92,10 +92,10 @@ Funksjonar definerast med `gjer` og returnerer verdi med `gjevTilbake`:
 
 ```python
 gjer kroppsMasseIndeks(vekt, høgd) {
-  gjevTilbake vekt / (høgd * høgd)
+  gjevTilbake vekt / (høgd * (høgd / 100))
 }
 
-fast resultat er kroppsMasseIndeks(70, 1.75)
+fast resultat er kroppsMasseIndeks(70, 175)
 ```
 
 ### Vilkårsutsagn
