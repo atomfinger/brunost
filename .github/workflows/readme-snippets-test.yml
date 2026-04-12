@@ -15,13 +15,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: sjekk ut repoet
         uses: actions/checkout@v4
 
-      - name: Build Brunost
+      - name: Sett opp Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.0
+
+      - name: Bygg Brunost
         run: zig build
 
-      - name: Extract code snippets
+      - name: Få kodesnuttane
         run: |
           mkdir -p snippets
 
@@ -46,12 +51,12 @@ jobs:
           }
           ' README.md
 
-      - name: Show extracted snippets
+      - name: Vis snutter
         run: |
           echo "Extracted files:"
           ls -la snippets || true
 
-      - name: Run Brunost on snippets
+      - name: Kjør snutter
         run: |
           for file in snippets/*.brunost; do
             echo "Running brunost on $file"
