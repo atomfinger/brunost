@@ -194,6 +194,17 @@ test "identifiers with æøå from dictionary are accepted" {
     try std.testing.expectEqualStrings("", out);
 }
 
+test "plural identifiers are accepted when the lemma exists in the dictionary" {
+    const out = try run_script(
+        \\fast iterasjonar er 3
+        \\fast nynorskIterasjonar er iterasjonar
+        \\fast opne_iterasjonar er nynorskIterasjonar
+        \\
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("", out);
+}
+
 test "feil: ukjend modul" {
     try expect_error("bruk ukjendmodul", error.UnknownModule);
 }

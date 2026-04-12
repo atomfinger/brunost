@@ -103,11 +103,11 @@ gjer teiknBrett(brett) {
     }
 }
 
-gjer køyrKomeSjø(fart, iterasjon) {
+gjer køyrKomeSjø(fart, iterasjonar) {
     endreleg brett er lagBrett()
 
     endreleg omgang er 0
-    medan (omgang erMindreEnn iterasjon) erSameSom sant gjer {
+    medan (omgang erMindreEnn iterasjonar) erSameSom sant gjer {
         teiknBrett(brett)
         brett er nesteGenerasjon(brett)
         prosess.sov(fart)
@@ -115,13 +115,13 @@ gjer køyrKomeSjø(fart, iterasjon) {
     }
 }
 
-endreleg iterasjon er 50
+endreleg iterasjonar er 50
 prøv {
-    iterasjon er streng.tilTal(terminal.argument(0))
+    iterasjonar er streng.tilTal(terminal.argument(0))
 } fang (feil) {
 }
 
 terminal.skriv("Startar Conway sitt livsspel i Brunost!")
 prosess.sov(1000)
-køyrKomeSjø(100, iterasjon)
+køyrKomeSjø(100, iterasjonar)
 terminal.skriv("Slutt på livsspelet!")
