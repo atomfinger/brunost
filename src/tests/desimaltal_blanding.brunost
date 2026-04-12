@@ -1,0 +1,17 @@
+bruk terminal
+
+// Heiltal + desimaltal
+terminal.skriv(1 + 0.5)
+
+// Desimaltal + heiltal
+terminal.skriv(2.5 + 1)
+
+// Heiltal * desimaltal
+terminal.skriv(3 * 1.5)
+
+// Heiltal / desimaltal
+terminal.skriv(10 / 2.5)
+
+// Samanlikning mellom heiltal og desimaltal
+terminal.skriv(3 erMindreEnn 3.5)
+terminal.skriv(3.5 erStørreEnn 3)

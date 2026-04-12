@@ -18,6 +18,7 @@ pub const Node = union(enum) {
     module_decl: ModuleDecl,
     // Expressions
     integer_lit: IntegerLit,
+    float_lit: FloatLit,
     string_lit: StringLit,
     bool_lit: BoolLit,
     list_lit: ListLit,
@@ -91,6 +92,10 @@ pub const FnDecl = struct {
 
 pub const IntegerLit = struct {
     value: i64,
+};
+
+pub const FloatLit = struct {
+    value: f64,
 };
 
 pub const StringLit = struct {

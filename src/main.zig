@@ -38,6 +38,7 @@ pub fn describe_error(err: anyerror) []const u8 {
         error.ExpectedCloseBrace => "Forventa '}'",
         error.ExpectedCloseBracket => "Forventa ']'",
         error.InvalidInteger => "Ugyldig heiltal",
+        error.InvalidFloat => "Ugyldig desimaltal",
         error.NotNynorsk => "Namnet er ikkje gyldig nynorsk",
         error.ParseFailed => "Kunne ikkje tolka koden",
         // Generelt
