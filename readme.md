@@ -91,11 +91,11 @@ fast fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
 Funksjonar definerast med `gjer` og returnerer verdi med `gjevTilbake`:
 
 ```python
-gjer bmi(vekt, høgd) {
+gjer kroppsMasseIndeks(vekt, høgd) {
   gjevTilbake vekt / (høgd * høgd)
 }
 
-fast resultat er bmi(70, 1.75)
+fast resultat er kroppsMasseIndeks(70, 1.75)
 ```
 
 ### Vilkårsutsagn
