@@ -142,17 +142,20 @@ pub fn run_with_context(
     script_args: []const []const u8,
     context: *RunContext,
 ) !void {
-    const dbg_w = stderr_writer();
+    const is_wasm = comptime @import("builtin").cpu.arch == .wasm32;
 
-    if (context.debug) {
-        dbg_w.print("[debug] === Tokens ===\n", .{}) catch {};
-        var dbg_lexer = token.Lexer.init(source);
-        while (true) {
-            const tok = dbg_lexer.next_token();
-            dbg_w.print("[debug]   {s:<24} '{s}'\n", .{ @tagName(tok.type), tok.literal }) catch {};
-            if (tok.type == .eof) break;
+    if (comptime !is_wasm) {
+        if (context.debug) {
+            const dbg_w = stderr_writer();
+            dbg_w.print("[debug] === Tokens ===\n", .{}) catch {};
+            var dbg_lexer = token.Lexer.init(source);
+            while (true) {
+                const tok = dbg_lexer.next_token();
+                dbg_w.print("[debug]   {s:<24} '{s}'\n", .{ @tagName(tok.type), tok.literal }) catch {};
+                if (tok.type == .eof) break;
+            }
+            dbg_w.print("[debug] === Parsing ===\n", .{}) catch {};
         }
-        dbg_w.print("[debug] === Parsing ===\n", .{}) catch {};
     }
 
     var arena = std.heap.ArenaAllocator.init(alloc);
@@ -166,13 +169,16 @@ pub fn run_with_context(
         return error.ParseFailed;
     };
 
-    if (context.debug) {
-        dbg_w.print("[debug]   {} setning(ar) tolka\n", .{program.program.statements.len}) catch {};
-        dbg_w.print("[debug] === Evaluering ===\n", .{}) catch {};
+    if (comptime !is_wasm) {
+        if (context.debug) {
+            const dbg_w = stderr_writer();
+            dbg_w.print("[debug]   {} setning(ar) tolka\n", .{program.program.statements.len}) catch {};
+            dbg_w.print("[debug] === Evaluering ===\n", .{}) catch {};
+        }
     }
 
     var interp = interpreter.Interpreter.init(alloc, output, base_dir, script_args);
-    interp.debug = context.debug;
+    interp.debug = if (comptime is_wasm) false else context.debug;
     defer interp.deinit();
     _ = try interp.eval(program, &interp.global);
 }

@@ -1,0 +1,15 @@
+bruk terminal
+
+gjer rekke(grense) {
+    viss (grense < 2) gjer {
+        gjevTilbake grense
+    }
+    gjevTilbake rekke(grense - 1) + rekke(grense - 2)
+}
+
+endreleg tellar er 0
+medan (tellar erMindreEnn 15) gjer {
+    fast kalkulasjon er rekke(tellar)
+    terminal.skriv(kalkulasjon)
+    tellar er tellar + 1
+}

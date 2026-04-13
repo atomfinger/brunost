@@ -229,6 +229,7 @@ pub const Interpreter = struct {
 
     fn dbg(self: *Interpreter, comptime fmt: []const u8, args: anytype) void {
         if (!self.debug) return;
+        if (comptime @import("builtin").cpu.arch == .wasm32) return;
         std.debug.print("[debug] " ++ fmt ++ "\n", args);
     }
 

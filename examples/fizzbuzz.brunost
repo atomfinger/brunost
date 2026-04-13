@@ -1,0 +1,17 @@
+bruk terminal
+bruk matte
+
+endreleg teljar er 1
+
+medan (teljar erSameEllerMindreEnn 15) gjer {
+    viss (matte.modulus(teljar, 15) erSameSom 0) gjer {
+        terminal.skriv("FizzBuzz")
+    } ellers viss (matte.modulus(teljar, 3) erSameSom 0) gjer {
+        terminal.skriv("Fizz")
+    } ellers viss (matte.modulus(teljar, 5) erSameSom 0) gjer {
+        terminal.skriv("Buzz")
+    } ellers {
+        terminal.skriv(teljar)
+    }
+    teljar er teljar + 1
+}
