@@ -192,6 +192,7 @@ pub const Interpreter = struct {
     base_dir: []const u8,
     script_args: []const []const u8,
     module_envs: std.ArrayList(*Environment),
+    debug: bool,
 
     pub fn init(
         alloc: std.mem.Allocator,
@@ -208,6 +209,7 @@ pub const Interpreter = struct {
             .base_dir = base_dir,
             .script_args = script_args,
             .module_envs = .{},
+            .debug = false,
         };
     }
 
@@ -223,6 +225,15 @@ pub const Interpreter = struct {
 
     pub fn str_alloc(self: *Interpreter) std.mem.Allocator {
         return self.str_arena.allocator();
+    }
+
+    fn dbg(self: *Interpreter, comptime fmt: []const u8, args: anytype) void {
+        if (!self.debug) return;
+        std.debug.print("[debug] " ++ fmt ++ "\n", args);
+    }
+
+    fn dbg_val(self: *Interpreter, v: Value) []const u8 {
+        return v.to_string(self.str_alloc()) catch "<minnefeil>";
     }
 
     pub fn eval(self: *Interpreter, node: *ast.Node, env: *Environment) EvalError!Value {
@@ -275,51 +286,63 @@ pub const Interpreter = struct {
     fn eval_var_decl(self: *Interpreter, decl: ast.VarDecl, env: *Environment) EvalError!Value {
         const value = try self.eval(decl.value, env);
         try env.define(decl.name, .{ .value = value, .mutable = decl.mutable });
+        self.dbg("{s} '{s}' = {s}", .{ if (decl.mutable) "endreleg" else "fast", decl.name, self.dbg_val(value) });
         return Value{ .null_val = {} };
     }
 
     fn eval_assign(self: *Interpreter, a: ast.AssignStmt, env: *Environment) EvalError!Value {
         const value = try self.eval(a.value, env);
         try env.assign(a.name, value);
+        self.dbg("set '{s}' = {s}", .{ a.name, self.dbg_val(value) });
         return Value{ .null_val = {} };
     }
 
     fn eval_return(self: *Interpreter, r: ast.ReturnStmt, env: *Environment) EvalError!Value {
         const value = try self.eval(r.value, env);
+        self.dbg("gjevTilbake {s}", .{self.dbg_val(value)});
         self.signal = Signal{ .return_val = value };
         return Value{ .null_val = {} };
     }
 
     fn eval_throw(self: *Interpreter, t: ast.ThrowStmt, env: *Environment) EvalError!Value {
         const value = try self.eval(t.value, env);
+        self.dbg("kast {s}", .{self.dbg_val(value)});
         self.signal = Signal{ .thrown = value };
         return Value{ .null_val = {} };
     }
 
-    fn eval_fn_decl(_: *Interpreter, f: ast.FnDecl, env: *Environment) EvalError!Value {
+    fn eval_fn_decl(self: *Interpreter, f: ast.FnDecl, env: *Environment) EvalError!Value {
         const func = Value{ .function = .{ .params = f.params, .body = f.body, .env = env } };
         try env.define(f.name, .{ .value = func, .mutable = false });
+        self.dbg("gjer '{s}' ({d} param(ar))", .{ f.name, f.params.len });
         return Value{ .null_val = {} };
     }
 
     fn eval_if(self: *Interpreter, stmt: ast.IfStmt, env: *Environment) EvalError!Value {
         const cond_val = try self.eval(stmt.condition, env);
         if (cond_val.is_truthy()) {
+            self.dbg("viss: {s} → tek konsekvens", .{self.dbg_val(cond_val)});
             var child_env = Environment.init(self.alloc, env);
             defer child_env.deinit();
             return self.eval(stmt.consequence, &child_env);
         } else if (stmt.alternative) |alt| {
+            self.dbg("viss: {s} → tek alternativ", .{self.dbg_val(cond_val)});
             var child_env = Environment.init(self.alloc, env);
             defer child_env.deinit();
             return self.eval(alt, &child_env);
+        } else {
+            self.dbg("viss: {s} → ingen alternativ", .{self.dbg_val(cond_val)});
         }
         return Value{ .null_val = {} };
     }
 
     fn eval_while(self: *Interpreter, stmt: ast.WhileStmt, env: *Environment) EvalError!Value {
+        var iteration: usize = 0;
         while (true) {
             const cond_val = try self.eval(stmt.condition, env);
             if (!cond_val.is_truthy()) break;
+            self.dbg("medan: iterasjon {d}", .{iteration});
+            iteration += 1;
             var child_env = Environment.init(self.alloc, env);
             defer child_env.deinit();
             _ = try self.eval(stmt.body, &child_env);
@@ -332,7 +355,9 @@ pub const Interpreter = struct {
         const iter_val = try self.eval(stmt.iterable, env);
         switch (iter_val) {
             .list => |items| {
-                for (items) |item| {
+                self.dbg("forKvart '{s}': {d} element(ar)", .{ stmt.iterator_name, items.len });
+                for (items, 0..) |item, i| {
+                    self.dbg("  element {d}: {s}", .{ i, self.dbg_val(item) });
                     var child_env = Environment.init(self.alloc, env);
                     defer child_env.deinit();
                     try child_env.define(stmt.iterator_name, .{ .value = item, .mutable = false });
@@ -381,7 +406,7 @@ pub const Interpreter = struct {
             try self.load_file_module(stmt.segments);
 
         try env.define(effective_name, .{ .value = mod, .mutable = false });
-
+        self.dbg("bruk '{s}' som '{s}'", .{ stmt.segments[stmt.segments.len - 1], effective_name });
         return Value{ .null_val = {} };
     }
 
@@ -596,10 +621,20 @@ pub const Interpreter = struct {
             else => return EvalError.TypeError,
         };
         if (expr.args.len != func.params.len) return EvalError.TypeError;
+        const fn_name = switch (expr.callee.*) {
+            .identifier => |id| id.name,
+            else => "<uttrykk>",
+        };
         var call_env = Environment.init(self.alloc, func.env);
         defer call_env.deinit();
+        if (self.debug) {
+             self.dbg("kall '{s}' ({d} arg(ar)):", .{ fn_name, expr.args.len });
+        }
         for (func.params, expr.args) |param, arg_node| {
             const arg_val = try self.eval(arg_node, env);
+            if (self.debug) {
+                self.dbg("  {s} = {s}", .{ param, self.dbg_val(arg_val) });
+            }
             try call_env.define(param, .{ .value = arg_val, .mutable = false });
         }
         _ = try self.eval(func.body, &call_env);
@@ -607,6 +642,7 @@ pub const Interpreter = struct {
             switch (sig) {
                 .return_val => |v| {
                     self.signal = null;
+                    self.dbg("  '{s}' returnerte {s}", .{ fn_name, self.dbg_val(v) });
                     return v;
                 },
                 else => {},
@@ -630,10 +666,18 @@ pub const Interpreter = struct {
             args.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
         }
         const args_slice = args.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory;
-        return switch (member_val) {
-            .builtin_fn => |f| f(args_slice, self),
-            .function => |f| self.call_function(f, args_slice),
-            else => EvalError.TypeError,
+        if (self.debug) {
+            self.dbg("kall '{s}'.'{s}' ({d} arg(ar)):", .{ expr.object, expr.member, args_slice.len });
+            for (args_slice, 0..) |arg, i| {
+                self.dbg("  arg[{d}] = {s}", .{ i, self.dbg_val(arg) });
+            }
+        }
+        const result = switch (member_val) {
+            .builtin_fn => |f| try f(args_slice, self),
+            .function => |f| try self.call_function(f, args_slice),
+            else => return EvalError.TypeError,
         };
+        self.dbg("  → {s}", .{self.dbg_val(result)});
+        return result;
     }
 };

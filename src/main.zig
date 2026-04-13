@@ -49,6 +49,7 @@ pub fn describe_error(err: anyerror) []const u8 {
 
 pub const RunContext = struct {
     parse_diagnostic: ?parser.ParseDiagnostic = null,
+    debug: bool = false,
 };
 
 fn print_parse_error(writer: std.io.AnyWriter, diagnostic: parser.ParseDiagnostic) !void {
@@ -75,9 +76,20 @@ pub fn main() !void {
     var args = try std.process.argsWithAllocator(alloc);
     defer args.deinit();
     _ = args.skip(); // argv[0]
-    const filename = args.next() orelse {
-        stderr_writer().print("Bruk: brunost <fil.brunost>\n", .{}) catch {};
+    const first_arg = args.next() orelse {
+        stderr_writer().print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
         std.process.exit(1);
+    };
+    var debug = false;
+    const filename: []const u8 = blk: {
+        if (std.mem.eql(u8, first_arg, "--debug")) {
+            debug = true;
+            break :blk args.next() orelse {
+                stderr_writer().print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+                std.process.exit(1);
+            };
+        }
+        break :blk first_arg;
     };
     var script_args: std.ArrayList([]const u8) = .{};
     defer script_args.deinit(alloc);
@@ -92,7 +104,7 @@ pub fn main() !void {
     defer alloc.free(source);
 
     const base_dir = std.fs.path.dirname(filename) orelse ".";
-    var context: RunContext = .{};
+    var context: RunContext = .{ .debug = debug };
     run_with_context(alloc, source, stdout_writer(), base_dir, script_args.items, &context) catch |err| {
         if (err == error.ParseFailed) {
             if (context.parse_diagnostic) |diagnostic| {
@@ -130,6 +142,19 @@ pub fn run_with_context(
     script_args: []const []const u8,
     context: *RunContext,
 ) !void {
+    const dbg_w = stderr_writer();
+
+    if (context.debug) {
+        dbg_w.print("[debug] === Tokens ===\n", .{}) catch {};
+        var dbg_lexer = token.Lexer.init(source);
+        while (true) {
+            const tok = dbg_lexer.next_token();
+            dbg_w.print("[debug]   {s:<24} '{s}'\n", .{ @tagName(tok.type), tok.literal }) catch {};
+            if (tok.type == .eof) break;
+        }
+        dbg_w.print("[debug] === Parsing ===\n", .{}) catch {};
+    }
+
     var arena = std.heap.ArenaAllocator.init(alloc);
     defer arena.deinit();
     const arena_alloc = arena.allocator();
@@ -141,7 +166,13 @@ pub fn run_with_context(
         return error.ParseFailed;
     };
 
+    if (context.debug) {
+        dbg_w.print("[debug]   {} setning(ar) tolka\n", .{program.program.statements.len}) catch {};
+        dbg_w.print("[debug] === Evaluering ===\n", .{}) catch {};
+    }
+
     var interp = interpreter.Interpreter.init(alloc, output, base_dir, script_args);
+    interp.debug = context.debug;
     defer interp.deinit();
     _ = try interp.eval(program, &interp.global);
 }
