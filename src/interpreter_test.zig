@@ -308,6 +308,18 @@ test "desimaltal streng-samankopling" {
     try std.testing.expectEqualStrings("pi er 3.14\nsvar: 2.5\n", out);
 }
 
+test "streng-samankopling med heiltal og boolsk" {
+    const out = try run_script(
+        \\bruk terminal
+        \\terminal.skriv(42 + " er svaret")
+        \\terminal.skriv("primtal: " + sant)
+        \\terminal.skriv("primtal: " + usant)
+        \\terminal.skriv(7 + " er eit primtal: " + sant)
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("42 er svaret\nprimtal: sant\nprimtal: usant\n7 er eit primtal: sant\n", out);
+}
+
 test "desimaltal samanlikningar" {
     const out = try run_script(
         \\bruk terminal

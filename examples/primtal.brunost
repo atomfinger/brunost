@@ -1,0 +1,26 @@
+bruk terminal
+bruk matte
+
+gjer sjekkPrimtal(tall) {
+    viss (tall erSameSom 1) gjer {
+        gjevTilbake usant
+    }
+
+    endreleg teller er 2
+    medan (teller erMindreEnn tall) gjer {
+        fast mod er matte.modulus(tall, teller)
+        viss (mod erSameSom 0) gjer {
+            gjevTilbake usant
+        }
+        teller er teller + 1
+    }
+
+    gjevTilbake sant
+}
+
+endreleg teller er 0
+medan (teller erMindreEnn 50) gjer {
+    fast erPrimtal er sjekkPrimtal(teller)
+    terminal.skriv(teller + " er eit primtal: " + erPrimtal)
+    teller er teller + 1
+}

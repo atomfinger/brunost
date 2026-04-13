@@ -4,8 +4,8 @@ bruk matte
 bruk prosess
 bruk streng
 
-fast breidde er 60
-fast høgd er 30
+fast breidde er 90
+fast høgd er 50
 
 // Skapar ei liste med tilfeldige 1-ar og 0-ar
 gjer lagBrett() {

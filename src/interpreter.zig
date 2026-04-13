@@ -495,6 +495,11 @@ pub const Interpreter = struct {
                 .integer => |a| switch (right) {
                     .integer => |b| return Value{ .integer = a + b },
                     .float => |b| return Value{ .float = @as(f64, @floatFromInt(a)) + b },
+                    .string => |b| {
+                        const a_str = try left.to_string(self.str_alloc());
+                        const s = std.fmt.allocPrint(self.str_alloc(), "{s}{s}", .{ a_str, b }) catch return EvalError.OutOfMemory;
+                        return Value{ .string = s };
+                    },
                     else => return EvalError.TypeError,
                 },
                 .float => |a| switch (right) {
@@ -504,13 +509,8 @@ pub const Interpreter = struct {
                 },
                 .string => |a| {
                     const b_str = try right.to_string(self.str_alloc());
-                    switch (right) {
-                        .string, .integer, .float => {
-                            const s = std.fmt.allocPrint(self.str_alloc(), "{s}{s}", .{ a, b_str }) catch return EvalError.OutOfMemory;
-                            return Value{ .string = s };
-                        },
-                        else => return EvalError.TypeError,
-                    }
+                    const s = std.fmt.allocPrint(self.str_alloc(), "{s}{s}", .{ a, b_str }) catch return EvalError.OutOfMemory;
+                    return Value{ .string = s };
                 },
                 else => return EvalError.TypeError,
             }
