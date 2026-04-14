@@ -42,13 +42,11 @@ jobs:
             if (!skip) {
               count++
               filename=sprintf("snippets/snippet-%02d.brunost", count)
-            } else {
-              filename=""
             }
             next
           }
 
-          /^```/ {
+          /^```$/ {
             inside=0
             skip=0
             if (filename != "") {
@@ -57,7 +55,7 @@ jobs:
             next
           }
 
-          inside && !skip && filename != "" {
+          inside && !skip {
             print >> filename
           }
           ' readme.md
