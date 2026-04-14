@@ -3,141 +3,848 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Brunost</title>
+        <title>Brunost — Programmeringsspråket</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+
         <style>
-            * {
+            :root {
+                --ink: #1a0f00;
+                --parchment: #f5edd8;
+                --cream: #faf6ec;
+                --red: #9b2215;
+                --gold: #c8881a;
+                --gold-lt: #e8b84b;
+                --blue: #2a4a72;
+                --green: #2d5a27;
+                --bg: #1c0e06;
+                --panel: #251408;
+                --border: #7a4e1a;
+            }
+
+            *,
+            *::before,
+            *::after {
                 box-sizing: border-box;
                 margin: 0;
                 padding: 0;
             }
 
             body {
-                font-family: "Courier New", Courier, monospace;
-                background: #f7f5f0;
-                color: #222;
-                padding: 3rem 1rem;
+                font-family: "Lora", Georgia, serif;
+                background: var(--bg);
+                color: var(--parchment);
+                min-height: 100vh;
+                overflow-x: hidden;
             }
 
-            .container {
-                max-width: 680px;
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            .page {
+                position: relative;
+                z-index: 1;
+                max-width: 760px;
                 margin: 0 auto;
+                padding: 3rem 1.5rem 5rem;
             }
 
             header {
-                margin-bottom: 2rem;
+                text-align: center;
+                padding: 2rem 0 1.5rem;
+                position: relative;
+            }
+
+            .rosemaling-top {
+                width: 100%;
+                margin-bottom: 1rem;
             }
 
             h1 {
-                font-size: 1.6rem;
-                letter-spacing: -0.02em;
-                margin-bottom: 0.3rem;
+                font-family: "UnifrakturMaguntia", serif;
+                font-size: clamp(3.5rem, 12vw, 6.5rem);
+                line-height: 1;
+                background: linear-gradient(
+                    160deg,
+                    var(--gold-lt) 20%,
+                    var(--gold) 55%,
+                    #a0600a 100%
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                filter: drop-shadow(0 2px 8px rgba(200, 136, 26, 0.35));
+                letter-spacing: 0.02em;
             }
 
             .tagline {
-                color: #888;
-                font-size: 0.85rem;
+                font-family: "Lora", serif;
+                font-style: italic;
+                color: var(--gold-lt);
+                font-size: 0.95rem;
+                margin-top: 0.5rem;
+                letter-spacing: 0.04em;
+                opacity: 0.85;
             }
 
-            .editor {
-                background: #1e1e1e;
+            .rosemaling-bottom {
+                width: 100%;
+                margin-top: 1rem;
+            }
+
+            .blurb {
+                background: linear-gradient(135deg, #2e1608 0%, #1e0d05 100%);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 1.25rem 1.75rem;
+                margin: 1.75rem 0;
+                position: relative;
+                font-size: 0.92rem;
+                line-height: 1.75;
+                color: #d9c9a8;
+            }
+            .blurb::before,
+            .blurb::after {
+                content: "";
+                position: absolute;
+                top: 6px;
+                bottom: 6px;
+                left: 6px;
+                right: 6px;
+                border: 1px solid rgba(200, 136, 26, 0.15);
+                border-radius: 4px;
+                pointer-events: none;
+            }
+            .blurb::after {
+                display: none;
+            }
+
+            .blurb-corner {
+                position: absolute;
+                width: 28px;
+                height: 28px;
+                fill: var(--gold);
+                opacity: 0.6;
+            }
+            .blurb-corner.tl {
+                top: -4px;
+                left: -4px;
+            }
+            .blurb-corner.tr {
+                top: -4px;
+                right: -4px;
+                transform: scaleX(-1);
+            }
+            .blurb-corner.bl {
+                bottom: -4px;
+                left: -4px;
+                transform: scaleY(-1);
+            }
+            .blurb-corner.br {
+                bottom: -4px;
+                right: -4px;
+                transform: scale(-1);
+            }
+
+            .editor-wrap {
+                margin-bottom: 1rem;
+            }
+
+            .editor-label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-family: "Lora", serif;
+                font-style: italic;
+                font-size: 0.78rem;
+                color: var(--gold);
+                letter-spacing: 0.06em;
+                margin-bottom: 0.4rem;
+                text-transform: uppercase;
+            }
+            .editor-label svg {
+                flex-shrink: 0;
+            }
+
+            .editor-shell {
+                border: 1px solid var(--border);
                 border-radius: 6px;
                 overflow: hidden;
-                margin-bottom: 0.75rem;
+                background: #120800;
+                position: relative;
+            }
+
+            /* Rosemaling side accent */
+            .editor-shell::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                opacity: 0.8;
             }
 
             .editor-bar {
-                background: #2a2a2a;
-                padding: 0.4rem 0.75rem;
-                font-size: 0.75rem;
-                color: #666;
+                background: #1c0d04;
+                border-bottom: 1px solid rgba(122, 78, 26, 0.4);
+                padding: 0.45rem 1rem 0.45rem 1.5rem;
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
+                font-family: "Source Code Pro", monospace;
+                font-size: 0.72rem;
+                color: #6b4e28;
+            }
+            .status-dot {
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #4a4a4a;
+                margin-right: 0.4rem;
+                transition: background 0.4s;
+            }
+            .status-dot.ready {
+                background: var(--green);
+                box-shadow: 0 0 4px var(--green);
+            }
+            .status-dot.loading {
+                background: var(--gold);
+                animation: pulse 1s infinite;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.3;
+                }
             }
 
             textarea {
                 width: 100%;
-                height: 200px;
-                background: #1e1e1e;
-                color: #d4d4d4;
+                height: 250px;
+                background: #0e0600;
+                color: #c9b99a;
                 border: none;
-                padding: 1rem;
-                font-family: inherit;
-                font-size: 0.9rem;
-                line-height: 1.6;
+                padding: 1rem 1rem 1rem 1.5rem;
+                font-family: "Source Code Pro", monospace;
+                font-size: 0.875rem;
+                line-height: 1.7;
                 resize: vertical;
                 outline: none;
                 tab-size: 2;
+                caret-color: var(--gold-lt);
             }
 
             .actions {
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
-                margin-bottom: 1.25rem;
+                gap: 1rem;
+                margin: 1rem 0;
             }
 
-            button {
-                padding: 0.4rem 1.1rem;
-                font-family: inherit;
-                font-size: 0.85rem;
-                cursor: pointer;
-                border: 1px solid #bbb;
+            .run-btn {
+                font-family: "Lora", serif;
+                font-size: 0.9rem;
+                font-style: italic;
+                letter-spacing: 0.05em;
+                padding: 0.55rem 1.8rem;
+                background: linear-gradient(
+                    135deg,
+                    var(--red) 0%,
+                    #7a1a0f 100%
+                );
+                color: var(--parchment);
+                border: 1px solid rgba(200, 136, 26, 0.4);
                 border-radius: 4px;
-                background: #fff;
+                cursor: pointer;
+                transition: all 0.2s;
+                position: relative;
+                overflow: hidden;
             }
-            button:hover:not(:disabled) {
-                background: #efefef;
+            .run-btn::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    135deg,
+                    rgba(200, 136, 26, 0.15) 0%,
+                    transparent 60%
+                );
+                opacity: 0;
+                transition: opacity 0.2s;
             }
-            button:disabled {
+            .run-btn:hover:not(:disabled)::before {
+                opacity: 1;
+            }
+            .run-btn:hover:not(:disabled) {
+                border-color: var(--gold);
+                box-shadow: 0 0 12px rgba(200, 136, 26, 0.25);
+            }
+            .run-btn:disabled {
                 opacity: 0.35;
                 cursor: default;
             }
-
-            .output-label {
+            .shortcut {
+                font-family: "Source Code Pro", monospace;
                 font-size: 0.7rem;
-                color: #aaa;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                margin-bottom: 0.35rem;
+                color: #5a3e1e;
+                letter-spacing: 0.04em;
             }
 
-            pre {
-                background: #fff;
-                border: 1px solid #e0ddd8;
-                border-radius: 4px;
-                padding: 0.75rem 1rem;
-                min-height: 80px;
-                font-family: inherit;
-                font-size: 0.9rem;
-                line-height: 1.6;
+            .output-shell {
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                overflow: hidden;
+                background: var(--panel);
+                position: relative;
+            }
+            .output-shell::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                opacity: 0.7;
+            }
+
+            .output-bar {
+                background: #1c0d04;
+                border-bottom: 1px solid rgba(122, 78, 26, 0.3);
+                padding: 0.45rem 1rem 0.45rem 1.5rem;
+                font-family: "Lora", serif;
+                font-style: italic;
+                font-size: 0.72rem;
+                color: #6b4e28;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+
+            pre#output {
+                padding: 1rem 1rem 1rem 1.5rem;
+                min-height: 100px;
+                font-family: "Source Code Pro", monospace;
+                font-size: 0.875rem;
+                line-height: 1.7;
                 white-space: pre-wrap;
                 word-break: break-all;
-                color: #333;
+                color: #b8d4a0;
+                background: transparent;
+                border: none;
+                border-radius: 0;
             }
-            pre.error {
-                color: #b00000;
+            pre#output.error {
+                color: #e87060;
             }
-            pre.empty {
-                color: #ccc;
+            pre#output.empty {
+                color: #3a2510;
                 font-style: italic;
+            }
+
+            /* ══ DIVIDER / FOOTER ════════════════════════════ */
+            .footer-divider {
+                margin: 3rem auto 1.5rem;
+                display: block;
+            }
+
+            footer {
+                text-align: center;
+                font-family: "Lora", serif;
+                font-style: italic;
+                font-size: 0.78rem;
+                color: #4a3218;
+                letter-spacing: 0.04em;
+            }
+
+            /* ══ QUICK REF ═══════════════════════════════════ */
+            .quickref {
+                margin: 1.75rem 0;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            @media (min-width: 600px) {
+                .quickref {
+                    grid-template-columns: 1fr 1fr;
+                }
+            }
+
+            .qr-card {
+                background: linear-gradient(135deg, #251408 0%, #1a0d05 100%);
+                border: 1px solid rgba(122, 78, 26, 0.45);
+                border-radius: 5px;
+                padding: 0.85rem 1rem;
+                position: relative;
+                overflow: hidden;
+            }
+            .qr-card::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 40px;
+                height: 40px;
+                background: radial-gradient(
+                    circle at top right,
+                    rgba(200, 136, 26, 0.08),
+                    transparent 70%
+                );
+            }
+            .qr-card h3 {
+                font-family: "Lora", serif;
+                font-size: 0.72rem;
+                font-style: italic;
+                letter-spacing: 0.07em;
+                text-transform: uppercase;
+                color: var(--gold);
+                margin-bottom: 0.5rem;
+            }
+            .qr-card code {
+                font-family: "Source Code Pro", monospace;
+                font-size: 0.78rem;
+                color: #9db88a;
+                display: block;
+                line-height: 1.65;
+            }
+
+            /* ── Scroll reveal animation ───────── */
+            .reveal {
+                opacity: 0;
+                transform: translateY(16px);
+                animation: fadeUp 0.6s ease forwards;
+            }
+            .reveal:nth-child(1) {
+                animation-delay: 0.05s;
+            }
+            .reveal:nth-child(2) {
+                animation-delay: 0.15s;
+            }
+            .reveal:nth-child(3) {
+                animation-delay: 0.25s;
+            }
+            .reveal:nth-child(4) {
+                animation-delay: 0.35s;
+            }
+            .reveal:nth-child(5) {
+                animation-delay: 0.45s;
+            }
+            .reveal:nth-child(6) {
+                animation-delay: 0.55s;
+            }
+            @keyframes fadeUp {
+                to {
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+            a {
+                color: var(--gold-lt);
+                text-decoration: none;
+                border-bottom: 1px solid rgba(232, 184, 75, 0.35);
+                transition: all 0.15s ease;
+            }
+            a:hover {
+                color: #f2cc73;
+                border-bottom-color: rgba(232, 184, 75, 0.8);
+            }
+            a:active {
+                color: var(--gold);
             }
         </style>
     </head>
     <body>
-        <div class="container">
-            <header>
+        <div class="page">
+            <!-- ══ HEADER ══ -->
+            <header class="reveal">
+                <!-- Top rosemaling border -->
+                <svg
+                    class="rosemaling-top"
+                    viewBox="0 0 700 60"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <g
+                        fill="none"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <!-- Central stem -->
+                        <path
+                            d="M0,30 Q175,12 350,30 Q525,48 700,30"
+                            stroke="#c8881a"
+                            stroke-width="1.5"
+                            fill="none"
+                        />
+                        <!-- Leaf pairs along the stem -->
+                        <!-- Leaf cluster 1 -->
+                        <path
+                            d="M175,18 Q160,4 148,8 Q155,20 175,18Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <path
+                            d="M175,18 Q190,4 202,8 Q195,20 175,18Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <circle
+                            cx="175"
+                            cy="12"
+                            r="5"
+                            fill="#9b2215"
+                            opacity="0.9"
+                        />
+                        <circle cx="175" cy="12" r="2.5" fill="#e8b84b" />
+                        <!-- Leaf cluster 2 -->
+                        <path
+                            d="M350,30 Q335,14 322,18 Q330,30 350,30Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <path
+                            d="M350,30 Q365,14 378,18 Q370,30 350,30Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <circle
+                            cx="350"
+                            cy="22"
+                            r="6"
+                            fill="#9b2215"
+                            opacity="0.9"
+                        />
+                        <circle cx="350" cy="22" r="3" fill="#e8b84b" />
+                        <!-- Leaf cluster 3 -->
+                        <path
+                            d="M525,42 Q510,28 498,32 Q505,44 525,42Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <path
+                            d="M525,42 Q540,28 552,32 Q545,44 525,42Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <circle
+                            cx="525"
+                            cy="36"
+                            r="5"
+                            fill="#9b2215"
+                            opacity="0.9"
+                        />
+                        <circle cx="525" cy="36" r="2.5" fill="#e8b84b" />
+                        <!-- Small accent flowers at ends -->
+                        <circle
+                            cx="40"
+                            cy="30"
+                            r="4"
+                            fill="#9b2215"
+                            opacity="0.7"
+                        />
+                        <circle
+                            cx="40"
+                            cy="30"
+                            r="2"
+                            fill="#e8b84b"
+                            opacity="0.7"
+                        />
+                        <circle
+                            cx="660"
+                            cy="30"
+                            r="4"
+                            fill="#9b2215"
+                            opacity="0.7"
+                        />
+                        <circle
+                            cx="660"
+                            cy="30"
+                            r="2"
+                            fill="#e8b84b"
+                            opacity="0.7"
+                        />
+                        <!-- Scrollwork -->
+                        <path
+                            d="M60,30 Q80,15 100,30"
+                            stroke="#7a4e1a"
+                            stroke-width="1"
+                            fill="none"
+                            opacity="0.6"
+                        />
+                        <path
+                            d="M600,30 Q620,45 640,30"
+                            stroke="#7a4e1a"
+                            stroke-width="1"
+                            fill="none"
+                            opacity="0.6"
+                        />
+                        <!-- Gold end lines -->
+                        <line
+                            x1="0"
+                            y1="30"
+                            x2="30"
+                            y2="30"
+                            stroke="#c8881a"
+                            stroke-width="1"
+                            opacity="0.4"
+                        />
+                        <line
+                            x1="670"
+                            y1="30"
+                            x2="700"
+                            y2="30"
+                            stroke="#c8881a"
+                            stroke-width="1"
+                            opacity="0.4"
+                        />
+                    </g>
+                </svg>
+
                 <h1>Brunost</h1>
-                <p class="tagline">
-                    Eit nynorsk programmeringsspråk — prøv det i nettlesaren
-                </p>
+                <p class="tagline">Programmeringsspråket med smak av Noreg</p>
+
+                <!-- Bottom rosemaling border (mirrored) -->
+                <svg
+                    class="rosemaling-bottom"
+                    viewBox="0 0 700 60"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <g
+                        fill="none"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M0,30 Q175,48 350,30 Q525,12 700,30"
+                            stroke="#c8881a"
+                            stroke-width="1.5"
+                            fill="none"
+                        />
+                        <path
+                            d="M175,42 Q160,56 148,52 Q155,40 175,42Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <path
+                            d="M175,42 Q190,56 202,52 Q195,40 175,42Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <circle
+                            cx="175"
+                            cy="48"
+                            r="5"
+                            fill="#9b2215"
+                            opacity="0.9"
+                        />
+                        <circle cx="175" cy="48" r="2.5" fill="#e8b84b" />
+                        <path
+                            d="M350,30 Q335,46 322,42 Q330,30 350,30Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <path
+                            d="M350,30 Q365,46 378,42 Q370,30 350,30Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <circle
+                            cx="350"
+                            cy="38"
+                            r="6"
+                            fill="#9b2215"
+                            opacity="0.9"
+                        />
+                        <circle cx="350" cy="38" r="3" fill="#e8b84b" />
+                        <path
+                            d="M525,18 Q510,32 498,28 Q505,16 525,18Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <path
+                            d="M525,18 Q540,32 552,28 Q545,16 525,18Z"
+                            fill="#2d5a27"
+                            opacity="0.85"
+                        />
+                        <circle
+                            cx="525"
+                            cy="24"
+                            r="5"
+                            fill="#9b2215"
+                            opacity="0.9"
+                        />
+                        <circle cx="525" cy="24" r="2.5" fill="#e8b84b" />
+                        <circle
+                            cx="40"
+                            cy="30"
+                            r="4"
+                            fill="#9b2215"
+                            opacity="0.7"
+                        />
+                        <circle
+                            cx="40"
+                            cy="30"
+                            r="2"
+                            fill="#e8b84b"
+                            opacity="0.7"
+                        />
+                        <circle
+                            cx="660"
+                            cy="30"
+                            r="4"
+                            fill="#9b2215"
+                            opacity="0.7"
+                        />
+                        <circle
+                            cx="660"
+                            cy="30"
+                            r="2"
+                            fill="#e8b84b"
+                            opacity="0.7"
+                        />
+                    </g>
+                </svg>
             </header>
 
-            <div class="editor">
-                <div class="editor-bar">
-                    <span>skript.brunost</span>
-                    <span id="status">lastar…</span>
+            <!-- ══ BLURB ══ -->
+            <div class="blurb reveal">
+                <svg class="blurb-corner tl" viewBox="0 0 28 28">
+                    <path
+                        d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z"
+                        fill="currentColor"
+                        opacity="0.5"
+                    />
+                    <circle cx="6" cy="6" r="3" fill="currentColor" />
+                </svg>
+                <svg class="blurb-corner tr" viewBox="0 0 28 28">
+                    <path
+                        d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z"
+                        fill="currentColor"
+                        opacity="0.5"
+                    />
+                    <circle cx="6" cy="6" r="3" fill="currentColor" />
+                </svg>
+                <svg class="blurb-corner bl" viewBox="0 0 28 28">
+                    <path
+                        d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z"
+                        fill="currentColor"
+                        opacity="0.5"
+                    />
+                    <circle cx="6" cy="6" r="3" fill="currentColor" />
+                </svg>
+                <svg class="blurb-corner br" viewBox="0 0 28 28">
+                    <path
+                        d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z"
+                        fill="currentColor"
+                        opacity="0.5"
+                    />
+                    <circle cx="6" cy="6" r="3" fill="currentColor" />
+                </svg>
+                Brunost er eit programmeringsspråk designa for dei som meiner at
+                kode ikkje berre skal vere funksjonell — han skal ha
+                <em>sjel</em>. Skriv med ekte nynorsk terminologi:
+                <code
+                    style="
+                        background: rgba(200, 136, 26, 0.1);
+                        padding: 0.1em 0.35em;
+                        border-radius: 3px;
+                        font-size: 0.85em;
+                        color: #e8b84b;
+                    "
+                    >forKvart</code
+                >,
+                <code
+                    style="
+                        background: rgba(200, 136, 26, 0.1);
+                        padding: 0.1em 0.35em;
+                        border-radius: 3px;
+                        font-size: 0.85em;
+                        color: #e8b84b;
+                    "
+                    >gjevTilbake</code
+                >,
+                <code
+                    style="
+                        background: rgba(200, 136, 26, 0.1);
+                        padding: 0.1em 0.35em;
+                        border-radius: 3px;
+                        font-size: 0.85em;
+                        color: #e8b84b;
+                    "
+                    >prøv</code
+                >
+                og
+                <code
+                    style="
+                        background: rgba(200, 136, 26, 0.1);
+                        padding: 0.1em 0.35em;
+                        border-radius: 3px;
+                        font-size: 0.85em;
+                        color: #e8b84b;
+                    "
+                    >fang</code
+                >. Kode som flyt like mjukt som brunost over ein nysteikt
+                vaffel. Du kan lese meir om Brunost på
+                <a href="https://github.com/atomfinger/brunost">GitHub</a>
+            </div>
+
+            <!-- ══ QUICK REF ══ -->
+            <div class="quickref reveal">
+                <div class="qr-card">
+                    <h3>Variablar</h3>
+                    <code>fast namn er "Noreg"</code>
+                    <code>endreleg tal er 0</code>
                 </div>
-                <textarea id="code" spellcheck="false">
+                <div class="qr-card">
+                    <h3>Løkker</h3>
+                    <code>forKvart x i liste { }</code>
+                    <code>medan (vilkår) gjer { }</code>
+                </div>
+                <div class="qr-card">
+                    <h3>Funksjonar</h3>
+                    <code>gjer namn(a, b) {</code>
+                    <code>&nbsp;&nbsp;gjevTilbake a+b</code>
+                    <code>}</code>
+                </div>
+                <div class="qr-card">
+                    <h3>Feilhandtering</h3>
+                    <code>prøv {</code>
+                    <code>&nbsp;&nbsp;kast "feil"</code>
+                    <code>} fang (e) { }</code>
+                </div>
+            </div>
+
+            <!-- ══ EDITOR ══ -->
+            <div class="editor-wrap reveal">
+                <div class="editor-label">Prøv ut Brunost i nettlesaren!</div>
+                <div class="editor-shell">
+                    <div class="editor-bar">
+                        <span>skript.brunost</span>
+                        <span
+                            ><span
+                                class="status-dot loading"
+                                id="statusDot"
+                            ></span
+                            ><span id="status">lastar Brunost…</span></span
+                        >
+                    </div>
+                    <textarea id="code" spellcheck="false">
 bruk terminal
 
 gjer kvadrat(nummer) {
@@ -146,21 +853,66 @@ gjer kvadrat(nummer) {
 
 forKvart nummer i [1, 2, 3, 4, 5] {
     terminal.skriv(kvadrat(nummer))
-}
-                </textarea>
+}</textarea
+                    >
+                </div>
             </div>
 
-            <div class="actions">
-                <button id="run" disabled>Køyr</button>
+            <!-- ══ ACTIONS ══ -->
+            <div class="actions reveal">
+                <button class="run-btn" id="run" disabled>Køyr skriptet</button>
             </div>
 
-            <div class="output-label">utdata</div>
-            <pre id="output" class="empty">(ingen utdata endå)</pre>
+            <!-- ══ OUTPUT ══ -->
+            <div class="output-shell reveal">
+                <div class="output-bar">Utdata</div>
+                <pre id="output" class="empty">(ingen utdata endå)</pre>
+            </div>
+
+            <!-- ══ FOOTER DIVIDER ══ -->
+            <svg
+                class="footer-divider"
+                width="300"
+                height="40"
+                viewBox="0 0 300 40"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+            >
+                <path
+                    d="M20,20 Q75,8 150,20 Q225,32 280,20"
+                    stroke="#7a4e1a"
+                    stroke-width="1"
+                    fill="none"
+                />
+                <path
+                    d="M150,20 Q140,10 132,14 Q138,22 150,20Z"
+                    fill="#2d5a27"
+                    opacity="0.7"
+                />
+                <path
+                    d="M150,20 Q160,10 168,14 Q162,22 150,20Z"
+                    fill="#2d5a27"
+                    opacity="0.7"
+                />
+                <circle cx="150" cy="14" r="4.5" fill="#9b2215" opacity="0.8" />
+                <circle cx="150" cy="14" r="2" fill="#e8b84b" opacity="0.8" />
+                <circle cx="20" cy="20" r="3" fill="#c8881a" opacity="0.5" />
+                <circle cx="280" cy="20" r="3" fill="#c8881a" opacity="0.5" />
+            </svg>
+
+            <footer>
+                Laga med kjærleik og altfor mykje brunost. Sjekk ut Brunost på
+                <a href="https://github.com/atomfinger/brunost">GitHub</a>
+            </footer>
         </div>
 
         <script>
             let wasm = null;
             let mem = null;
+
+            const dot = document.getElementById("statusDot");
+            const status = document.getElementById("status");
+            const runBtn = document.getElementById("run");
 
             WebAssembly.instantiateStreaming(fetch("./brunost.wasm"), {
                 env: {},
@@ -168,16 +920,19 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                 .then((r) => {
                     wasm = r.instance.exports;
                     mem = new Uint8Array(wasm.memory.buffer);
-                    document.getElementById("status").textContent = "klar";
-                    document.getElementById("run").disabled = false;
+                    dot.className = "status-dot ready";
+                    status.textContent = "Brunost er lasta!";
+                    runBtn.disabled = false;
                 })
                 .catch((err) => {
-                    document.getElementById("status").textContent =
-                        "feil: kunne ikkje lasta";
+                    dot.className = "status-dot";
+                    dot.style.background = "#9b2215";
+                    status.textContent = "feil: kunne ikkje lasta";
                     console.error(err);
                 });
 
-            document.getElementById("run").addEventListener("click", () => {
+            function runCode() {
+                if (!wasm) return;
                 const encoded = new TextEncoder().encode(
                     document.getElementById("code").value,
                 );
@@ -199,11 +954,12 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                       ? "empty"
                       : "";
                 el.textContent = out || "(ingen utdata)";
-            });
+            }
+
+            runBtn.addEventListener("click", runCode);
 
             document.getElementById("code").addEventListener("keydown", (e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter")
-                    document.getElementById("run").click();
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runCode();
                 if (e.key === "Tab") {
                     e.preventDefault();
                     const s = e.target.selectionStart;
