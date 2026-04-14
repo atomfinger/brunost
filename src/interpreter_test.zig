@@ -393,3 +393,78 @@ test "desimaltal stdlib matte" {
     defer std.testing.allocator.free(out);
     try std.testing.expectEqualStrings("3.5\n2.5\n1.5\n2.5\n2\n", out);
 }
+
+test "kart (hashmap)" {
+    const out = try run_script(@embedFile("tests/kart_test.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("1\n2\n2\nsant\nusant\n1\n99\n10\n20\n", out);
+}
+
+test "prøv/fang fangar kast" {
+    const out = try run_script(
+        \\bruk terminal
+        \\prøv {
+        \\  kast "noko gjekk gale"
+        \\  terminal.skriv("aldri nådd")
+        \\} fang (feil) {
+        \\  terminal.skriv("fanga: " + feil)
+        \\}
+        \\terminal.skriv("etter")
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("fanga: noko gjekk gale\netter\n", out);
+}
+
+test "prøv/fang fangar runtime eval-feil" {
+    const out = try run_script(
+        \\bruk kart
+        \\bruk terminal
+        \\fast minKart er {}
+        \\prøv {
+        \\  fast verdi er kart.hent(minKart, "nøkkel")
+        \\  terminal.skriv("aldri nådd")
+        \\} fang (feil) {
+        \\  terminal.skriv("fanga: " + feil)
+        \\}
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("fanga: KeyNotFound\n", out);
+}
+
+test "prøv/fang fangar IndexOutOfBounds" {
+    const out = try run_script(
+        \\bruk liste
+        \\bruk terminal
+        \\fast minListe er [1, 2, 3]
+        \\prøv {
+        \\  fast verdi er liste.hent(minListe, 99)
+        \\  terminal.skriv("aldri nådd")
+        \\} fang (feil) {
+        \\  terminal.skriv("fanga: " + feil)
+        \\}
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("fanga: IndexOutOfBounds\n", out);
+}
+
+test "prøv/fang: ingen feil fortset normalt" {
+    const out = try run_script(
+        \\bruk terminal
+        \\prøv {
+        \\  terminal.skriv("ok")
+        \\} fang (feil) {
+        \\  terminal.skriv("aldri nådd")
+        \\}
+        \\terminal.skriv("etter")
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("ok\netter\n", out);
+}
+
+test "prøv/fang: feil utanfor fangar ikkje" {
+    try expect_error(
+        \\bruk kart
+        \\fast minKart er {}
+        \\fast verdi er kart.hent(minKart, "nøkkel")
+    , error.KeyNotFound);
+}

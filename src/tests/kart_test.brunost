@@ -1,0 +1,25 @@
+bruk kart
+bruk terminal
+
+// Basic creation and lookup
+fast minKart er kart.sett(kart.sett({}, "a", 1), "b", 2)
+terminal.skriv(kart.hent(minKart, "a"))
+terminal.skriv(kart.hent(minKart, "b"))
+terminal.skriv(kart.lengd(minKart))
+
+// Membership check
+terminal.skriv(kart.inneheld(minKart, "a"))
+terminal.skriv(kart.inneheld(minKart, "c"))
+
+// Remove a key
+fast nyKart er kart.fjern(minKart, "a")
+terminal.skriv(kart.lengd(nyKart))
+
+// Overwrite an existing key
+fast endraKart er kart.sett(minKart, "a", 99)
+terminal.skriv(kart.hent(endraKart, "a"))
+
+// Literal with initial entries
+fast storKart er { "x": 10, "y": 20 }
+terminal.skriv(kart.hent(storKart, "x"))
+terminal.skriv(kart.hent(storKart, "y"))

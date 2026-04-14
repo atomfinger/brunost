@@ -7,6 +7,7 @@ const stdlib_matte = @import("stdlib/matte.zig");
 const stdlib_streng = @import("stdlib/streng.zig");
 const stdlib_liste = @import("stdlib/liste.zig");
 const stdlib_prosess = @import("stdlib/prosess.zig");
+const stdlib_kart = @import("stdlib/kart.zig");
 
 pub const EvalError = error{
     TypeError,
@@ -14,6 +15,7 @@ pub const EvalError = error{
     ImmutableAssignment,
     DivisionByZero,
     IndexOutOfBounds,
+    KeyNotFound,
     UnknownBuiltin,
     UnknownModule,
     ModuleNameCollision,
@@ -43,6 +45,7 @@ pub const Value = union(enum) {
     string: []const u8,
     boolean: bool,
     list: []Value,
+    hashmap: *std.StringHashMapUnmanaged(Value),
     function: Function,
     module: []ModuleMember,
     builtin_fn: *const fn (args: []const Value, interp: *Interpreter) EvalError!Value,
@@ -55,6 +58,7 @@ pub const Value = union(enum) {
             .float => |n| n != 0.0,
             .string => |s| s.len > 0,
             .list => |l| l.len > 0,
+            .hashmap => |h| h.count() > 0,
             .null_val => false,
             .function, .module, .builtin_fn => true,
         };
@@ -106,6 +110,21 @@ pub const Value = union(enum) {
                 buf.append(alloc, ']') catch return EvalError.OutOfMemory;
                 break :blk buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory;
             },
+            .hashmap => |h| blk: {
+                var buf: std.ArrayList(u8) = .{};
+                buf.append(alloc, '{') catch return EvalError.OutOfMemory;
+                var it = h.iterator();
+                var first = true;
+                while (it.next()) |entry| {
+                    if (!first) buf.appendSlice(alloc, ", ") catch return EvalError.OutOfMemory;
+                    first = false;
+                    const vs = try entry.value_ptr.*.to_string(alloc);
+                    const pair = std.fmt.allocPrint(alloc, "\"{s}\": {s}", .{ entry.key_ptr.*, vs }) catch return EvalError.OutOfMemory;
+                    buf.appendSlice(alloc, pair) catch return EvalError.OutOfMemory;
+                }
+                buf.append(alloc, '}') catch return EvalError.OutOfMemory;
+                break :blk buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory;
+            },
             .function => "<funksjon>",
             .module => "<modul>",
             .builtin_fn => "<innebygd-funksjon>",
@@ -137,6 +156,13 @@ pub const Value = union(enum) {
     pub fn as_list(self: Value) EvalError![]Value {
         return switch (self) {
             .list => |l| l,
+            else => EvalError.TypeError,
+        };
+    }
+
+    pub fn as_hashmap(self: Value) EvalError!*std.StringHashMapUnmanaged(Value) {
+        return switch (self) {
+            .hashmap => |h| h,
             else => EvalError.TypeError,
         };
     }
@@ -258,6 +284,7 @@ pub const Interpreter = struct {
             .string_lit => |s| Value{ .string = s.value },
             .bool_lit => |b| Value{ .boolean = b.value },
             .list_lit => |l| self.eval_list(l, env),
+            .hashmap_lit => |h| self.eval_hashmap(h, env),
             .identifier => |i| self.eval_identifier(i, env),
             .infix_expr => |i| self.eval_infix(i, env),
             .prefix_expr => |p| self.eval_prefix(p, env),
@@ -374,18 +401,30 @@ pub const Interpreter = struct {
     fn eval_try(self: *Interpreter, stmt: ast.TryStmt, env: *Environment) EvalError!Value {
         var try_env = Environment.init(self.alloc, env);
         defer try_env.deinit();
-        _ = try self.eval(stmt.body, &try_env);
-        if (self.signal) |sig| {
-            switch (sig) {
+
+        // Evaluate the try body, intercepting both `kast` signals and runtime
+        // EvalErrors so they can both be caught by the `fang` block.
+        const maybe_caught: ?Value = caught: {
+            _ = self.eval(stmt.body, &try_env) catch |err| {
+                // Convert a Zig EvalError into a string value delivered to fang.
+                const s = std.fmt.allocPrint(self.str_alloc(), "{s}", .{@errorName(err)}) catch return EvalError.OutOfMemory;
+                break :caught Value{ .string = s };
+            };
+            if (self.signal) |sig| switch (sig) {
                 .thrown => |err_val| {
                     self.signal = null;
-                    var catch_env = Environment.init(self.alloc, env);
-                    defer catch_env.deinit();
-                    try catch_env.define(stmt.error_name, .{ .value = err_val, .mutable = false });
-                    return self.eval(stmt.catch_body, &catch_env);
+                    break :caught err_val;
                 },
-                else => {}, // return signal propagates
-            }
+                else => {},
+            };
+            break :caught null;
+        };
+
+        if (maybe_caught) |err_val| {
+            var catch_env = Environment.init(self.alloc, env);
+            defer catch_env.deinit();
+            try catch_env.define(stmt.error_name, .{ .value = err_val, .mutable = false });
+            return self.eval(stmt.catch_body, &catch_env);
         }
         return Value{ .null_val = {} };
     }
@@ -427,7 +466,24 @@ pub const Interpreter = struct {
 
     fn make_builtin_module(self: *Interpreter, name: []const u8) EvalError!Value {
         const alloc = self.str_alloc();
-        if (std.mem.eql(u8, name, "terminal")) return stdlib_terminal.make(alloc) else if (std.mem.eql(u8, name, "matte")) return stdlib_matte.make(alloc) else if (std.mem.eql(u8, name, "streng")) return stdlib_streng.make(alloc) else if (std.mem.eql(u8, name, "liste")) return stdlib_liste.make(alloc) else if (std.mem.eql(u8, name, "prosess")) return stdlib_prosess.make(alloc) else return EvalError.UnknownModule;
+
+        const builtins = comptime [_]struct {
+            name: []const u8,
+            make: *const fn (std.mem.Allocator) EvalError!Value,
+        }{
+            .{ .name = "terminal", .make = stdlib_terminal.make },
+            .{ .name = "matte",    .make = stdlib_matte.make    },
+            .{ .name = "streng",   .make = stdlib_streng.make   },
+            .{ .name = "liste",    .make = stdlib_liste.make    },
+            .{ .name = "prosess",  .make = stdlib_prosess.make  },
+            .{ .name = "kart",     .make = stdlib_kart.make     },
+        };
+
+        for (builtins) |b| {
+            if (std.mem.eql(u8, name, b.name)) return b.make(alloc);
+        }
+
+        return EvalError.UnknownModule;
     }
 
     fn load_file_module(self: *Interpreter, segments: [][]const u8) EvalError!Value {
@@ -490,6 +546,18 @@ pub const Interpreter = struct {
             items.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
         }
         return Value{ .list = items.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory };
+    }
+
+    fn eval_hashmap(self: *Interpreter, h: ast.HashmapLit, env: *Environment) EvalError!Value {
+        const map = self.str_alloc().create(std.StringHashMapUnmanaged(Value)) catch return EvalError.OutOfMemory;
+        map.* = .{};
+        for (h.pairs) |pair| {
+            const k = try self.eval(pair.key, env);
+            const key = try k.as_str();
+            const value = try self.eval(pair.value, env);
+            map.put(self.str_alloc(), key, value) catch return EvalError.OutOfMemory;
+        }
+        return Value{ .hashmap = map };
     }
 
     fn eval_identifier(_: *Interpreter, i: ast.Identifier, env: *Environment) EvalError!Value {

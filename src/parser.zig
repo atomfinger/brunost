@@ -403,6 +403,9 @@ pub const Parser = struct {
             .lbracket => {
                 return self.parse_list();
             },
+            .lbrace => {
+                return self.parse_hashmap();
+            },
             .identifier => {
                 const name = self.curr.literal;
                 self.advance();
@@ -452,6 +455,22 @@ pub const Parser = struct {
         if (self.curr.type != .rbracket) return ParseError.ExpectedCloseBracket;
         self.advance();
         return self.alloc_node(.{ .list_lit = .{ .elements = try elements.toOwnedSlice(self.arena) } });
+    }
+
+    fn parse_hashmap(self: *Parser) ParseError!*ast.Node {
+        self.advance(); // consume {
+        var pairs: std.ArrayList(ast.HashmapPair) = .{};
+        while (self.curr.type != .rbrace and self.curr.type != .eof) {
+            const key = try self.parse_expr(0);
+            if (self.curr.type != .colon) return ParseError.UnexpectedToken;
+            self.advance(); // consume :
+            const value = try self.parse_expr(0);
+            try pairs.append(self.arena, .{ .key = key, .value = value });
+            if (self.curr.type == .comma) self.advance();
+        }
+        if (self.curr.type != .rbrace) return ParseError.UnexpectedToken;
+        self.advance();
+        return self.alloc_node(.{ .hashmap_lit = .{ .pairs = try pairs.toOwnedSlice(self.arena) } });
     }
 
 };

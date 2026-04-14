@@ -22,6 +22,7 @@ pub const Node = union(enum) {
     string_lit: StringLit,
     bool_lit: BoolLit,
     list_lit: ListLit,
+    hashmap_lit: HashmapLit,
     identifier: Identifier,
     infix_expr: InfixExpr,
     prefix_expr: PrefixExpr,
@@ -108,6 +109,15 @@ pub const BoolLit = struct {
 
 pub const ListLit = struct {
     elements: []*Node,
+};
+
+pub const HashmapPair = struct {
+    key: *Node,
+    value: *Node,
+};
+
+pub const HashmapLit = struct {
+    pairs: []HashmapPair,
 };
 
 pub const Identifier = struct {
