@@ -33,6 +33,7 @@ jobs:
             inside=0
             skip=0
             count=0
+            filename=""
           }
 
           /^```python/ {
@@ -41,6 +42,8 @@ jobs:
             if (!skip) {
               count++
               filename=sprintf("snippets/snippet-%02d.brunost", count)
+            } else {
+              filename=""
             }
             next
           }
@@ -48,10 +51,13 @@ jobs:
           /^```/ {
             inside=0
             skip=0
+            if (filename != "") {
+              close(filename)
+            }
             next
           }
 
-          inside && !skip {
+          inside && !skip && filename != "" {
             print >> filename
           }
           ' readme.md
