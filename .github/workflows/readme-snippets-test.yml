@@ -33,6 +33,7 @@ jobs:
             inside=0
             skip=0
             count=0
+            filename=""
           }
 
           /^```python/ {
@@ -45,9 +46,12 @@ jobs:
             next
           }
 
-          /^```/ {
+          /^```$/ {
             inside=0
             skip=0
+            if (filename != "") {
+              close(filename)
+            }
             next
           }
 
@@ -65,5 +69,5 @@ jobs:
         run: |
           for file in snippets/*.brunost; do
             echo "Running brunost on $file"
-            ./zig-out/bin/brunost "$file"
+            ./zig-out/bin/brunost --debug "$file"
           done
