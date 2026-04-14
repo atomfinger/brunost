@@ -65,5 +65,5 @@ jobs:
         run: |
           for file in snippets/*.brunost; do
             echo "Running brunost on $file"
-            ./zig-out/bin/brunost "$file"
+            ./zig-out/bin/brunost --debug "$file"
           done
