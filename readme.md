@@ -30,7 +30,7 @@ Ingen framandord. Ingen rar import-hierarki. Berre kode som flyt like mjukt som 
 | **Løkker** | `forKvart` og `medan`-syntaks som les seg naturleg |
 | **Feilhandtering** | `prøv`/`fang`-blokker for reine feilflyt |
 | **Modular** | Innebygde, brukar-definerte og fil-baserte modular |
-| **Mutabilitet** | Eksplisitt `fast`/`endreleg` — aldri uventa endringar |
+| **Mutabilitet** | Eksplisitt `låst`/`open` — aldri uventa endringar |
 
 ---
 
@@ -47,11 +47,11 @@ gjer rekn(tal, faktor) {
   gjevTilbake tal * faktor
 }
 
-fast talrekke er [1, 2, 3, 4, 5]
+låst talrekke er [1, 2, 3, 4, 5]
 
 prøv {
   forKvart tal i talrekke {
-    fast resultat er rekn(tal, 3)
+    låst resultat er rekn(tal, 3)
     terminal.skriv(resultat)
   }
 } fang (feil) {
@@ -69,21 +69,21 @@ Brunost skil mellom variablar som kan endrast og dei som ikkje kan det.
 
 ```python
 // Uforanderleg — set ein gong, aldri endra
-fast fart er 88
+låst fart er 88
 
 // Foranderleg — kan oppdaterast fritt
-endreleg straum er 1
+open straum er 1
 straum er straum + 1
 ```
 
 ### Typar
 
 ```python
-fast erNynorsk    er sant                                               // Boolsk
-fast årstal       er 1814                                               // Heiltal 
-fast graderNord   er 71.0                                               // Desimaltal
-fast helsing      er "God dag, Noreg!"                                  // Streng
-fast fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
+låst erNynorsk    er sant                                               // Boolsk
+låst årstal       er 1814                                               // Heiltal 
+låst graderNord   er 71.0                                               // Desimaltal
+låst helsing      er "God dag, Noreg!"                                  // Streng
+låst fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
 ```
 
 ### Funksjonar
@@ -95,7 +95,7 @@ gjer kroppsMasseIndeks(vekt, høgd) {
   gjevTilbake vekt / (høgd * (høgd / 100))
 }
 
-fast resultat er kroppsMasseIndeks(70, 175)
+låst resultat er kroppsMasseIndeks(70, 175)
 ```
 
 ### Vilkårsutsagn
@@ -103,7 +103,7 @@ fast resultat er kroppsMasseIndeks(70, 175)
 ```python
 bruk terminal
 
-fast temperatur er -5
+låst temperatur er -5
 
 viss (temperatur erMindreEnn 0) gjer {
   terminal.skriv("Det er kaldt — ta på deg ull!")
@@ -121,7 +121,7 @@ viss (temperatur erMindreEnn 0) gjer {
 ```python
 bruk terminal
 
-fast fylke er ["Vestland", "Rogaland", "Troms", "Finnmark"]
+låst fylke er ["Vestland", "Rogaland", "Troms", "Finnmark"]
 
 forKvart namn i fylke {
   terminal.skriv("Hei frå " + namn + "!")
@@ -133,7 +133,7 @@ forKvart namn i fylke {
 ```python
 bruk terminal
 
-endreleg teller er 10
+open teller er 10
 
 medan (teller erStørreEnn 0) gjer {
   terminal.skriv(teller)
@@ -156,7 +156,7 @@ gjer delTal(teljar, nemnar) {
 }
 
 prøv {
-  fast svar er delTal(42, 0)
+  låst svar er delTal(42, 0)
   terminal.skriv("Svar: " + svar)
 } fang (feil) {
   terminal.skriv("Feil oppstod: " + feil)

@@ -314,7 +314,7 @@ pub const Interpreter = struct {
     fn eval_var_decl(self: *Interpreter, decl: ast.VarDecl, env: *Environment) EvalError!Value {
         const value = try self.eval(decl.value, env);
         try env.define(decl.name, .{ .value = value, .mutable = decl.mutable });
-        self.dbg("{s} '{s}' = {s}", .{ if (decl.mutable) "endreleg" else "fast", decl.name, self.dbg_val(value) });
+        self.dbg("{s} '{s}' = {s}", .{ if (decl.mutable) "open" else "låst", decl.name, self.dbg_val(value) });
         return Value{ .null_val = {} };
     }
 

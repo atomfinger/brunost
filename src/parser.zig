@@ -116,7 +116,7 @@ pub const Parser = struct {
     }
 
     fn parse_var_decl(self: *Parser, mutable: bool) ParseError!*ast.Node {
-        self.advance(); // consume fast / endreleg
+        self.advance(); // consume open / låst
         if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
         const name = self.curr.literal;
         if (!nynorsk.isValidIdentifier(name)) return ParseError.NotNynorsk;

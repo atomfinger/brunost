@@ -1,18 +1,18 @@
 bruk terminal
 
 // Uforanderlege variablar
-fast fyrste er 10
+låst fyrste er 10
 terminal.skriv(fyrste)
 
 // Foranderlege variablar
-endreleg andre er 5
+open andre er 5
 andre er andre + fyrste
 terminal.skriv(andre)
 
 // Strengar
-fast helsing er "Hei"
+låst helsing er "Hei"
 terminal.skriv(helsing)
 
 // Boolsk
-fast erSant er sant
+låst erSant er sant
 terminal.skriv(erSant)

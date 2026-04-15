@@ -16,7 +16,7 @@ fn stderr_writer() std.io.AnyWriter {
 pub fn describe_error(err: anyerror) []const u8 {
     return switch (err) {
         // Tolkarfeil
-        error.ImmutableAssignment => "Kan ikkje endra ein uforanderleg variabel (deklarert med 'fast')",
+        error.ImmutableAssignment => "Kan ikkje endra ein uforanderleg variabel (deklarert med 'l\xc3\xa5st')",
         error.UndefinedVariable => "Variabelen er ikkje definert",
         error.TypeError => "Typefeil: operasjonen støttar ikkje desse typane",
         error.DivisionByZero => "Kan ikkje dela på null",

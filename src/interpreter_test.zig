@@ -77,8 +77,8 @@ test "boolean operators and simplified if/while syntax" {
     const out = try run_script(
         \\bruk terminal
         \\
-        \\fast tal er -1
-        \\fast nummer er 5
+        \\låst tal er -1
+        \\låst nummer er 5
         \\
         \\viss (ikkje tal erSameEllerStørreEnn 0) gjer {
         \\  terminal.skriv("negativ")
@@ -92,7 +92,7 @@ test "boolean operators and simplified if/while syntax" {
         \\  terminal.skriv("eller")
         \\}
         \\
-        \\endreleg teljar er 0
+        \\open teljar er 0
         \\medan (teljar erMindreEnn 2) gjer {
         \\  terminal.skriv(teljar)
         \\  teljar er teljar + 1
@@ -219,18 +219,18 @@ test "feil: ugyldig syntaks" {
 }
 
 test "feil: parse diagnostic includes offending identifier" {
-    const context = try expect_parse_error("fast foo er 1", error.NotNynorsk);
+    const context = try expect_parse_error("låst foo er 1", error.NotNynorsk);
     const diagnostic = context.parse_diagnostic.?;
     try std.testing.expectEqualStrings("foo", diagnostic.literal);
     try std.testing.expectEqual(@as(usize, 1), diagnostic.line);
-    try std.testing.expectEqual(@as(usize, 6), diagnostic.column);
+    try std.testing.expectEqual(@as(usize, 7), diagnostic.column);
 }
 
 test "identifiers with æøå from dictionary are accepted" {
     const out = try run_script(
-        \\fast ære er 1
-        \\fast høgd er 30
-        \\fast år er 2026
+        \\låst ære er 1
+        \\låst høgd er 30
+        \\låst år er 2026
         \\
     );
     defer std.testing.allocator.free(out);
@@ -239,9 +239,9 @@ test "identifiers with æøå from dictionary are accepted" {
 
 test "plural identifiers are accepted when the lemma exists in the dictionary" {
     const out = try run_script(
-        \\fast iterasjonar er 3
-        \\fast nynorskIterasjonar er iterasjonar
-        \\fast opne_iterasjonar er nynorskIterasjonar
+        \\låst iterasjonar er 3
+        \\låst nynorskIterasjonar er iterasjonar
+        \\låst opne_iterasjonar er nynorskIterasjonar
         \\
     );
     defer std.testing.allocator.free(out);
@@ -419,9 +419,9 @@ test "prøv/fang fangar runtime eval-feil" {
     const out = try run_script(
         \\bruk kart
         \\bruk terminal
-        \\fast minKart er {}
+        \\låst minKart er {}
         \\prøv {
-        \\  fast verdi er kart.hent(minKart, "nøkkel")
+        \\  låst verdi er kart.hent(minKart, "nøkkel")
         \\  terminal.skriv("aldri nådd")
         \\} fang (feil) {
         \\  terminal.skriv("fanga: " + feil)
@@ -435,9 +435,9 @@ test "prøv/fang fangar IndexOutOfBounds" {
     const out = try run_script(
         \\bruk liste
         \\bruk terminal
-        \\fast minListe er [1, 2, 3]
+        \\låst minListe er [1, 2, 3]
         \\prøv {
-        \\  fast verdi er liste.hent(minListe, 99)
+        \\  låst verdi er liste.hent(minListe, 99)
         \\  terminal.skriv("aldri nådd")
         \\} fang (feil) {
         \\  terminal.skriv("fanga: " + feil)
@@ -464,7 +464,7 @@ test "prøv/fang: ingen feil fortset normalt" {
 test "prøv/fang: feil utanfor fangar ikkje" {
     try expect_error(
         \\bruk kart
-        \\fast minKart er {}
-        \\fast verdi er kart.hent(minKart, "nøkkel")
+        \\låst minKart er {}
+        \\låst verdi er kart.hent(minKart, "nøkkel")
     , error.KeyNotFound);
 }

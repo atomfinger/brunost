@@ -1,10 +1,10 @@
 bruk terminal
 bruk liste
 
-fast minListe er [10, 20, 30]
+låst minListe er [10, 20, 30]
 terminal.skriv(liste.lengd(minListe))
 terminal.skriv(liste.fyrste(minListe))
 terminal.skriv(liste.siste(minListe))
 
-fast nyListe er liste.leggTil(minListe, 40)
+låst nyListe er liste.leggTil(minListe, 40)
 terminal.skriv(liste.lengd(nyListe))

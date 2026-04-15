@@ -4,16 +4,16 @@ bruk matte
 bruk prosess
 bruk streng
 
-fast breidde er 90
-fast høgd er 50
+låst breidde er 90
+låst høgd er 50
 
 // Skapar ei liste med tilfeldige 1-ar og 0-ar
 gjer lagBrett() {
-    endreleg brett er []
-    endreleg rad er 0
+    open brett er []
+    open rad er 0
     medan (rad erMindreEnn høgd) gjer {
-        endreleg rekkje er []
-        endreleg kolonne er 0
+        open rekkje er []
+        open kolonne er 0
         medan (kolonne erMindreEnn breidde) gjer {
             rekkje er liste.leggTil(rekkje, matte.tilfeldig(0, 1))
             kolonne er kolonne + 1
@@ -32,12 +32,12 @@ gjer hentCelle(brett, kolonne, rad) {
         gjevTilbake 0
     }
 
-    fast rekkje er liste.hent(brett, rad)
+    låst rekkje er liste.hent(brett, rad)
     gjevTilbake liste.hent(rekkje, kolonne)
 }
 
 gjer telNaboTal(brett, kolonne, rad) {
-    endreleg sum er 0
+    open sum er 0
     sum er sum + hentCelle(brett, kolonne - 1, rad - 1)
     sum er sum + hentCelle(brett, kolonne, rad - 1)
     sum er sum + hentCelle(brett, kolonne + 1, rad - 1)
@@ -50,16 +50,16 @@ gjer telNaboTal(brett, kolonne, rad) {
 }
 
 gjer nesteGenerasjon(brett) {
-    endreleg nyttBrett er []
-    endreleg rad er 0
+    open nyttBrett er []
+    open rad er 0
     medan (rad erMindreEnn høgd) gjer {
-        endreleg nyRekkje er []
-        endreleg kolonne er 0
+        open nyRekkje er []
+        open kolonne er 0
         medan (kolonne erMindreEnn breidde) gjer {
-            fast celle er hentCelle(brett, kolonne, rad)
-            fast naboTal er telNaboTal(brett, kolonne, rad)
+            låst celle er hentCelle(brett, kolonne, rad)
+            låst naboTal er telNaboTal(brett, kolonne, rad)
 
-            endreleg nyCelle er 0
+            open nyCelle er 0
             viss (celle erSameSom 1) gjer {
                 viss (naboTal erSameSom 2) gjer { nyCelle er 1 }
                 viss (naboTal erSameSom 3) gjer { nyCelle er 1 }
@@ -77,13 +77,13 @@ gjer nesteGenerasjon(brett) {
 
 gjer teiknBrett(brett) {
     terminal.tøm()
-    endreleg rad er 0
+    open rad er 0
     medan (rad erMindreEnn høgd) gjer {
-        fast rekkje er liste.hent(brett, rad)
-        endreleg linje er ""
-        endreleg kolonne er 0
+        låst rekkje er liste.hent(brett, rad)
+        open linje er ""
+        open kolonne er 0
         medan (kolonne erMindreEnn breidde) gjer {
-            fast celle er liste.hent(rekkje, kolonne)
+            låst celle er liste.hent(rekkje, kolonne)
             viss (celle erSameSom 1) gjer {
                 linje er linje + "██"
             } ellers {
@@ -97,9 +97,9 @@ gjer teiknBrett(brett) {
 }
 
 gjer køyrKomeSjø(fart, iterasjonar) {
-    endreleg brett er lagBrett()
+    open brett er lagBrett()
 
-    endreleg omgang er 0
+    open omgang er 0
     medan (omgang erMindreEnn iterasjonar) gjer {
         teiknBrett(brett)
         brett er nesteGenerasjon(brett)
@@ -108,7 +108,7 @@ gjer køyrKomeSjø(fart, iterasjonar) {
     }
 }
 
-endreleg iterasjonar er 50
+open iterasjonar er 50
 prøv {
     iterasjonar er streng.tilTal(terminal.argument(0))
 } fang (feil) {

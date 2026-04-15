@@ -1,6 +1,6 @@
 bruk terminal
 
-endreleg verdi er 1
+open verdi er 1
 
 viss (verdi er 1) gjer {
   terminal.skriv("ein")
@@ -10,7 +10,7 @@ viss (verdi er 1) gjer {
   terminal.skriv("anna")
 }
 
-endreleg tal er 10
+open tal er 10
 
 viss (tal > 5) gjer {
   terminal.skriv("stort")

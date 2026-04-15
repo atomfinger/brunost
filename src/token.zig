@@ -35,8 +35,8 @@ pub const token_types = enum {
     // keywords
     equal, // erSameSom
     function, // gjer
-    let_mutable, // endreleg
-    let_immutable, // fast
+    let_mutable, // open
+    let_immutable, // låst
     return_op, // gjevTilbake
     if_op, // viss
     else_op, // ellers
@@ -71,8 +71,8 @@ pub const Token = struct {
 
     pub fn keyword(identifier: []const u8) ?token_types {
         const map = std.StaticStringMap(token_types).initComptime(.{
-            .{ "endreleg", .let_mutable },
-            .{ "fast", .let_immutable },
+            .{ "open", .let_mutable },
+            .{ "l\xc3\xa5st", .let_immutable },
             .{ "gjer", .function },
             .{ "sant", .true_val },
             .{ "usant", .false_val },
