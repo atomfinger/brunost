@@ -80,8 +80,8 @@ straum er straum + 1
 
 ```python
 fast erNynorsk    er sant                                               // Boolsk
-fast årstal       er 1814                                               // Heiltall 
-fast graderNord   er 71.0                                               // Desimaltall
+fast årstal       er 1814                                               // Heiltal 
+fast graderNord   er 71.0                                               // Desimaltal
 fast helsing      er "God dag, Noreg!"                                  // Streng
 fast fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
 ```
@@ -148,11 +148,11 @@ medan (teller erStørreEnn 0) gjer {
 ```python
 bruk terminal
 
-gjer delTal(tellerTall, nemnar) {
+gjer delTal(teljar, nemnar) {
   viss (nemnar er 0) gjer {
     kast "Matematikken seier nei: kan ikkje dele på null"
   }
-  gjevTilbake tellerTall / nemnar
+  gjevTilbake teljar / nemnar
 }
 
 prøv {
