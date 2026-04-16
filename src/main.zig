@@ -3,16 +3,6 @@ const token = @import("token.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
 
-const FileWriter = std.io.GenericWriter(std.fs.File, std.fs.File.WriteError, std.fs.File.write);
-
-fn stdout_writer() std.io.AnyWriter {
-    return (FileWriter{ .context = std.fs.File.stdout() }).any();
-}
-
-fn stderr_writer() std.io.AnyWriter {
-    return (FileWriter{ .context = std.fs.File.stderr() }).any();
-}
-
 pub fn describe_error(err: anyerror) []const u8 {
     return switch (err) {
         // Tolkarfeil
@@ -25,6 +15,9 @@ pub fn describe_error(err: anyerror) []const u8 {
         error.UnknownModule => "Ukjend innebygd modul",
         error.ModuleNameCollision => "Modulnamn-konflikt — bruk 'som' for å gje modulen eit anna namn",
         error.ModuleNotFound => "Kunne ikkje finna modulfila",
+        error.UndefinedField => "Feltet er ikkje definert i typen",
+        error.ImmutableField => "Kan ikkje endra eit uforanderleg felt (deklarert med 'l\xc3\xa5st')",
+        error.NotAStructType => "Namnet er ikkje ein kjend type",
         // Parserfeil
         error.UnexpectedToken => "Uventa teikn i koden",
         error.ExpectedIdentifier => "Forventa eit namn her",
@@ -52,7 +45,7 @@ pub const RunContext = struct {
     debug: bool = false,
 };
 
-fn print_parse_error(writer: std.io.AnyWriter, diagnostic: parser.ParseDiagnostic) !void {
+fn print_parse_error(writer: *std.Io.Writer, diagnostic: parser.ParseDiagnostic) !void {
     const base_message = describe_error(diagnostic.err);
     if (diagnostic.literal.len > 0) {
         try writer.print(
@@ -68,65 +61,78 @@ fn print_parse_error(writer: std.io.AnyWriter, diagnostic: parser.ParseDiagnosti
     );
 }
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+pub fn main(init: std.process.Init.Minimal) !void {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
 
-    var args = try std.process.argsWithAllocator(alloc);
-    defer args.deinit();
-    _ = args.skip(); // argv[0]
-    const first_arg = args.next() orelse {
-        stderr_writer().print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+    const io = std.Options.debug_io;
+
+    var stdout_buf: [4096]u8 = undefined;
+    var stdout_fw = std.Io.File.stdout().writer(io, &stdout_buf);
+    defer stdout_fw.flush() catch {};
+
+    var stderr_buf: [512]u8 = undefined;
+    var stderr_fw = std.Io.File.stderr().writer(io, &stderr_buf);
+    defer stderr_fw.flush() catch {};
+
+    var args_it = std.process.Args.Iterator.init(init.args);
+    _ = args_it.skip(); // skip argv[0]
+    const first_arg = args_it.next() orelse {
+        stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+        stderr_fw.flush() catch {};
         std.process.exit(1);
     };
     var debug = false;
     const filename: []const u8 = blk: {
         if (std.mem.eql(u8, first_arg, "--debug")) {
             debug = true;
-            break :blk args.next() orelse {
-                stderr_writer().print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+            break :blk args_it.next() orelse {
+                stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+                stderr_fw.flush() catch {};
                 std.process.exit(1);
             };
         }
         break :blk first_arg;
     };
-    var script_args: std.ArrayList([]const u8) = .{};
+    var script_args: std.ArrayList([]const u8) = .empty;
     defer script_args.deinit(alloc);
-    while (args.next()) |arg| {
+    while (args_it.next()) |arg| {
         try script_args.append(alloc, arg);
     }
 
-    const source = std.fs.cwd().readFileAlloc(alloc, filename, 10 * 1024 * 1024) catch |err| {
-        stderr_writer().print("Feil: Kunne ikkje lesa fila '{s}': {s}\n", .{ filename, describe_error(err) }) catch {};
+    const source = std.Io.Dir.cwd().readFileAlloc(io, filename, alloc, .limited(10 * 1024 * 1024)) catch |err| {
+        stderr_fw.interface.print("Feil: Kunne ikkje lesa fila '{s}': {s}\n", .{ filename, describe_error(err) }) catch {};
+        stderr_fw.flush() catch {};
         std.process.exit(1);
     };
     defer alloc.free(source);
 
     const base_dir = std.fs.path.dirname(filename) orelse ".";
     var context: RunContext = .{ .debug = debug };
-    run_with_context(alloc, source, stdout_writer(), base_dir, script_args.items, &context) catch |err| {
+    run_with_context(alloc, source, &stdout_fw.interface, base_dir, script_args.items, &context) catch |err| {
         if (err == error.ParseFailed) {
             if (context.parse_diagnostic) |diagnostic| {
-                print_parse_error(stderr_writer(), diagnostic) catch {};
+                print_parse_error(&stderr_fw.interface, diagnostic) catch {};
             } else {
-                stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
+                stderr_fw.interface.print("Feil: {s}\n", .{describe_error(err)}) catch {};
             }
         } else {
-            stderr_writer().print("Feil: {s}\n", .{describe_error(err)}) catch {};
+            stderr_fw.interface.print("Feil: {s}\n", .{describe_error(err)}) catch {};
         }
+        stderr_fw.flush() catch {};
         std.process.exit(1);
     };
 }
 
-pub fn run(alloc: std.mem.Allocator, source: []const u8, output: std.io.AnyWriter, base_dir: []const u8) !void {
+pub fn run(alloc: std.mem.Allocator, source: []const u8, output: *std.Io.Writer, base_dir: []const u8) !void {
     try run_with_args(alloc, source, output, base_dir, &.{});
 }
 
 pub fn run_with_args(
     alloc: std.mem.Allocator,
     source: []const u8,
-    output: std.io.AnyWriter,
+    output: *std.Io.Writer,
     base_dir: []const u8,
     script_args: []const []const u8,
 ) !void {
@@ -137,7 +143,7 @@ pub fn run_with_args(
 pub fn run_with_context(
     alloc: std.mem.Allocator,
     source: []const u8,
-    output: std.io.AnyWriter,
+    output: *std.Io.Writer,
     base_dir: []const u8,
     script_args: []const []const u8,
     context: *RunContext,
@@ -146,15 +152,14 @@ pub fn run_with_context(
 
     if (comptime !is_wasm) {
         if (context.debug) {
-            const dbg_w = stderr_writer();
-            dbg_w.print("[debug] === Tokens ===\n", .{}) catch {};
+            std.debug.print("[debug] === Tokens ===\n", .{});
             var dbg_lexer = token.Lexer.init(source);
             while (true) {
                 const tok = dbg_lexer.next_token();
-                dbg_w.print("[debug]   {s:<24} '{s}'\n", .{ @tagName(tok.type), tok.literal }) catch {};
+                std.debug.print("[debug]   {s:<24} '{s}'\n", .{ @tagName(tok.type), tok.literal });
                 if (tok.type == .eof) break;
             }
-            dbg_w.print("[debug] === Parsing ===\n", .{}) catch {};
+            std.debug.print("[debug] === Parsing ===\n", .{});
         }
     }
 
@@ -171,9 +176,8 @@ pub fn run_with_context(
 
     if (comptime !is_wasm) {
         if (context.debug) {
-            const dbg_w = stderr_writer();
-            dbg_w.print("[debug]   {} setning(ar) tolka\n", .{program.program.statements.len}) catch {};
-            dbg_w.print("[debug] === Evaluering ===\n", .{}) catch {};
+            std.debug.print("[debug]   {} setning(ar) tolka\n", .{program.program.statements.len});
+            std.debug.print("[debug] === Evaluering ===\n", .{});
         }
     }
 

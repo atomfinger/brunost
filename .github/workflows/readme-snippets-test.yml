@@ -3,10 +3,12 @@ name: Validate README Brunost Snippets
 on:
   push:
     paths:
-      - "readme.md"
+      - "README.md"
+      - "scripts/run_readme_snippets.py"
   pull_request:
     paths:
-      - "readme.md"
+      - "README.md"
+      - "scripts/run_readme_snippets.py"
 
 jobs:
   run-snippets:
@@ -19,55 +21,10 @@ jobs:
       - name: Sett opp Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.15.0
+          version: 0.16.0
 
       - name: Bygg Brunost
         run: zig build
 
-      - name: Extract code snippets
-        run: |
-          mkdir -p snippets
-
-          awk '
-          BEGIN {
-            inside=0
-            skip=0
-            count=0
-            filename=""
-          }
-
-          /^```python/ {
-            inside=1
-            skip = ($0 ~ /skip|ignore/)
-            if (!skip) {
-              count++
-              filename=sprintf("snippets/snippet-%02d.brunost", count)
-            }
-            next
-          }
-
-          /^```$/ {
-            inside=0
-            skip=0
-            if (filename != "") {
-              close(filename)
-            }
-            next
-          }
-
-          inside && !skip {
-            print >> filename
-          }
-          ' readme.md
-
-      - name: Vis snutter
-        run: |
-          echo "Extracted files:"
-          ls -la snippets || true
-
-      - name: Kjør snutter
-        run: |
-          for file in snippets/*.brunost; do
-            echo "Running brunost on $file"
-            ./zig-out/bin/brunost --debug "$file"
-          done
+      - name: Trekk ut og køyr README-snutter
+        run: python3 scripts/run_readme_snippets.py

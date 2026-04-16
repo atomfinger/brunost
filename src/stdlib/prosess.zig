@@ -17,7 +17,7 @@ fn sov(args: []const Value, _: *Interpreter) EvalError!Value {
     const ms = try args[0].as_int();
     if (ms > 0) {
         if (comptime @import("builtin").cpu.arch != .wasm32) {
-            std.Thread.sleep(@intCast(ms * 1_000_000));
+            std.Io.sleep(std.Options.debug_io, .fromMilliseconds(@intCast(ms)), .awake) catch {};
         }
     }
     return Value{ .null_val = {} };

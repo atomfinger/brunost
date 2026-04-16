@@ -21,6 +21,9 @@ pub const EvalError = error{
     ModuleNameCollision,
     ModuleNotFound,
     OutOfMemory,
+    UndefinedField,
+    ImmutableField,
+    NotAStructType,
 };
 
 pub const Signal = union(enum) {
@@ -39,6 +42,25 @@ pub const ModuleMember = struct {
     value: Value,
 };
 
+/// Schema stored in environment when a `type` is declared.
+pub const StructType = struct {
+    name: []const u8,
+    fields: []ast.StructFieldDecl,
+};
+
+/// One live field in a struct instance.
+pub const StructFieldEntry = struct {
+    name: []const u8,
+    value: Value,
+    mutable: bool,
+};
+
+/// Heap-allocated so all copies of Value.struct_instance share the same fields.
+pub const StructInstance = struct {
+    type_name: []const u8,
+    fields: []StructFieldEntry,
+};
+
 pub const Value = union(enum) {
     integer: i64,
     float: f64,
@@ -50,6 +72,8 @@ pub const Value = union(enum) {
     module: []ModuleMember,
     builtin_fn: *const fn (args: []const Value, interp: *Interpreter) EvalError!Value,
     null_val: void,
+    struct_type: StructType,
+    struct_instance: *StructInstance,
 
     pub fn is_truthy(self: Value) bool {
         return switch (self) {
@@ -61,6 +85,7 @@ pub const Value = union(enum) {
             .hashmap => |h| h.count() > 0,
             .null_val => false,
             .function, .module, .builtin_fn => true,
+            .struct_type, .struct_instance => true,
         };
     }
 
@@ -100,7 +125,7 @@ pub const Value = union(enum) {
             .boolean => |b| if (b) "sant" else "usant",
             .null_val => "inkje",
             .list => |l| blk: {
-                var buf: std.ArrayList(u8) = .{};
+                var buf: std.ArrayList(u8) = .empty;
                 buf.append(alloc, '[') catch return EvalError.OutOfMemory;
                 for (l, 0..) |elem, idx| {
                     const s = try elem.to_string(alloc);
@@ -111,7 +136,7 @@ pub const Value = union(enum) {
                 break :blk buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory;
             },
             .hashmap => |h| blk: {
-                var buf: std.ArrayList(u8) = .{};
+                var buf: std.ArrayList(u8) = .empty;
                 buf.append(alloc, '{') catch return EvalError.OutOfMemory;
                 var it = h.iterator();
                 var first = true;
@@ -128,6 +153,26 @@ pub const Value = union(enum) {
             .function => "<funksjon>",
             .module => "<modul>",
             .builtin_fn => "<innebygd-funksjon>",
+            .struct_type => "<type>",
+            .struct_instance => |s| blk: {
+                var buf: std.ArrayList(u8) = .empty;
+                buf.append(alloc, '{') catch return EvalError.OutOfMemory;
+                for (s.fields, 0..) |f, i| {
+                    const pair = switch (f.value) {
+                        .string => |str| std.fmt.allocPrint(alloc, "\"{s}\": \"{s}\"", .{ f.name, str }) catch return EvalError.OutOfMemory,
+                        .boolean => |b| std.fmt.allocPrint(alloc, "\"{s}\": {s}", .{ f.name, if (b) "true" else "false" }) catch return EvalError.OutOfMemory,
+                        .null_val => std.fmt.allocPrint(alloc, "\"{s}\": null", .{f.name}) catch return EvalError.OutOfMemory,
+                        else => blk2: {
+                            const vs = try f.value.to_string(alloc);
+                            break :blk2 std.fmt.allocPrint(alloc, "\"{s}\": {s}", .{ f.name, vs }) catch return EvalError.OutOfMemory;
+                        },
+                    };
+                    buf.appendSlice(alloc, pair) catch return EvalError.OutOfMemory;
+                    if (i + 1 < s.fields.len) buf.appendSlice(alloc, ", ") catch return EvalError.OutOfMemory;
+                }
+                buf.append(alloc, '}') catch return EvalError.OutOfMemory;
+                break :blk buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory;
+            },
         };
     }
 
@@ -214,7 +259,7 @@ pub const Interpreter = struct {
     str_arena: std.heap.ArenaAllocator,
     global: Environment,
     signal: ?Signal,
-    output: std.io.AnyWriter,
+    output: *std.Io.Writer,
     base_dir: []const u8,
     script_args: []const []const u8,
     module_envs: std.ArrayList(*Environment),
@@ -222,7 +267,7 @@ pub const Interpreter = struct {
 
     pub fn init(
         alloc: std.mem.Allocator,
-        output: std.io.AnyWriter,
+        output: *std.Io.Writer,
         base_dir: []const u8,
         script_args: []const []const u8,
     ) Interpreter {
@@ -234,7 +279,7 @@ pub const Interpreter = struct {
             .output = output,
             .base_dir = base_dir,
             .script_args = script_args,
-            .module_envs = .{},
+            .module_envs = .empty,
             .debug = false,
         };
     }
@@ -279,6 +324,10 @@ pub const Interpreter = struct {
             .try_stmt => |t| self.eval_try(t, env),
             .import_stmt => |s| self.eval_import(s, env),
             .module_decl => |m| self.eval_module_decl(m, env),
+            .struct_decl => |d| self.eval_struct_decl(d, env),
+            .field_assign => |a| self.eval_field_assign(a, env),
+            .struct_lit => |l| self.eval_struct_lit(l, env),
+            .field_access => |a| self.eval_field_access(a, env),
             .integer_lit => |i| Value{ .integer = i.value },
             .float_lit => |f| Value{ .float = f.value },
             .string_lit => |s| Value{ .string = s.value },
@@ -451,7 +500,7 @@ pub const Interpreter = struct {
     }
 
     fn eval_module_decl(self: *Interpreter, decl: ast.ModuleDecl, env: *Environment) EvalError!Value {
-        var members: std.ArrayList(ModuleMember) = .{};
+        var members: std.ArrayList(ModuleMember) = .empty;
         for (decl.functions) |fn_node| {
             const f = fn_node.fn_decl;
             members.append(self.str_alloc(), .{
@@ -493,7 +542,7 @@ pub const Interpreter = struct {
         if (self.base_dir.len == 0) return EvalError.ModuleNotFound;
 
         // Build path: base_dir/seg0/.../segN.brunost
-        var path_parts: std.ArrayList([]const u8) = .{};
+        var path_parts: std.ArrayList([]const u8) = .empty;
         path_parts.append(self.str_alloc(), self.base_dir) catch return EvalError.OutOfMemory;
         for (segments) |seg| {
             path_parts.append(self.str_alloc(), seg) catch return EvalError.OutOfMemory;
@@ -501,10 +550,11 @@ pub const Interpreter = struct {
         const joined = std.fs.path.join(self.str_alloc(), path_parts.items) catch return EvalError.OutOfMemory;
         const path = std.fmt.allocPrint(self.str_alloc(), "{s}.brunost", .{joined}) catch return EvalError.OutOfMemory;
 
-        const source = std.fs.cwd().readFileAlloc(
-            self.str_alloc(),
+        const source = std.Io.Dir.cwd().readFileAlloc(
+            std.Options.debug_io,
             path,
-            std.math.maxInt(usize)
+            self.str_alloc(),
+            .unlimited,
         ) catch return EvalError.ModuleNotFound;
 
         const lexer = token_mod.Lexer.init(source);
@@ -523,7 +573,7 @@ pub const Interpreter = struct {
         };
         self.signal = saved_signal;
 
-        var members: std.ArrayList(ModuleMember) = .{};
+        var members: std.ArrayList(ModuleMember) = .empty;
         var it = mod_env.store.iterator();
         while (it.next()) |entry| {
             switch (entry.value_ptr.value) {
@@ -540,7 +590,7 @@ pub const Interpreter = struct {
     }
 
     fn eval_list(self: *Interpreter, l: ast.ListLit, env: *Environment) EvalError!Value {
-        var items: std.ArrayList(Value) = .{};
+        var items: std.ArrayList(Value) = .empty;
         for (l.elements) |elem| {
             const v = try self.eval(elem, env);
             items.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
@@ -720,6 +770,72 @@ pub const Interpreter = struct {
         return Value{ .null_val = {} };
     }
 
+    fn eval_struct_decl(self: *Interpreter, decl: ast.StructDecl, env: *Environment) EvalError!Value {
+        const fields = self.str_alloc().dupe(ast.StructFieldDecl, decl.fields) catch return EvalError.OutOfMemory;
+        try env.define(decl.name, .{
+            .value = .{ .struct_type = .{ .name = decl.name, .fields = fields } },
+            .mutable = false,
+        });
+        return .{ .null_val = {} };
+    }
+
+    fn eval_struct_lit(self: *Interpreter, lit: ast.StructLit, env: *Environment) EvalError!Value {
+        const entry = env.get(lit.type_name) orelse return EvalError.UndefinedVariable;
+        const schema = switch (entry.value) {
+            .struct_type => |t| t,
+            else => return EvalError.NotAStructType,
+        };
+        const instance = self.str_alloc().create(StructInstance) catch return EvalError.OutOfMemory;
+        const fields = self.str_alloc().alloc(StructFieldEntry, schema.fields.len) catch return EvalError.OutOfMemory;
+        for (schema.fields, 0..) |fd, i| {
+            var found: ?Value = null;
+            for (lit.fields) |lf| {
+                if (std.mem.eql(u8, lf.name, fd.name)) {
+                    found = try self.eval(lf.value, env);
+                    break;
+                }
+            }
+            const val = if (found) |v|
+                v
+            else if (fd.default_value) |dv|
+                try self.eval(dv, env)
+            else
+                return EvalError.UndefinedField;
+            fields[i] = .{ .name = fd.name, .value = val, .mutable = fd.mutable };
+        }
+        instance.* = .{ .type_name = schema.name, .fields = fields };
+        return .{ .struct_instance = instance };
+    }
+
+    fn eval_field_access(_: *Interpreter, access: ast.FieldAccess, env: *Environment) EvalError!Value {
+        const obj_entry = env.get(access.object) orelse return EvalError.UndefinedVariable;
+        const instance = switch (obj_entry.value) {
+            .struct_instance => |s| s,
+            else => return EvalError.TypeError,
+        };
+        for (instance.fields) |f| {
+            if (std.mem.eql(u8, f.name, access.field)) return f.value;
+        }
+        return EvalError.UndefinedField;
+    }
+
+    fn eval_field_assign(self: *Interpreter, a: ast.FieldAssign, env: *Environment) EvalError!Value {
+        const obj_entry = env.get(a.object) orelse return EvalError.UndefinedVariable;
+        const instance = switch (obj_entry.value) {
+            .struct_instance => |s| s,
+            else => return EvalError.TypeError,
+        };
+        const new_val = try self.eval(a.value, env);
+        for (instance.fields) |*f| {
+            if (std.mem.eql(u8, f.name, a.field)) {
+                if (!f.mutable) return EvalError.ImmutableField;
+                f.value = new_val;
+                return .{ .null_val = {} };
+            }
+        }
+        return EvalError.UndefinedField;
+    }
+
     fn eval_member_call(self: *Interpreter, expr: ast.MemberCall, env: *Environment) EvalError!Value {
         const entry = env.get(expr.object) orelse return EvalError.UndefinedVariable;
         const members = switch (entry.value) {
@@ -729,7 +845,7 @@ pub const Interpreter = struct {
         const member_val = for (members) |m| {
             if (std.mem.eql(u8, m.name, expr.member)) break m.value;
         } else return EvalError.UndefinedVariable;
-        var args: std.ArrayList(Value) = .{};
+        var args: std.ArrayList(Value) = .empty;
         for (expr.args) |arg_node| {
             const v = try self.eval(arg_node, env);
             args.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;

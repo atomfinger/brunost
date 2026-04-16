@@ -1,0 +1,9 @@
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"
+    open alder er 0
+}
+
+låst minBil er Bil { namn er "Toyota", alder er 5 }
+terminal.skriv(minBil)

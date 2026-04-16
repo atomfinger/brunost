@@ -47,16 +47,20 @@ export fn evaluate(source_ptr: [*]const u8, source_len: usize) void {
     output_len = 0;
     output_is_error = false;
 
-    var fbs = std.io.fixedBufferStream(&output_buf);
-    const writer = fbs.writer().any();
+    var aw: std.Io.Writer.Allocating = .init(std.heap.page_allocator);
+    defer aw.deinit();
 
     const source = source_ptr[0..source_len];
 
-    main.run(std.heap.page_allocator, source, writer, "") catch |err| {
+    main.run(std.heap.page_allocator, source, &aw.writer, "") catch |err| {
         output_is_error = true;
-        fbs.reset();
-        writer.print("{s}", .{main.describe_error(err)}) catch {};
+        aw.deinit();
+        aw = .init(std.heap.page_allocator);
+        aw.writer.writeAll(main.describe_error(err)) catch {};
     };
 
-    output_len = fbs.pos;
+    const written = aw.writer.buffered();
+    const copy_len = @min(written.len, output_buf.len);
+    @memcpy(output_buf[0..copy_len], written[0..copy_len]);
+    output_len = copy_len;
 }

@@ -54,6 +54,7 @@ pub const token_types = enum {
     import_op, // bruk
     module_op, // modul
     as_op, // som
+    type_op, // type
 };
 
 pub const Token = struct {
@@ -93,6 +94,7 @@ pub const Token = struct {
             .{ "bruk", .import_op },
             .{ "modul", .module_op },
             .{ "som", .as_op },
+            .{ "type", .type_op },
             .{ "erSt\xc3\xb8rreEnn", .gt }, // erStørreEnn
             .{ "erMindreEnn", .lt },
             .{ "erSameEllerSt\xc3\xb8rreEnn", .gte }, // erSameEllerStørreEnn

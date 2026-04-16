@@ -1,0 +1,24 @@
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"
+    open alder er 0
+}
+
+type Flate {
+    open bilar er []
+    open tal er []
+}
+
+låst minFlate er Flate {
+    bilar er ["Toyota", "Honda", "Volvo"],
+    tal er [1, 2, 3],
+}
+
+forKvart b i minFlate.bilar {
+    terminal.skriv(b)
+}
+
+forKvart nummer i minFlate.tal {
+    terminal.skriv(nummer)
+}

@@ -16,6 +16,8 @@ pub const Node = union(enum) {
     fn_decl: FnDecl,
     import_stmt: ImportStmt,
     module_decl: ModuleDecl,
+    struct_decl: StructDecl,
+    field_assign: FieldAssign,
     // Expressions
     integer_lit: IntegerLit,
     float_lit: FloatLit,
@@ -28,6 +30,8 @@ pub const Node = union(enum) {
     prefix_expr: PrefixExpr,
     call_expr: CallExpr,
     member_call: MemberCall,
+    struct_lit: StructLit,
+    field_access: FieldAccess,
 };
 
 pub const Program = struct {
@@ -157,4 +161,42 @@ pub const ImportStmt = struct {
 pub const ModuleDecl = struct {
     name: []const u8,
     functions: []*Node,
+};
+
+/// One field in a `type` declaration: låst/open name (er default)?
+pub const StructFieldDecl = struct {
+    name: []const u8,
+    default_value: ?*Node, // null means required at instantiation
+    mutable: bool,
+};
+
+/// type Name { låst felt er verdi ... }
+pub const StructDecl = struct {
+    name: []const u8,
+    fields: []StructFieldDecl,
+};
+
+/// One field in a struct literal: name er value
+pub const StructLitField = struct {
+    name: []const u8,
+    value: *Node,
+};
+
+/// TypeName { felt er verdi, ... }
+pub const StructLit = struct {
+    type_name: []const u8,
+    fields: []StructLitField,
+};
+
+/// instans.felt  (read)
+pub const FieldAccess = struct {
+    object: []const u8,
+    field: []const u8,
+};
+
+/// instans.felt er verdi  (write — statement only)
+pub const FieldAssign = struct {
+    object: []const u8,
+    field: []const u8,
+    value: *Node,
 };
