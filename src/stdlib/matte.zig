@@ -65,7 +65,10 @@ fn tilfeldig(args: []const Value, _: *Interpreter) EvalError!Value {
     const minVal = if (args.len > 0) try args[0].as_int() else std.math.minInt(i64);
     const maxVal = if (args.len > 1) try args[1].as_int() else std.math.maxInt(i64);
     if (!prng_seeded and builtin.cpu.arch != .wasm32) {
-        prng_state = std.Random.DefaultPrng.init(std.crypto.random.int(u64));
+        var seed_bytes: [8]u8 = undefined;
+        std.Options.debug_io.randomSecure(&seed_bytes) catch {};
+        const seed = std.mem.readInt(u64, &seed_bytes, .little);
+        prng_state = std.Random.DefaultPrng.init(seed);
         prng_seeded = true;
     }
     const result = prng_state.random().intRangeAtMost(i64, minVal, maxVal);

@@ -31,6 +31,7 @@ Ingen framandord. Ingen rar import-hierarki. Berre kode som flyt like mjukt som 
 | **Feilhandtering** | `prøv`/`fang`-blokker for reine feilflyt |
 | **Modular** | Innebygde, brukar-definerte og fil-baserte modular |
 | **Mutabilitet** | Eksplisitt `låst`/`open` — aldri uventa endringar |
+| **Typar** | Eigendefinerte datatypar med feltmutabilitet |
 
 ---
 
@@ -163,6 +164,87 @@ prøv {
 }
 ```
 
+### Eigendefinerte typar
+
+Brunost støttar eigendefinerte datatypar med `type`. Typenamn skal skrivast med stor forbokstav. Kvart felt får si eiga mutabilitet med `låst` eller `open`:
+
+```python
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"  // kan ikkje endrast etter oppretting
+    open alder er 0        // kan endrast fritt
+}
+
+låst minBil er Bil { namn er "Troll", alder er 70 }
+
+terminal.skriv(minBil.namn)   // Troll
+terminal.skriv(minBil.alder)  // 70
+```
+
+Felt utan standardverdi er påkravde ved oppretting:
+
+```python
+type Person {
+    låst namn er "ukjend"
+    open alder               // påkravd — ingen standardverdi
+}
+
+låst person er Person { namn er "Kari", alder er 30 }
+```
+
+Opne felt kan oppdaterast med `er`:
+
+```python skip
+open minBil er Bil { namn er "Troll", alder er 69 }
+minBil.alder er 70
+terminal.skriv(minBil.alder)  // 70
+```
+
+Typar fungerer i `viss`-vilkår, `forKvart`-løkker og som funksjonsparameter:
+
+```python
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"
+    open alder er 0
+}
+
+type Flåte {
+    open bilar er []
+}
+
+gjer skrivBil(kvar) {
+    terminal.skriv(kvar.namn + " (" + kvar.alder + " år)")
+}
+
+låst minBil er Bil { namn er "Troll", alder er 70 }
+
+// Felt i vilkårsutsagn
+viss (minBil.alder er 70) gjer {
+    terminal.skriv("Bilen er 70 år gamal")
+}
+
+// Iterera over eit listfelt
+låst minFlåte er Flåte {
+    bilar er ["Troll", "Buddy", "Th!nk"],
+}
+
+forKvart b i minFlåte.bilar {
+    terminal.skriv(b)
+}
+
+// Type som parameter
+skrivBil(minBil)
+```
+
+Typar skrives ut som JSON:
+
+```python skip
+terminal.skriv(minBil)  // {"namn": "Troll", "alder": 70}
+```
+
 ---
 
 ## Modular
@@ -256,7 +338,7 @@ mise run demo:stop  # Stopp demo-serveren
 
 ### Manuell oppsett
 
-**Krav:** [Zig](https://ziglang.org/) 0.15 eller nyare.
+**Krav:** [Zig](https://ziglang.org/) 0.16 eller nyare.
 
 ```bash
 zig build                            # Bygg prosjektet

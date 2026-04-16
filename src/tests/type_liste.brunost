@@ -1,0 +1,14 @@
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"
+    open alder er 0
+}
+
+låst fyrste er Bil { namn er "Toyota", alder er 5 }
+låst andre er Bil { namn er "Honda", alder er 3 }
+låst bilar er [fyrste, andre]
+
+forKvart b i bilar {
+    terminal.skriv(b.namn)
+}

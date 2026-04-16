@@ -1,5 +1,5 @@
 [tools]
-zig = "0.15.2"
+zig = "0.16.0"
 python = "3"
 
 [tasks.build]
@@ -14,6 +14,11 @@ run = "zig build wasm && cp zig-out/wasm/brunost.wasm brunost.wasm"
 description = "Run all tests with output"
 depends = ["build"]
 run = "zig build test --summary all 2>&1"
+
+[tasks."test:readme"]
+description = "Extract and run all README code snippets"
+depends = ["build"]
+run = "python3 scripts/run_readme_snippets.py"
 
 [tasks."demo:start"]
 description = "Start the brunost demo HTML server on http://localhost:8765"

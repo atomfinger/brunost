@@ -7,24 +7,24 @@ fn run_script(source: []const u8) ![]u8 {
 }
 
 fn run_script_with_args(source: []const u8, script_args: []const []const u8) ![]u8 {
-    var buf: std.ArrayList(u8) = .{};
-    errdefer buf.deinit(std.testing.allocator);
-    try main.run_with_args(std.testing.allocator, source, buf.writer(std.testing.allocator).any(), "", script_args);
-    return buf.toOwnedSlice(std.testing.allocator);
+    var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer aw.deinit();
+    try main.run_with_args(std.testing.allocator, source, &aw.writer, "", script_args);
+    return aw.toOwnedSlice();
 }
 
 fn expect_error(source: []const u8, expected: anyerror) !void {
-    var buf: std.ArrayList(u8) = .{};
-    defer buf.deinit(std.testing.allocator);
+    var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer aw.deinit();
     try std.testing.expectError(
         expected,
-        main.run(std.testing.allocator, source, buf.writer(std.testing.allocator).any(), ""),
+        main.run(std.testing.allocator, source, &aw.writer, ""),
     );
 }
 
 fn expect_parse_error(source: []const u8, expected: parser.ParseError) !main.RunContext {
-    var buf: std.ArrayList(u8) = .{};
-    defer buf.deinit(std.testing.allocator);
+    var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer aw.deinit();
 
     var context: main.RunContext = .{};
     try std.testing.expectError(
@@ -32,7 +32,7 @@ fn expect_parse_error(source: []const u8, expected: parser.ParseError) !main.Run
         main.run_with_context(
             std.testing.allocator,
             source,
-            buf.writer(std.testing.allocator).any(),
+            &aw.writer,
             "",
             &.{},
             &context,
@@ -171,29 +171,29 @@ test "modulus" {
 }
 
 test "fil-import: bruk hjelp.rekning som rekn" {
-    var buf: std.ArrayList(u8) = .{};
-    defer buf.deinit(std.testing.allocator);
+    var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer aw.deinit();
     try main.run(
         std.testing.allocator,
         @embedFile("tests/fil_import_alias.brunost"),
-        buf.writer(std.testing.allocator).any(),
+        &aw.writer,
         "src/tests",
     );
-    const out = try buf.toOwnedSlice(std.testing.allocator);
+    const out = try aw.toOwnedSlice();
     defer std.testing.allocator.free(out);
     try std.testing.expectEqualStrings("15\n42\n", out);
 }
 
 test "fil-import: bruk hjelp.rekning" {
-    var buf: std.ArrayList(u8) = .{};
-    defer buf.deinit(std.testing.allocator);
+    var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer aw.deinit();
     try main.run(
         std.testing.allocator,
         @embedFile("tests/fil_import.brunost"),
-        buf.writer(std.testing.allocator).any(),
+        &aw.writer,
         "src/tests",
     );
-    const out = try buf.toOwnedSlice(std.testing.allocator);
+    const out = try aw.toOwnedSlice();
     defer std.testing.allocator.free(out);
     try std.testing.expectEqualStrings("7\n12\n", out);
 }
@@ -467,4 +467,95 @@ test "prøv/fang: feil utanfor fangar ikkje" {
         \\låst minKart er {}
         \\låst verdi er kart.hent(minKart, "nøkkel")
     , error.KeyNotFound);
+}
+
+test "type: les felt" {
+    const out = try run_script(@embedFile("tests/type_grunnleggjande.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("Toyota\n5\n", out);
+}
+
+test "type: oppdater open felt" {
+    const out = try run_script(@embedFile("tests/type_oppdatering.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("10\n", out);
+}
+
+test "type: standardverdiar" {
+    const out = try run_script(@embedFile("tests/type_standard.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("Honda\n0\n", out);
+}
+
+test "type: i liste" {
+    const out = try run_script(@embedFile("tests/type_liste.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("Toyota\nHonda\n", out);
+}
+
+test "type: som parameter" {
+    const out = try run_script(@embedFile("tests/type_funksjon.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("Toyota\n5\n", out);
+}
+
+test "type: skriv som json" {
+    const out = try run_script(@embedFile("tests/type_json.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("{\"namn\": \"Toyota\", \"alder\": 5}\n", out);
+}
+
+test "type: viss med felt-samanlikning" {
+    const out = try run_script(@embedFile("tests/type_viss.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("Bilen er 5 år gamal\nDet er ein Toyota\nBilen er meir enn 3 år\n", out);
+}
+
+test "type: forKvart over listfelt" {
+    const out = try run_script(@embedFile("tests/type_forkvart_felt.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("Toyota\nHonda\nVolvo\n1\n2\n3\n", out);
+}
+
+test "feil: endra låst felt" {
+    try expect_error(
+        \\type Bil {
+        \\    låst namn er "ukjend"
+        \\    open alder er 0
+        \\}
+        \\open minBil er Bil { namn er "Toyota", alder er 5 }
+        \\minBil.namn er "Honda"
+    , error.ImmutableField);
+}
+
+test "feil: påkravd felt manglar" {
+    try expect_error(
+        \\type Bil {
+        \\    låst namn er "ukjend"
+        \\    open alder
+        \\}
+        \\låst minBil er Bil { namn er "Toyota" }
+    , error.UndefinedField);
+}
+
+test "feil: ukjent type" {
+    try expect_error(
+        \\låst minBil er ukjendType { namn er "Toyota" }
+    , error.UndefinedVariable);
+}
+
+test "feil: type-namn er ikkje nynorsk" {
+    _ = try expect_parse_error(
+        \\type fooBar {
+        \\    låst namn er "x"
+        \\}
+    , error.NotNynorsk);
+}
+
+test "feil: feltnamn er ikkje nynorsk" {
+    _ = try expect_parse_error(
+        \\type Bil {
+        \\    låst fooField er "x"
+        \\}
+    , error.NotNynorsk);
 }

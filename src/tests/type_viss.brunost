@@ -1,0 +1,22 @@
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"
+    open alder er 0
+}
+
+låst minBil er Bil { namn er "Toyota", alder er 5 }
+
+viss (minBil.alder er 5) gjer {
+    terminal.skriv("Bilen er 5 år gamal")
+} ellers {
+    terminal.skriv("Feil alder")
+}
+
+viss (minBil.namn er "Toyota") gjer {
+    terminal.skriv("Det er ein Toyota")
+}
+
+viss (minBil.alder erStørreEnn 3) gjer {
+    terminal.skriv("Bilen er meir enn 3 år")
+}

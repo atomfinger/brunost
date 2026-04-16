@@ -34,6 +34,9 @@ pub const Parser = struct {
     curr: token.Token,
     peek: token.Token,
     arena: std.mem.Allocator,
+    /// When true, `parse_primary` will not try to parse `identifier {` as a
+    /// struct literal. Used in contexts where `{` starts a block (e.g. forKvart body).
+    no_struct_lit: bool = false,
 
     pub fn init(lexer: token.Lexer, arena: std.mem.Allocator) Parser {
         var p = Parser{
@@ -90,7 +93,7 @@ pub const Parser = struct {
     }
 
     pub fn parse_program(self: *Parser) ParseError!*ast.Node {
-        var stmts: std.ArrayList(*ast.Node) = .{};
+        var stmts: std.ArrayList(*ast.Node) = .empty;
         while (self.curr.type != .eof) {
             const stmt = try self.parse_statement();
             try stmts.append(self.arena, stmt);
@@ -111,6 +114,7 @@ pub const Parser = struct {
             .function => self.parse_fn_decl(),
             .import_op => self.parse_import(),
             .module_op => self.parse_module_decl(),
+            .type_op => self.parse_struct_decl(),
             else => self.parse_assign_or_expr(),
         };
     }
@@ -145,7 +149,7 @@ pub const Parser = struct {
         if (!nynorsk.isValidIdentifier(name)) return ParseError.NotNynorsk;
         self.advance();
         try self.expect(.lparen);
-        var params: std.ArrayList([]const u8) = .{};
+        var params: std.ArrayList([]const u8) = .empty;
         while (self.curr.type != .rparen and self.curr.type != .eof) {
             if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
             if (!nynorsk.isValidIdentifier(self.curr.literal)) return ParseError.NotNynorsk;
@@ -212,7 +216,9 @@ pub const Parser = struct {
         self.advance();
         if (self.curr.type != .in_op) return ParseError.ExpectedIn;
         self.advance();
+        self.no_struct_lit = true;
         const iterable = try self.parse_expr(0);
+        self.no_struct_lit = false;
         const body = try self.parse_block();
         return self.alloc_node(.{ .foreach_stmt = .{
             .iterator_name = iter_name,
@@ -223,7 +229,7 @@ pub const Parser = struct {
 
     fn parse_import(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume bruk
-        var segments: std.ArrayList([]const u8) = .{};
+        var segments: std.ArrayList([]const u8) = .empty;
         if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
         try segments.append(self.arena, self.curr.literal);
         self.advance();
@@ -253,7 +259,7 @@ pub const Parser = struct {
         self.advance();
         if (self.curr.type != .lbrace) return ParseError.ExpectedOpenBrace;
         self.advance();
-        var functions: std.ArrayList(*ast.Node) = .{};
+        var functions: std.ArrayList(*ast.Node) = .empty;
         while (self.curr.type != .rbrace and self.curr.type != .eof) {
             if (self.curr.type != .function) return ParseError.UnexpectedToken;
             const fn_node = try self.parse_fn_decl();
@@ -264,6 +270,45 @@ pub const Parser = struct {
         return self.alloc_node(.{ .module_decl = .{
             .name = name,
             .functions = try functions.toOwnedSlice(self.arena),
+        } });
+    }
+
+    fn parse_struct_decl(self: *Parser) ParseError!*ast.Node {
+        self.advance(); // consume type
+        if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+        const name = self.curr.literal;
+        if (!nynorsk.isValidIdentifier(name)) return ParseError.NotNynorsk;
+        self.advance();
+        if (self.curr.type != .lbrace) return ParseError.ExpectedOpenBrace;
+        self.advance(); // consume {
+        var fields: std.ArrayList(ast.StructFieldDecl) = .empty;
+        while (self.curr.type != .rbrace and self.curr.type != .eof) {
+            const mutable = switch (self.curr.type) {
+                .let_immutable => false,
+                .let_mutable => true,
+                else => return ParseError.UnexpectedToken,
+            };
+            self.advance(); // consume låst/open
+            if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+            const field_name = self.curr.literal;
+            if (!nynorsk.isValidIdentifier(field_name)) return ParseError.NotNynorsk;
+            self.advance();
+            var default_value: ?*ast.Node = null;
+            if (self.curr.type == .assign) {
+                self.advance(); // consume er
+                default_value = try self.parse_expr(0);
+            }
+            try fields.append(self.arena, .{
+                .name = field_name,
+                .default_value = default_value,
+                .mutable = mutable,
+            });
+        }
+        if (self.curr.type != .rbrace) return ParseError.ExpectedCloseBrace;
+        self.advance(); // consume }
+        return self.alloc_node(.{ .struct_decl = .{
+            .name = name,
+            .fields = try fields.toOwnedSlice(self.arena),
         } });
     }
 
@@ -288,6 +333,31 @@ pub const Parser = struct {
     }
 
     fn parse_assign_or_expr(self: *Parser) ParseError!*ast.Node {
+        // Field assignment or member call: identifier.member ...
+        if (self.curr.type == .identifier and self.peek.type == .dot) {
+            const obj = self.curr.literal;
+            self.advance(); // consume object name
+            self.advance(); // consume .
+            if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+            const member = self.curr.literal;
+            self.advance(); // consume member name
+            if (self.curr.type == .assign) {
+                // Field assignment: obj.member er expr
+                self.advance(); // consume er
+                const value = try self.parse_expr(0);
+                return self.alloc_node(.{ .field_assign = .{ .object = obj, .field = member, .value = value } });
+            }
+            if (self.curr.type == .lparen) {
+                // Member call as expression statement: obj.member(args)
+                const args = try self.parse_call_args();
+                const call_node = try self.alloc_node(.{ .member_call = .{ .object = obj, .member = member, .args = args } });
+                return self.alloc_node(.{ .expr_stmt = .{ .expr = call_node } });
+            }
+            // Field access as expression statement (uncommon but valid)
+            const fa = try self.alloc_node(.{ .field_access = .{ .object = obj, .field = member } });
+            return self.alloc_node(.{ .expr_stmt = .{ .expr = fa } });
+        }
+        // Simple variable assignment: name er expr
         if (self.curr.type == .identifier and self.peek.type == .assign) {
             const name = self.curr.literal;
             self.advance(); // consume identifier
@@ -302,7 +372,7 @@ pub const Parser = struct {
     fn parse_block(self: *Parser) ParseError!*ast.Node {
         if (self.curr.type != .lbrace) return ParseError.ExpectedOpenBrace;
         self.advance();
-        var stmts: std.ArrayList(*ast.Node) = .{};
+        var stmts: std.ArrayList(*ast.Node) = .empty;
         while (self.curr.type != .rbrace and self.curr.type != .eof) {
             const stmt = try self.parse_statement();
             try stmts.append(self.arena, stmt);
@@ -409,7 +479,7 @@ pub const Parser = struct {
             .identifier => {
                 const name = self.curr.literal;
                 self.advance();
-                // member access
+                // member access or field access
                 if (self.curr.type == .dot) {
                     self.advance();
                     if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
@@ -419,7 +489,29 @@ pub const Parser = struct {
                         const args = try self.parse_call_args();
                         return self.alloc_node(.{ .member_call = .{ .object = name, .member = member, .args = args } });
                     }
-                    return ParseError.UnexpectedToken;
+                    // Field access (no parentheses): obj.field
+                    return self.alloc_node(.{ .field_access = .{ .object = name, .field = member } });
+                }
+                // Struct literal: TypeName { felt er verdi, ... }
+                if (!self.no_struct_lit and self.curr.type == .lbrace) {
+                    self.advance(); // consume {
+                    var lit_fields: std.ArrayList(ast.StructLitField) = .empty;
+                    while (self.curr.type != .rbrace and self.curr.type != .eof) {
+                        if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+                        const field_name = self.curr.literal;
+                        if (!nynorsk.isValidIdentifier(field_name)) return ParseError.NotNynorsk;
+                        self.advance();
+                        try self.expect(.assign); // er
+                        const val = try self.parse_expr(0);
+                        try lit_fields.append(self.arena, .{ .name = field_name, .value = val });
+                        if (self.curr.type == .comma) self.advance();
+                    }
+                    if (self.curr.type != .rbrace) return ParseError.UnexpectedToken;
+                    self.advance();
+                    return self.alloc_node(.{ .struct_lit = .{
+                        .type_name = name,
+                        .fields = try lit_fields.toOwnedSlice(self.arena),
+                    } });
                 }
                 if (self.curr.type == .lparen) {
                     const callee = try self.alloc_node(.{ .identifier = .{ .name = name } });
@@ -434,7 +526,7 @@ pub const Parser = struct {
 
     fn parse_call_args(self: *Parser) ParseError![]*ast.Node {
         try self.expect(.lparen);
-        var args: std.ArrayList(*ast.Node) = .{};
+        var args: std.ArrayList(*ast.Node) = .empty;
         while (self.curr.type != .rparen and self.curr.type != .eof) {
             const arg = try self.parse_expr(0);
             try args.append(self.arena, arg);
@@ -446,7 +538,7 @@ pub const Parser = struct {
 
     fn parse_list(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume [
-        var elements: std.ArrayList(*ast.Node) = .{};
+        var elements: std.ArrayList(*ast.Node) = .empty;
         while (self.curr.type != .rbracket and self.curr.type != .eof) {
             const elem = try self.parse_expr(0);
             try elements.append(self.arena, elem);
@@ -459,7 +551,7 @@ pub const Parser = struct {
 
     fn parse_hashmap(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume {
-        var pairs: std.ArrayList(ast.HashmapPair) = .{};
+        var pairs: std.ArrayList(ast.HashmapPair) = .empty;
         while (self.curr.type != .rbrace and self.curr.type != .eof) {
             const key = try self.parse_expr(0);
             if (self.curr.type != .colon) return ParseError.UnexpectedToken;

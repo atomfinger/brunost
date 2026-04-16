@@ -1,0 +1,14 @@
+bruk terminal
+
+type Bil {
+    låst namn er "ukjend"
+    open alder er 0
+}
+
+gjer visBil(kvar) {
+    terminal.skriv(kvar.namn)
+    terminal.skriv(kvar.alder)
+}
+
+låst minBil er Bil { namn er "Toyota", alder er 5 }
+visBil(minBil)
