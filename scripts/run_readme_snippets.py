@@ -23,9 +23,8 @@ import re
 import subprocess
 import sys
 
-
-FENCE_RE = re.compile(r'^```python(?:\s+(.+))?$')
-CLOSE_RE = re.compile(r'^```\s*$')
+FENCE_RE = re.compile(r"^```python(?:\s+(.+))?$")
+CLOSE_RE = re.compile(r"^```\s*$")
 SKIP_TAGS = {"skip", "ignore"}
 
 
@@ -117,10 +116,16 @@ def main() -> int:
         description="Extract and run Brunost snippets from README.md",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--readme",  default="README.md", help="Path to README file")
-    parser.add_argument("--brunost", default="./zig-out/bin/brunost", help="Path to brunost binary")
-    parser.add_argument("--out-dir", default="readme-snippets", help="Output directory for snippets")
-    parser.add_argument("--extract-only", action="store_true", help="Only extract, do not run")
+    parser.add_argument("--readme", default="readme.md", help="Path to README file")
+    parser.add_argument(
+        "--brunost", default="./zig-out/bin/brunost", help="Path to brunost binary"
+    )
+    parser.add_argument(
+        "--out-dir", default="readme-snippets", help="Output directory for snippets"
+    )
+    parser.add_argument(
+        "--extract-only", action="store_true", help="Only extract, do not run"
+    )
     args = parser.parse_args()
 
     if not os.path.isfile(args.readme):
@@ -150,7 +155,7 @@ def main() -> int:
         print(f"\nAlle {len(paths)} snutter gjekk gjennom ✓")
         return 0
     else:
-        print(f"\nFeil: nokre snutter feila", file=sys.stderr)
+        print("\nFeil: nokre snutter feila", file=sys.stderr)
         return 1
 
 

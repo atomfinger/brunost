@@ -7,7 +7,7 @@ on:
       - "scripts/run_readme_snippets.py"
   pull_request:
     paths:
-      - "README.md"
+      - "readme.md"
       - "scripts/run_readme_snippets.py"
 
 jobs:
