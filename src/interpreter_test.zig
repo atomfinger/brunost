@@ -517,6 +517,26 @@ test "type: forKvart over listfelt" {
     try std.testing.expectEqualStrings("Toyota\nHonda\nVolvo\n1\n2\n3\n", out);
 }
 
+test "streng: reverser" {
+    const out = try run_script(
+        \\bruk terminal
+        \\bruk streng
+        \\terminal.skriv(streng.reverser("123"))
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("321\n", out);
+}
+
+test "streng: inneheld" {
+    const out = try run_script(
+        \\bruk streng
+        \\bruk terminal
+        \\terminal.skriv(streng.inneheld("Hello verda!", "verda"))
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("sant\n", out);
+}
+
 test "feil: endra låst felt" {
     try expect_error(
         \\type Bil {
