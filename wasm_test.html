@@ -468,7 +468,6 @@
                 color: var(--gold);
             }
 
-            /* ══ LANGUAGE TOGGLE ════════════════════════════ */
             .lang-toggle {
                 position: fixed;
                 top: 1rem;
@@ -484,7 +483,9 @@
                 border-radius: 4px;
                 cursor: pointer;
                 letter-spacing: 0.04em;
-                transition: border-color 0.15s, box-shadow 0.15s;
+                transition:
+                    border-color 0.15s,
+                    box-shadow 0.15s;
             }
             .lang-toggle:hover {
                 border-color: var(--gold);
@@ -493,7 +494,11 @@
         </style>
     </head>
     <body>
-        <button class="lang-toggle" id="langToggle" onclick="toggleLanguage()"></button>
+        <button
+            class="lang-toggle"
+            id="langToggle"
+            onclick="toggleLanguage()"
+        ></button>
 
         <div class="page">
             <!-- ══ HEADER ══ -->
@@ -642,7 +647,9 @@
                 </svg>
 
                 <h1>Brunost</h1>
-                <p class="tagline" data-i18n="tagline">Programmeringsspråket med smak av Noreg</p>
+                <p class="tagline" data-i18n="tagline">
+                    Programmeringsspråket med smak av Noreg
+                </p>
 
                 <!-- Bottom rosemaling border (mirrored) -->
                 <svg
@@ -782,55 +789,58 @@
                     />
                     <circle cx="6" cy="6" r="3" fill="currentColor" />
                 </svg>
-                <span data-i18n="blurb">Brunost er eit programmeringsspråk designa for dei som meiner at
-                kode ikkje berre skal vere funksjonell — han skal ha
-                <em>sjel</em>. Skriv med ekte nynorsk terminologi:
-                <code
-                    style="
-                        background: rgba(200, 136, 26, 0.1);
-                        padding: 0.1em 0.35em;
-                        border-radius: 3px;
-                        font-size: 0.85em;
-                        color: #e8b84b;
-                    "
-                    >forKvart</code
-                >,
-                <code
-                    style="
-                        background: rgba(200, 136, 26, 0.1);
-                        padding: 0.1em 0.35em;
-                        border-radius: 3px;
-                        font-size: 0.85em;
-                        color: #e8b84b;
-                    "
-                    >gjevTilbake</code
-                >,
-                <code
-                    style="
-                        background: rgba(200, 136, 26, 0.1);
-                        padding: 0.1em 0.35em;
-                        border-radius: 3px;
-                        font-size: 0.85em;
-                        color: #e8b84b;
-                    "
-                    >prøv</code
+                <span data-i18n="blurb"
+                    >Brunost er eit programmeringsspråk designa for dei som
+                    meiner at kode ikkje berre skal vere funksjonell — han skal
+                    ha <em>sjel</em>. Skriv med ekte nynorsk terminologi:
+                    <code
+                        style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        "
+                        >forKvart</code
+                    >,
+                    <code
+                        style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        "
+                        >gjevTilbake</code
+                    >,
+                    <code
+                        style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        "
+                        >prøv</code
+                    >
+                    og
+                    <code
+                        style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        "
+                        >fang</code
+                    >. Kode som flyt like mjukt som brunost over ein nysteikt
+                    vaffel. Du kan lese meir om Brunost på
+                    <a href="https://github.com/atomfinger/brunost"
+                        >GitHub</a
+                    ></span
                 >
-                og
-                <code
-                    style="
-                        background: rgba(200, 136, 26, 0.1);
-                        padding: 0.1em 0.35em;
-                        border-radius: 3px;
-                        font-size: 0.85em;
-                        color: #e8b84b;
-                    "
-                    >fang</code
-                >. Kode som flyt like mjukt som brunost over ein nysteikt
-                vaffel. Du kan lese meir om Brunost på
-                <a href="https://github.com/atomfinger/brunost">GitHub</a></span>
             </div>
 
-            <!-- ══ QUICK REF ══ -->
             <div class="quickref reveal">
                 <div class="qr-card">
                     <h3 data-i18n="qr-variables">Variablar</h3>
@@ -856,9 +866,10 @@
                 </div>
             </div>
 
-            <!-- ══ EDITOR ══ -->
             <div class="editor-wrap reveal">
-                <div class="editor-label" data-i18n="editor-label">Prøv ut Brunost i nettlesaren!</div>
+                <div class="editor-label" data-i18n="editor-label">
+                    Prøv ut Brunost i nettlesaren!
+                </div>
                 <div class="editor-shell">
                     <div class="editor-bar">
                         <span>skript.brunost</span>
@@ -867,7 +878,9 @@
                                 class="status-dot loading"
                                 id="statusDot"
                             ></span
-                            ><span id="status" data-i18n="status-loading">lastar Brunost…</span></span
+                            ><span id="status" data-i18n="status-loading"
+                                >lastar Brunost…</span
+                            ></span
                         >
                     </div>
                     <textarea id="code" spellcheck="false">
@@ -884,18 +897,19 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                 </div>
             </div>
 
-            <!-- ══ ACTIONS ══ -->
             <div class="actions reveal">
-                <button class="run-btn" id="run" disabled data-i18n="run-btn">Køyr skriptet</button>
+                <button class="run-btn" id="run" disabled data-i18n="run-btn">
+                    Køyr skriptet
+                </button>
             </div>
 
-            <!-- ══ OUTPUT ══ -->
             <div class="output-shell reveal">
                 <div class="output-bar" data-i18n="output-bar">Utdata</div>
-                <pre id="output" class="empty" data-i18n="output-empty-init">(ingen utdata endå)</pre>
+                <pre id="output" class="empty" data-i18n="output-empty-init">
+(ingen utdata endå)</pre
+                >
             </div>
 
-            <!-- ══ FOOTER DIVIDER ══ -->
             <svg
                 class="footer-divider"
                 width="300"
@@ -928,63 +942,68 @@ forKvart nummer i [1, 2, 3, 4, 5] {
 
             <footer>
                 <p>
-                    <span data-i18n="footer-made-by">Laga med kjærleik og altfor mykje brunost av</span>
+                    <span data-i18n="footer-made-by"
+                        >Laga med kjærleik og altfor mykje brunost av</span
+                    >
                     <a href="https://lindbakk.com/">John Mikael Lindbakk </a>
                 </p>
                 <p>
-                    <span data-i18n="footer-read-more">Les meir om Brunost på</span>
+                    <span data-i18n="footer-read-more"
+                        >Les meir om Brunost på</span
+                    >
                     <a href="https://github.com/atomfinger/brunost">GitHub</a>
                 </p>
             </footer>
         </div>
 
         <script>
-            // ══ i18n ══════════════════════════════════════════════════════
-            const CODE_STYLE = 'background:rgba(200,136,26,0.1);padding:0.1em 0.35em;border-radius:3px;font-size:0.85em;color:#e8b84b;';
+            const CODE_STYLE =
+                "background:rgba(200,136,26,0.1);padding:0.1em 0.35em;border-radius:3px;font-size:0.85em;color:#e8b84b;";
             const translations = {
                 nn: {
-                    "page-title":      "Brunost — Programmeringsspråket",
-                    "tagline":         "Programmeringsspråket med smak av Noreg",
-                    "blurb":           `Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje berre skal vere funksjonell — han skal ha <em>sjel</em>. Skriv med ekte nynorsk terminologi: <code style="${CODE_STYLE}">forKvart</code>, <code style="${CODE_STYLE}">gjevTilbake</code>, <code style="${CODE_STYLE}">prøv</code> og <code style="${CODE_STYLE}">fang</code>. Kode som flyt like mjukt som brunost over ein nysteikt vaffel. Du kan lese meir om Brunost på <a href="https://github.com/atomfinger/brunost">GitHub</a>`,
-                    "qr-variables":    "Variablar",
-                    "qr-loops":        "Løkker",
-                    "qr-functions":    "Funksjonar",
-                    "qr-errors":       "Feilhandtering",
-                    "editor-label":    "Prøv ut Brunost i nettlesaren!",
-                    "status-loading":  "lastar Brunost…",
-                    "status-ready":    "Brunost er lasta!",
-                    "status-error":    "feil: kunne ikkje lasta Brunost",
-                    "run-btn":         "Køyr skriptet",
-                    "output-bar":      "Utdata",
+                    "page-title": "Brunost — Programmeringsspråket",
+                    tagline: "Programmeringsspråket med smak av Noreg",
+                    blurb: `Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje berre skal vere funksjonell — han skal ha <em>sjel</em>. Skriv med ekte nynorsk terminologi: <code style="${CODE_STYLE}">forKvart</code>, <code style="${CODE_STYLE}">gjevTilbake</code>, <code style="${CODE_STYLE}">prøv</code> og <code style="${CODE_STYLE}">fang</code>. Kode som flyt like mjukt som brunost over ein nysteikt vaffel. Du kan lese meir om Brunost på <a href="https://github.com/atomfinger/brunost">GitHub</a>`,
+                    "qr-variables": "Variablar",
+                    "qr-loops": "Løkker",
+                    "qr-functions": "Funksjonar",
+                    "qr-errors": "Feilhandtering",
+                    "editor-label": "Prøv ut Brunost i nettlesaren!",
+                    "status-loading": "lastar Brunost…",
+                    "status-ready": "Brunost er lasta!",
+                    "status-error": "feil: kunne ikkje lasta Brunost",
+                    "run-btn": "Køyr skriptet",
+                    "output-bar": "Utdata",
                     "output-empty-init": "(ingen utdata endå)",
-                    "output-empty":    "(ingen utdata)",
-                    "footer-made-by":  "Laga med kjærleik og altfor mykje brunost av",
-                    "footer-read-more":"Les meir om Brunost på",
-                    "lang-toggle":     "🇬🇧 English",
+                    "output-empty": "(ingen utdata)",
+                    "footer-made-by":
+                        "Laga med kjærleik og altfor mykje brunost av",
+                    "footer-read-more": "Les meir om Brunost på",
+                    "lang-toggle": "🇬🇧 English",
                 },
                 en: {
-                    "page-title":      "Brunost — The Programming Language",
-                    "tagline":         "The programming language with a taste of Norway",
-                    "blurb":           `Brunost is a programming language designed for those who believe code shouldn't just be functional — it should have <em>soul</em>. Write with genuine Nynorsk terminology: <code style="${CODE_STYLE}">forKvart</code>, <code style="${CODE_STYLE}">gjevTilbake</code>, <code style="${CODE_STYLE}">prøv</code> and <code style="${CODE_STYLE}">fang</code>. Code that flows as smoothly as brunost over a freshly made waffle. You can read more about Brunost on <a href="https://github.com/atomfinger/brunost">GitHub</a>`,
-                    "qr-variables":    "Variables",
-                    "qr-loops":        "Loops",
-                    "qr-functions":    "Functions",
-                    "qr-errors":       "Error Handling",
-                    "editor-label":    "Try Brunost in the browser!",
-                    "status-loading":  "loading Brunost…",
-                    "status-ready":    "Brunost is loaded!",
-                    "status-error":    "error: could not load Brunost",
-                    "run-btn":         "Run the script",
-                    "output-bar":      "Output",
+                    "page-title": "Brunost — The Programming Language",
+                    tagline: "The programming language with a taste of Norway",
+                    blurb: `Brunost is a programming language designed for those who believe code shouldn't just be functional — it should have <em>soul</em>. Write with genuine Nynorsk terminology: <code style="${CODE_STYLE}">forKvart</code>, <code style="${CODE_STYLE}">gjevTilbake</code>, <code style="${CODE_STYLE}">prøv</code> and <code style="${CODE_STYLE}">fang</code>. Code that flows as smoothly as brunost over a freshly made waffle. You can read more about Brunost on <a href="https://github.com/atomfinger/brunost">GitHub</a>`,
+                    "qr-variables": "Variables",
+                    "qr-loops": "Loops",
+                    "qr-functions": "Functions",
+                    "qr-errors": "Error Handling",
+                    "editor-label": "Try Brunost in the browser!",
+                    "status-loading": "loading Brunost…",
+                    "status-ready": "Brunost is loaded!",
+                    "status-error": "error: could not load Brunost",
+                    "run-btn": "Run the script",
+                    "output-bar": "Output",
                     "output-empty-init": "(no output yet)",
-                    "output-empty":    "(no output)",
-                    "footer-made-by":  "Made with love and way too much brunost by",
-                    "footer-read-more":"Read more about Brunost on",
-                    "lang-toggle":     "🇳🇴 Nynorsk",
+                    "output-empty": "(no output)",
+                    "footer-made-by":
+                        "Made with love and way too much brunost by",
+                    "footer-read-more": "Read more about Brunost on",
+                    "lang-toggle": "🇳🇴 Nynorsk",
                 },
             };
 
-            // HTML keys whose content is rich (innerHTML, not textContent)
             const HTML_KEYS = new Set(["blurb"]);
 
             let currentLang = "nn";
@@ -994,7 +1013,8 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                 const t = translations[lang];
                 document.documentElement.lang = lang;
                 document.title = t["page-title"];
-                document.getElementById("langToggle").textContent = t["lang-toggle"];
+                document.getElementById("langToggle").textContent =
+                    t["lang-toggle"];
                 document.querySelectorAll("[data-i18n]").forEach((el) => {
                     const key = el.dataset.i18n;
                     if (!(key in t)) return;
@@ -1004,7 +1024,9 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                         el.textContent = t[key];
                     }
                 });
-                try { localStorage.setItem("brunost-lang", lang); } catch (_) {}
+                try {
+                    localStorage.setItem("brunost-lang", lang);
+                } catch (_) {}
             }
 
             function toggleLanguage() {
@@ -1014,7 +1036,9 @@ forKvart nummer i [1, 2, 3, 4, 5] {
             // Initialise language on load
             (function initLang() {
                 let stored = null;
-                try { stored = localStorage.getItem("brunost-lang"); } catch (_) {}
+                try {
+                    stored = localStorage.getItem("brunost-lang");
+                } catch (_) {}
                 let lang;
                 if (stored && translations[stored]) {
                     lang = stored;
@@ -1025,7 +1049,6 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                 setLanguage(lang);
             })();
 
-            // ══ WASM ══════════════════════════════════════════════════════
             let wasm = null;
             let mem = null;
 
@@ -1040,13 +1063,15 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                     wasm = r.instance.exports;
                     mem = new Uint8Array(wasm.memory.buffer);
                     dot.className = "status-dot ready";
-                    status.textContent = translations[currentLang]["status-ready"];
+                    status.textContent =
+                        translations[currentLang]["status-ready"];
                     runBtn.disabled = false;
                 })
                 .catch((err) => {
                     dot.className = "status-dot";
                     dot.style.background = "#9b2215";
-                    status.textContent = translations[currentLang]["status-error"];
+                    status.textContent =
+                        translations[currentLang]["status-error"];
                     console.error(err);
                 });
 
@@ -1072,7 +1097,8 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                     : out === ""
                       ? "empty"
                       : "";
-                el.textContent = out || translations[currentLang]["output-empty"];
+                el.textContent =
+                    out || translations[currentLang]["output-empty"];
             }
 
             runBtn.addEventListener("click", runCode);
