@@ -1,7 +1,7 @@
 bruk terminal
 bruk matte
 
-endreleg teljar er 1
+open teljar er 1
 
 medan (teljar erSameEllerMindreEnn 15) gjer {
     viss (matte.modulus(teljar, 15) erSameSom 0) gjer {
