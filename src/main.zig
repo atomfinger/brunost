@@ -78,7 +78,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
     defer stderr_fw.flush() catch {};
 
     var args_it = if (comptime builtin.os.tag == .windows)
-        try std.process.Args.Iterator.initAllocator(alloc, init.args)
+        try std.process.Args.Iterator.initAllocator(init.args, alloc)
     else
         std.process.Args.Iterator.init(init.args);
     defer if (comptime builtin.os.tag == .windows) args_it.deinit();
