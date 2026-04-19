@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const token = @import("token.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
@@ -76,7 +77,11 @@ pub fn main(init: std.process.Init.Minimal) !void {
     var stderr_fw = std.Io.File.stderr().writer(io, &stderr_buf);
     defer stderr_fw.flush() catch {};
 
-    var args_it = std.process.Args.Iterator.init(init.args);
+    var args_it = if (comptime builtin.os.tag == .windows)
+        try std.process.Args.Iterator.initAllocator(alloc, init.args)
+    else
+        std.process.Args.Iterator.init(init.args);
+    defer if (comptime builtin.os.tag == .windows) args_it.deinit();
     _ = args_it.skip(); // skip argv[0]
     const first_arg = args_it.next() orelse {
         stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
