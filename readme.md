@@ -12,10 +12,9 @@
 [![Under arbeid](https://img.shields.io/badge/status-under%20arbeid-orange?style=flat-square)](https://github.com/atomfinger/brunost)
 [![Palmeolje-fri](https://img.shields.io/badge/palmeolje-fri-green?style=flat-square)](https://github.com/atomfinger/brunost)
 
-
 ## Kva er Brunost?
 
-Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje berre skal vere funksjonell — han skal ha *sjel*. Inspirert av den klassiske norske frukostopplevinga kombinerer Brunost ein rein, lesbar syntaks med ekte nynorsk terminologi.
+Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje berre skal vere funksjonell — han skal ha _sjel_. Inspirert av den klassiske norske frukostopplevinga kombinerer Brunost ein rein, lesbar syntaks med ekte nynorsk terminologi.
 
 Ingen framandord. Ingen rar import-hierarki. Berre kode som flyt like mjukt som brunost over ein nysteikt vaffel.
 
@@ -25,13 +24,13 @@ Ingen framandord. Ingen rar import-hierarki. Berre kode som flyt like mjukt som 
 
 ## Hovudtrekk
 
-| Eigenskap | Brunost |
-|---|---|
-| **Løkker** | `forKvart` og `medan`-syntaks som les seg naturleg |
-| **Feilhandtering** | `prøv`/`fang`-blokker for reine feilflyt |
-| **Modular** | Innebygde, brukar-definerte og fil-baserte modular |
-| **Mutabilitet** | Eksplisitt `låst`/`open` — aldri uventa endringar |
-| **Typar** | Eigendefinerte datatypar med feltmutabilitet |
+| Eigenskap          | Brunost                                            |
+| ------------------ | -------------------------------------------------- |
+| **Løkker**         | `forKvart` og `medan`-syntaks som les seg naturleg |
+| **Feilhandtering** | `prøv`/`fang`-blokker for reine feilflyt           |
+| **Modular**        | Innebygde, brukar-definerte og fil-baserte modular |
+| **Mutabilitet**    | Eksplisitt `låst`/`open` — aldri uventa endringar  |
+| **Typar**          | Eigendefinerte datatypar med feltmutabilitet       |
 
 ---
 
@@ -81,7 +80,7 @@ straum er straum + 1
 
 ```python
 låst erNynorsk    er sant                                               // Boolsk
-låst årstal       er 1814                                               // Heiltal 
+låst årstal       er 1814                                               // Heiltal
 låst graderNord   er 71.0                                               // Desimaltal
 låst helsing      er "God dag, Noreg!"                                  // Streng
 låst fjordar      er ["Sognefjord", "Hardangerfjord", "Geirangerfjord"] // Liste
@@ -293,6 +292,7 @@ terminal.skriv(geometri.omkrins(5, 8)) // 26
 Del koden over fleire filer for større prosjekt.
 
 `utils/rekning.brunost`:
+
 ```python skip
 gjer leggTil(a, b) {
   gjevTilbake a + b
@@ -304,6 +304,7 @@ gjer trekkFrå(a, b) {
 ```
 
 `hovud.brunost`:
+
 ```python skip
 bruk terminal
 bruk utils.rekning
@@ -354,6 +355,14 @@ Eller bruk den kompilerte binærfila direkte:
 
 Testane er snapshot-testar som køyrer `.brunost`-skript og samanliknar utdata med venta resultat. Testskripter ligg i `src/tests/`.
 
+### Alternativ: nix
+
+Ein kan òg køyre brunost direkte ved hjelp av nix:
+
+```sh
+nix run github:atomfinger/brunost -- mittskript.brunost
+```
+
 ---
 
 ## Bidra
@@ -369,7 +378,7 @@ Brunost er eit aktivt prosjekt og tek gjerne imot bidrag — anten det er feilre
 
 <div align="center">
 
-*Laga med kjærleik og altfor mykje brunost*
+_Laga med kjærleik og altfor mykje brunost_
 
 **[Prøv Brunost i nettlesaren](https://atomfinger.github.io/brunost/)**
 
