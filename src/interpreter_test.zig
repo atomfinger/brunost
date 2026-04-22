@@ -350,12 +350,12 @@ test "desimaltal i kontrollflyt" {
         \\bruk terminal
         \\viss (0.0) gjer {
         \\  terminal.skriv("sant")
-        \\} ellers {
+        \\} elles {
         \\  terminal.skriv("usant")
         \\}
         \\viss (0.1) gjer {
         \\  terminal.skriv("sant")
-        \\} ellers {
+        \\} elles {
         \\  terminal.skriv("usant")
         \\}
     );

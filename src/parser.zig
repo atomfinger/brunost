@@ -179,7 +179,7 @@ pub const Parser = struct {
         const consequence = try self.parse_block();
         var alternative: ?*ast.Node = null;
         if (self.curr.type == .else_op) {
-            self.advance(); // consume ellers
+            self.advance(); // consume elles
             if (self.curr.type == .if_op) {
                 alternative = try self.parse_if();
             } else {

@@ -9,7 +9,7 @@ låst minBil er Bil { namn er "Toyota", alder er 5 }
 
 viss (minBil.alder er 5) gjer {
     terminal.skriv("Bilen er 5 år gamal")
-} ellers {
+} elles {
     terminal.skriv("Feil alder")
 }
 

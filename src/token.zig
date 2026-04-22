@@ -39,7 +39,7 @@ pub const token_types = enum {
     let_immutable, // låst
     return_op, // gjevTilbake
     if_op, // viss
-    else_op, // ellers
+    else_op, // elles
     true_val, // sant
     false_val, // usant
     not_op, // ikkje
@@ -81,7 +81,7 @@ pub const Token = struct {
             .{ "og", .and_op },
             .{ "eller", .or_op },
             .{ "viss", .if_op },
-            .{ "ellers", .else_op },
+            .{ "elles", .else_op },
             .{ "gjevTilbake", .return_op },
             .{ "er", .assign },
             .{ "erSameSom", .equal },

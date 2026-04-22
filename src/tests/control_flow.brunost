@@ -4,9 +4,9 @@ open verdi er 1
 
 viss (verdi er 1) gjer {
   terminal.skriv("ein")
-} ellers viss (verdi er 2) gjer {
+} elles viss (verdi er 2) gjer {
   terminal.skriv("to")
-} ellers {
+} elles {
   terminal.skriv("anna")
 }
 
@@ -14,6 +14,6 @@ open tal er 10
 
 viss (tal > 5) gjer {
   terminal.skriv("stort")
-} ellers {
+} elles {
   terminal.skriv("lite")
 }

@@ -107,9 +107,9 @@ låst temperatur er -5
 
 viss (temperatur erMindreEnn 0) gjer {
   terminal.skriv("Det er kaldt — ta på deg ull!")
-} ellers viss (temperatur erMindreEnn 15) gjer {
+} elles viss (temperatur erMindreEnn 15) gjer {
   terminal.skriv("Frisk luft, ta med jakke")
-} ellers {
+} elles {
   terminal.skriv("Norsk sommar! Nyt det medan det varar")
 }
 ```

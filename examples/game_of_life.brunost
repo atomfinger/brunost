@@ -63,7 +63,7 @@ gjer nesteGenerasjon(brett) {
             viss (celle erSameSom 1) gjer {
                 viss (naboTal erSameSom 2) gjer { nyCelle er 1 }
                 viss (naboTal erSameSom 3) gjer { nyCelle er 1 }
-            } ellers {
+            } elles {
                 viss (naboTal erSameSom 3) gjer { nyCelle er 1 }
             }
             nyRekkje er liste.leggTil(nyRekkje, nyCelle)
@@ -86,7 +86,7 @@ gjer teiknBrett(brett) {
             låst celle er liste.hent(rekkje, kolonne)
             viss (celle erSameSom 1) gjer {
                 linje er linje + "██"
-            } ellers {
+            } elles {
                 linje er linje + "  "
             }
             kolonne er kolonne + 1
