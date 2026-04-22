@@ -23,6 +23,7 @@ fn skriv(args: []const Value, interp: *Interpreter) EvalError!Value {
 
 fn toem(args: []const Value, interp: *Interpreter) EvalError!Value {
     if (args.len != 0) return EvalError.TypeError;
+    interp.output.flush() catch return EvalError.OutOfMemory;
     interp.output.print("\x1B[2J\x1B[H", .{}) catch return EvalError.OutOfMemory;
     return Value{ .null_val = {} };
 }

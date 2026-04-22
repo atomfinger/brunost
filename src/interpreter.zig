@@ -61,12 +61,17 @@ pub const StructInstance = struct {
     fields: []StructFieldEntry,
 };
 
+pub const BrunostList = struct {
+    items: []Value,
+    cap: usize,
+};
+
 pub const Value = union(enum) {
     integer: i64,
     float: f64,
     string: []const u8,
     boolean: bool,
-    list: []Value,
+    list: BrunostList,
     hashmap: *std.StringHashMapUnmanaged(Value),
     function: Function,
     module: []ModuleMember,
@@ -81,7 +86,7 @@ pub const Value = union(enum) {
             .integer => |n| n != 0,
             .float => |n| n != 0.0,
             .string => |s| s.len > 0,
-            .list => |l| l.len > 0,
+            .list => |l| l.items.len > 0,
             .hashmap => |h| h.count() > 0,
             .null_val => false,
             .function, .module, .builtin_fn => true,
@@ -127,10 +132,10 @@ pub const Value = union(enum) {
             .list => |l| blk: {
                 var buf: std.ArrayList(u8) = .empty;
                 buf.append(alloc, '[') catch return EvalError.OutOfMemory;
-                for (l, 0..) |elem, idx| {
+                for (l.items, 0..) |elem, idx| {
                     const s = try elem.to_string(alloc);
                     buf.appendSlice(alloc, s) catch return EvalError.OutOfMemory;
-                    if (idx + 1 < l.len) buf.appendSlice(alloc, ", ") catch return EvalError.OutOfMemory;
+                    if (idx + 1 < l.items.len) buf.appendSlice(alloc, ", ") catch return EvalError.OutOfMemory;
                 }
                 buf.append(alloc, ']') catch return EvalError.OutOfMemory;
                 break :blk buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory;
@@ -200,7 +205,7 @@ pub const Value = union(enum) {
 
     pub fn as_list(self: Value) EvalError![]Value {
         return switch (self) {
-            .list => |l| l,
+            .list => |l| l.items,
             else => EvalError.TypeError,
         };
     }
@@ -431,9 +436,9 @@ pub const Interpreter = struct {
     fn eval_foreach(self: *Interpreter, stmt: ast.ForeachStmt, env: *Environment) EvalError!Value {
         const iter_val = try self.eval(stmt.iterable, env);
         switch (iter_val) {
-            .list => |items| {
-                self.dbg("forKvart '{s}': {d} element(ar)", .{ stmt.iterator_name, items.len });
-                for (items, 0..) |item, i| {
+            .list => |bl| {
+                self.dbg("forKvart '{s}': {d} element(ar)", .{ stmt.iterator_name, bl.items.len });
+                for (bl.items, 0..) |item, i| {
                     self.dbg("  element {d}: {s}", .{ i, self.dbg_val(item) });
                     var child_env = Environment.init(self.alloc, env);
                     defer child_env.deinit();
@@ -595,7 +600,8 @@ pub const Interpreter = struct {
             const v = try self.eval(elem, env);
             items.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
         }
-        return Value{ .list = items.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory };
+        const slice = items.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory;
+        return Value{ .list = .{ .items = slice, .cap = slice.len } };
     }
 
     fn eval_hashmap(self: *Interpreter, h: ast.HashmapLit, env: *Environment) EvalError!Value {
@@ -845,12 +851,20 @@ pub const Interpreter = struct {
         const member_val = for (members) |m| {
             if (std.mem.eql(u8, m.name, expr.member)) break m.value;
         } else return EvalError.UndefinedVariable;
-        var args: std.ArrayList(Value) = .empty;
-        for (expr.args) |arg_node| {
-            const v = try self.eval(arg_node, env);
-            args.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
-        }
-        const args_slice = args.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory;
+        var args_buf: [16]Value = undefined;
+        const args_slice: []Value = if (expr.args.len <= args_buf.len) blk: {
+            for (expr.args, 0..) |arg_node, ai| {
+                args_buf[ai] = try self.eval(arg_node, env);
+            }
+            break :blk args_buf[0..expr.args.len];
+        } else blk: {
+            var args_list: std.ArrayList(Value) = .empty;
+            for (expr.args) |arg_node| {
+                const v = try self.eval(arg_node, env);
+                args_list.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
+            }
+            break :blk args_list.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory;
+        };
         if (self.debug) {
             self.dbg("kall '{s}'.'{s}' ({d} arg(ar)):", .{ expr.object, expr.member, args_slice.len });
             for (args_slice, 0..) |arg, i| {
@@ -862,7 +876,7 @@ pub const Interpreter = struct {
             .function => |f| try self.call_function(f, args_slice),
             else => return EvalError.TypeError,
         };
-        self.dbg("  → {s}", .{self.dbg_val(result)});
+        if (self.debug) self.dbg("  → {s}", .{self.dbg_val(result)});
         return result;
     }
 };

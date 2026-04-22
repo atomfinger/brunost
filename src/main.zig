@@ -69,7 +69,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
     const io = std.Options.debug_io;
 
-    var stdout_buf: [4096]u8 = undefined;
+    var stdout_buf: [16384]u8 = undefined;
     var stdout_fw = std.Io.File.stdout().writer(io, &stdout_buf);
     defer stdout_fw.flush() catch {};
 

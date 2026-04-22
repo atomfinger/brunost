@@ -72,7 +72,7 @@ fn noklar(args: []const Value, interp: *Interpreter) EvalError!Value {
     while (it.next()) |entry| : (i += 1) {
         keys[i] = Value{ .string = entry.key_ptr.* };
     }
-    return Value{ .list = keys };
+    return Value{ .list = .{ .items = keys, .cap = keys.len } };
 }
 
 fn verdiar(args: []const Value, interp: *Interpreter) EvalError!Value {
@@ -84,5 +84,5 @@ fn verdiar(args: []const Value, interp: *Interpreter) EvalError!Value {
     while (it.next()) |entry| : (i += 1) {
         vals[i] = entry.value_ptr.*;
     }
-    return Value{ .list = vals };
+    return Value{ .list = .{ .items = vals, .cap = vals.len } };
 }

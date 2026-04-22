@@ -24,11 +24,23 @@ fn lengd(args: []const Value, _: *Interpreter) EvalError!Value {
 
 fn legg_til(args: []const Value, interp: *Interpreter) EvalError!Value {
     if (args.len != 2) return EvalError.TypeError;
-    const l = try args[0].as_list();
-    const new_list = interp.str_alloc().alloc(Value, l.len + 1) catch return EvalError.OutOfMemory;
-    @memcpy(new_list[0..l.len], l);
-    new_list[l.len] = args[1];
-    return Value{ .list = new_list };
+    const bl = switch (args[0]) {
+        .list => |l| l,
+        else => return EvalError.TypeError,
+    };
+    const new_len = bl.items.len + 1;
+    if (new_len <= bl.cap) {
+        // Spare capacity in the arena-allocated buffer: extend in place.
+        // The arena never reclaims memory, so bl.items.ptr[0..bl.cap] is permanently ours.
+        const buf = bl.items.ptr[0..new_len];
+        buf[bl.items.len] = args[1];
+        return Value{ .list = .{ .items = buf, .cap = bl.cap } };
+    }
+    const new_cap = if (bl.cap == 0) @as(usize, 4) else bl.cap * 2;
+    const new_buf = interp.str_alloc().alloc(Value, new_cap) catch return EvalError.OutOfMemory;
+    @memcpy(new_buf[0..bl.items.len], bl.items);
+    new_buf[bl.items.len] = args[1];
+    return Value{ .list = .{ .items = new_buf[0..new_len], .cap = new_cap } };
 }
 
 fn fyrste(args: []const Value, _: *Interpreter) EvalError!Value {
@@ -62,5 +74,5 @@ fn oppdater(args: []const Value, interp: *Interpreter) EvalError!Value {
     const new_list = interp.str_alloc().alloc(Value, l.len) catch return EvalError.OutOfMemory;
     @memcpy(new_list, l);
     new_list[@intCast(idx)] = args[2];
-    return Value{ .list = new_list };
+    return Value{ .list = .{ .items = new_list, .cap = new_list.len } };
 }
