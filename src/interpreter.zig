@@ -8,9 +8,6 @@ const stdlib_streng = @import("stdlib/streng.zig");
 const stdlib_liste = @import("stdlib/liste.zig");
 const stdlib_prosess = @import("stdlib/prosess.zig");
 const stdlib_kart = @import("stdlib/kart.zig");
-const stdlib_fil = @import("stdlib/fil.zig");
-const stdlib_http = @import("stdlib/http.zig");
-const stdlib_nettverk = @import("stdlib/nettverk.zig");
 
 pub const EvalError = error{
     TypeError,
@@ -100,10 +97,13 @@ pub const ResourceHandle = struct {
     kind: ResourceHandleKind,
 };
 
-pub const RuntimeResource = union(ResourceHandleKind) {
-    listener: std.Io.net.Server,
-    stream: std.Io.net.Stream,
-};
+pub const RuntimeResource = if (@import("builtin").cpu.arch == .wasm32)
+    union(ResourceHandleKind) { listener: void, stream: void }
+else
+    union(ResourceHandleKind) {
+        listener: std.Io.net.Server,
+        stream: std.Io.net.Stream,
+    };
 
 pub const ResourceSlot = struct {
     active: bool,
@@ -361,13 +361,15 @@ pub const Interpreter = struct {
     }
 
     pub fn deinit(self: *Interpreter) void {
-        for (self.resource_slots.items) |*slot| {
-            if (!slot.active) continue;
-            switch (slot.resource) {
-                .listener => |*server| server.deinit(std.Options.debug_io),
-                .stream => |*stream| stream.close(std.Options.debug_io),
+        if (comptime @import("builtin").cpu.arch != .wasm32) {
+            for (self.resource_slots.items) |*slot| {
+                if (!slot.active) continue;
+                switch (slot.resource) {
+                    .listener => |*server| server.deinit(std.Options.debug_io),
+                    .stream => |*stream| stream.close(std.Options.debug_io),
+                }
+                slot.active = false;
             }
-            slot.active = false;
         }
         self.resource_slots.deinit(self.alloc);
         for (self.module_envs.items) |env| {
@@ -680,13 +682,16 @@ pub const Interpreter = struct {
             .{ .name = "liste",    .make = stdlib_liste.make    },
             .{ .name = "prosess",  .make = stdlib_prosess.make  },
             .{ .name = "kart",     .make = stdlib_kart.make     },
-            .{ .name = "fil",      .make = stdlib_fil.make      },
-            .{ .name = "http",     .make = stdlib_http.make     },
-            .{ .name = "nettverk", .make = stdlib_nettverk.make },
         };
 
         for (builtins) |b| {
             if (std.mem.eql(u8, name, b.name)) return b.make(alloc);
+        }
+
+        if (comptime @import("builtin").cpu.arch != .wasm32) {
+            if (std.mem.eql(u8, name, "fil")) return @import("stdlib/fil.zig").make(alloc);
+            if (std.mem.eql(u8, name, "http")) return @import("stdlib/http.zig").make(alloc);
+            if (std.mem.eql(u8, name, "nettverk")) return @import("stdlib/nettverk.zig").make(alloc);
         }
 
         return EvalError.UnknownModule;
