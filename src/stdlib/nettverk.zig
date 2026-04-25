@@ -13,8 +13,8 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
     const members = try alloc.dupe(ModuleMember, &[_]ModuleMember{
         .{ .name = "lytt",      .value = .{ .builtin_fn = lytt } },
         .{ .name = "port",      .value = .{ .builtin_fn = port } },
-        .{ .name = "vent",       .value = .{ .builtin_fn = vent } },
-        .{ .name = "kopla",     .value = .{ .builtin_fn = kopla } },
+        .{ .name = "godta",      .value = .{ .builtin_fn = godta } },
+        .{ .name = "kopleTil",  .value = .{ .builtin_fn = kopleTil } },
         .{ .name = "les",       .value = .{ .builtin_fn = les } },
         .{ .name = "skriv",     .value = .{ .builtin_fn = skriv } },
         .{ .name = "lukk",      .value = .{ .builtin_fn = lukk } },
@@ -134,7 +134,7 @@ fn port(args: []const Value, interp: *Interpreter) EvalError!Value {
     return .{ .integer = try interp.local_port(args[0]) };
 }
 
-fn vent(args: []const Value, interp: *Interpreter) EvalError!Value {
+fn godta(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 1) return EvalError.TypeError;
     const server = try interp.require_listener(args[0]);
@@ -142,7 +142,7 @@ fn vent(args: []const Value, interp: *Interpreter) EvalError!Value {
     return interp.register_stream(stream);
 }
 
-fn kopla(args: []const Value, interp: *Interpreter) EvalError!Value {
+fn kopleTil(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 2) return EvalError.TypeError;
     const host = try args[0].as_str();
