@@ -8,6 +8,7 @@ const stdlib_streng = @import("stdlib/streng.zig");
 const stdlib_liste = @import("stdlib/liste.zig");
 const stdlib_prosess = @import("stdlib/prosess.zig");
 const stdlib_kart = @import("stdlib/kart.zig");
+const stdlib_nettverk = @import("stdlib/nettverk.zig");
 
 pub const EvalError = error{
     TypeError,
@@ -24,6 +25,23 @@ pub const EvalError = error{
     UndefinedField,
     ImmutableField,
     NotAStructType,
+    InvalidAddress,
+    InvalidPort,
+    InvalidHandle,
+    UnsupportedPlatform,
+    AddressInUse,
+    AddressUnavailable,
+    ConnectionRefused,
+    ConnectionAborted,
+    ConnectionResetByPeer,
+    HostUnreachable,
+    NetworkUnreachable,
+    NetworkDown,
+    SocketNotListening,
+    AccessDenied,
+    Timeout,
+    SystemResources,
+    SocketLimitExceeded,
 };
 
 pub const Signal = union(enum) {
@@ -66,6 +84,26 @@ pub const BrunostList = struct {
     cap: usize,
 };
 
+pub const ResourceHandleKind = enum {
+    listener,
+    stream,
+};
+
+pub const ResourceHandle = struct {
+    id: usize,
+    kind: ResourceHandleKind,
+};
+
+pub const RuntimeResource = union(ResourceHandleKind) {
+    listener: std.Io.net.Server,
+    stream: std.Io.net.Stream,
+};
+
+pub const ResourceSlot = struct {
+    active: bool,
+    resource: RuntimeResource,
+};
+
 pub const Value = union(enum) {
     integer: i64,
     float: f64,
@@ -79,6 +117,7 @@ pub const Value = union(enum) {
     null_val: void,
     struct_type: StructType,
     struct_instance: *StructInstance,
+    resource_handle: ResourceHandle,
 
     pub fn is_truthy(self: Value) bool {
         return switch (self) {
@@ -89,7 +128,7 @@ pub const Value = union(enum) {
             .list => |l| l.items.len > 0,
             .hashmap => |h| h.count() > 0,
             .null_val => false,
-            .function, .module, .builtin_fn => true,
+            .function, .module, .builtin_fn, .resource_handle => true,
             .struct_type, .struct_instance => true,
         };
     }
@@ -116,6 +155,10 @@ pub const Value = union(enum) {
             },
             .null_val => switch (other) {
                 .null_val => true,
+                else => false,
+            },
+            .resource_handle => |a| switch (other) {
+                .resource_handle => |b| a.id == b.id and a.kind == b.kind,
                 else => false,
             },
             else => false,
@@ -159,6 +202,17 @@ pub const Value = union(enum) {
             .module => "<modul>",
             .builtin_fn => "<innebygd-funksjon>",
             .struct_type => "<type>",
+            .resource_handle => |h| std.fmt.allocPrint(
+                alloc,
+                "<{s}#{d}>",
+                .{
+                    switch (h.kind) {
+                        .listener => "lyttar",
+                        .stream => "straum",
+                    },
+                    h.id,
+                },
+            ) catch return EvalError.OutOfMemory,
             .struct_instance => |s| blk: {
                 var buf: std.ArrayList(u8) = .empty;
                 buf.append(alloc, '{') catch return EvalError.OutOfMemory;
@@ -216,6 +270,13 @@ pub const Value = union(enum) {
             else => EvalError.TypeError,
         };
     }
+
+    pub fn as_resource_handle(self: Value) EvalError!ResourceHandle {
+        return switch (self) {
+            .resource_handle => |h| h,
+            else => EvalError.TypeError,
+        };
+    }
 };
 
 pub const EnvEntry = struct {
@@ -268,6 +329,7 @@ pub const Interpreter = struct {
     base_dir: []const u8,
     script_args: []const []const u8,
     module_envs: std.ArrayList(*Environment),
+    resource_slots: std.ArrayList(ResourceSlot),
     debug: bool,
 
     pub fn init(
@@ -285,11 +347,21 @@ pub const Interpreter = struct {
             .base_dir = base_dir,
             .script_args = script_args,
             .module_envs = .empty,
+            .resource_slots = .empty,
             .debug = false,
         };
     }
 
     pub fn deinit(self: *Interpreter) void {
+        for (self.resource_slots.items) |*slot| {
+            if (!slot.active) continue;
+            switch (slot.resource) {
+                .listener => |*server| server.deinit(std.Options.debug_io),
+                .stream => |*stream| stream.close(std.Options.debug_io),
+            }
+            slot.active = false;
+        }
+        self.resource_slots.deinit(self.alloc);
         for (self.module_envs.items) |env| {
             env.deinit();
             self.alloc.destroy(env);
@@ -301,6 +373,72 @@ pub const Interpreter = struct {
 
     pub fn str_alloc(self: *Interpreter) std.mem.Allocator {
         return self.str_arena.allocator();
+    }
+
+    pub fn register_listener(self: *Interpreter, server: std.Io.net.Server) EvalError!Value {
+        try self.resource_slots.append(self.alloc, .{
+            .active = true,
+            .resource = .{ .listener = server },
+        });
+        return .{
+            .resource_handle = .{
+                .id = self.resource_slots.items.len,
+                .kind = .listener,
+            },
+        };
+    }
+
+    pub fn register_stream(self: *Interpreter, stream: std.Io.net.Stream) EvalError!Value {
+        try self.resource_slots.append(self.alloc, .{
+            .active = true,
+            .resource = .{ .stream = stream },
+        });
+        return .{
+            .resource_handle = .{
+                .id = self.resource_slots.items.len,
+                .kind = .stream,
+            },
+        };
+    }
+
+    fn get_active_slot(self: *Interpreter, handle: ResourceHandle) EvalError!*ResourceSlot {
+        if (handle.id == 0 or handle.id > self.resource_slots.items.len) return EvalError.InvalidHandle;
+        const slot = &self.resource_slots.items[handle.id - 1];
+        if (!slot.active) return EvalError.InvalidHandle;
+        return slot;
+    }
+
+    pub fn require_listener(self: *Interpreter, value: Value) EvalError!*std.Io.net.Server {
+        const handle = try value.as_resource_handle();
+        const slot = try self.get_active_slot(handle);
+        return switch (slot.resource) {
+            .listener => |*server| server,
+            else => EvalError.TypeError,
+        };
+    }
+
+    pub fn require_stream(self: *Interpreter, value: Value) EvalError!*std.Io.net.Stream {
+        const handle = try value.as_resource_handle();
+        const slot = try self.get_active_slot(handle);
+        return switch (slot.resource) {
+            .stream => |*stream| stream,
+            else => EvalError.TypeError,
+        };
+    }
+
+    pub fn local_port(self: *Interpreter, value: Value) EvalError!u16 {
+        const server = try self.require_listener(value);
+        return server.socket.address.getPort();
+    }
+
+    pub fn close_handle(self: *Interpreter, value: Value) EvalError!void {
+        const handle = try value.as_resource_handle();
+        const slot = try self.get_active_slot(handle);
+        switch (slot.resource) {
+            .listener => |*server| server.deinit(std.Options.debug_io),
+            .stream => |*stream| stream.close(std.Options.debug_io),
+        }
+        slot.active = false;
     }
 
     fn dbg(self: *Interpreter, comptime fmt: []const u8, args: anytype) void {
@@ -531,6 +669,7 @@ pub const Interpreter = struct {
             .{ .name = "liste",    .make = stdlib_liste.make    },
             .{ .name = "prosess",  .make = stdlib_prosess.make  },
             .{ .name = "kart",     .make = stdlib_kart.make     },
+            .{ .name = "nettverk", .make = stdlib_nettverk.make },
         };
 
         for (builtins) |b| {

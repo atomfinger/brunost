@@ -2,6 +2,8 @@ const std = @import("std");
 const main = @import("main.zig");
 const parser = @import("parser.zig");
 
+const io = std.Options.debug_io;
+
 fn run_script(source: []const u8) ![]u8 {
     return run_script_with_args(source, &.{});
 }
@@ -41,6 +43,83 @@ fn expect_parse_error(source: []const u8, expected: parser.ParseError) !main.Run
     try std.testing.expect(context.parse_diagnostic != null);
     try std.testing.expectEqual(expected, context.parse_diagnostic.?.err);
     return context;
+}
+
+const ThreadedScriptResult = struct {
+    err: ?anyerror = null,
+    output: []u8 = &.{},
+};
+
+fn run_script_in_thread(result: *ThreadedScriptResult, source: []const u8, script_args: []const []const u8) void {
+    var aw: std.Io.Writer.Allocating = .init(std.heap.page_allocator);
+    defer aw.deinit();
+
+    main.run_with_args(std.heap.page_allocator, source, &aw.writer, "", script_args) catch |err| {
+        result.err = err;
+        return;
+    };
+
+    result.output = aw.toOwnedSlice() catch |err| {
+        result.err = err;
+        return;
+    };
+}
+
+const EchoServerResult = struct {
+    err: ?anyerror = null,
+    received: [16]u8 = undefined,
+    received_len: usize = 0,
+};
+
+fn run_echo_server(result: *EchoServerResult, server: std.Io.net.Server) void {
+    var local_server = server;
+    defer local_server.deinit(io);
+
+    var stream = local_server.accept(io) catch |err| {
+        result.err = err;
+        return;
+    };
+    defer stream.close(io);
+
+    var reader_buffer: [128]u8 = undefined;
+    var reader = stream.reader(io, &reader_buffer);
+    result.received_len = reader.interface.readSliceShort(result.received[0..4]) catch |err| {
+        result.err = reader.err orelse err;
+        return;
+    };
+
+    var writer_buffer: [128]u8 = undefined;
+    var writer = stream.writer(io, &writer_buffer);
+    writer.interface.writeAll("pong") catch |err| {
+        result.err = writer.err orelse err;
+        return;
+    };
+    writer.interface.flush() catch |err| {
+        result.err = writer.err orelse err;
+        return;
+    };
+}
+
+fn choose_loopback_port() !u16 {
+    const address = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(0) };
+    var server = try address.listen(io, .{ .reuse_address = true });
+    defer server.deinit(io);
+    return server.socket.address.getPort();
+}
+
+fn connect_loopback_with_retry(port: u16) !std.Io.net.Stream {
+    const address = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(port) };
+    var attempts: usize = 0;
+    while (true) : (attempts += 1) {
+        return address.connect(io, .{ .mode = .stream, .protocol = .tcp }) catch |err| switch (err) {
+            error.ConnectionRefused => {
+                if (attempts >= 19) return err;
+                std.Io.sleep(io, .fromMilliseconds(25), .awake) catch {};
+                continue;
+            },
+            else => return err,
+        };
+    }
 }
 
 test "hello world" {
@@ -578,4 +657,105 @@ test "feil: feltnamn er ikkje nynorsk" {
         \\    låst fooField er "x"
         \\}
     , error.NotNynorsk);
+}
+
+test "nettverk: kopleTil, skriv, les og lukk" {
+    const address = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(0) };
+    const server = try address.listen(io, .{ .reuse_address = true });
+    const port = server.socket.address.getPort();
+
+    var server_result: EchoServerResult = .{};
+    const server_thread = try std.Thread.spawn(.{}, run_echo_server, .{ &server_result, server });
+    defer server_thread.join();
+
+    const port_arg = try std.fmt.allocPrint(std.testing.allocator, "{d}", .{port});
+    defer std.testing.allocator.free(port_arg);
+
+    const out = try run_script_with_args(
+        \\bruk nettverk
+        \\bruk terminal
+        \\bruk streng
+        \\
+        \\låst sokkel er nettverk.kopleTil("127.0.0.1", streng.tilTal(terminal.argument(0)))
+        \\nettverk.skriv(sokkel, "ping")
+        \\låst svar er nettverk.les(sokkel, 4)
+        \\terminal.skriv(svar)
+        \\nettverk.lukk(sokkel)
+        ,
+        &.{port_arg},
+    );
+    defer std.testing.allocator.free(out);
+
+    try std.testing.expect(server_result.err == null);
+    try std.testing.expectEqualStrings("ping", server_result.received[0..server_result.received_len]);
+    try std.testing.expectEqualStrings("pong\n", out);
+}
+
+test "nettverk: lytt, godta, port og lukk" {
+    const out = try run_script(
+        \\bruk nettverk
+        \\bruk terminal
+        \\
+        \\låst lyttar er nettverk.lytt("127.0.0.1", 0)
+        \\terminal.skriv(nettverk.port(lyttar))
+        \\nettverk.lukk(lyttar)
+    );
+    defer std.testing.allocator.free(out);
+
+    const trimmed = std.mem.trim(u8, out, "\n");
+    const parsed_port = try std.fmt.parseInt(u16, trimmed, 10);
+    try std.testing.expect(parsed_port > 0);
+}
+
+test "nettverk: Brunost kan vere server" {
+    const port = try choose_loopback_port();
+    const port_arg = try std.fmt.allocPrint(std.testing.allocator, "{d}", .{port});
+    defer std.testing.allocator.free(port_arg);
+
+    var server_result: ThreadedScriptResult = .{};
+    const server_thread = try std.Thread.spawn(.{}, run_script_in_thread, .{
+        &server_result,
+        \\bruk nettverk
+        \\bruk terminal
+        \\bruk streng
+        \\
+        \\låst tal er streng.tilTal(terminal.argument(0))
+        \\låst lyttar er nettverk.lytt("127.0.0.1", tal)
+        \\låst klient er nettverk.godta(lyttar)
+        \\låst svar er nettverk.les(klient, 4)
+        \\terminal.skriv(svar)
+        \\nettverk.skriv(klient, "pong")
+        \\nettverk.lukk(klient)
+        \\nettverk.lukk(lyttar)
+        ,
+        &.{port_arg},
+    });
+    var joined = false;
+    var stream = connect_loopback_with_retry(port) catch |err| {
+        server_thread.join();
+        joined = true;
+        if (server_result.err) |thread_err| return thread_err;
+        return err;
+    };
+    defer stream.close(io);
+
+    var writer_buffer: [128]u8 = undefined;
+    var writer = stream.writer(io, &writer_buffer);
+    try writer.interface.writeAll("ping");
+    try writer.interface.flush();
+
+    var reader_buffer: [128]u8 = undefined;
+    var reader = stream.reader(io, &reader_buffer);
+    var reply: [4]u8 = undefined;
+    const reply_len = try reader.interface.readSliceShort(&reply);
+
+    if (!joined) {
+        server_thread.join();
+        joined = true;
+    }
+
+    try std.testing.expect(server_result.err == null);
+    defer if (server_result.output.len > 0) std.heap.page_allocator.free(server_result.output);
+    try std.testing.expectEqualStrings("ping\n", server_result.output);
+    try std.testing.expectEqualStrings("pong", reply[0..reply_len]);
 }
