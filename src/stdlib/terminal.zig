@@ -18,6 +18,7 @@ fn skriv(args: []const Value, interp: *Interpreter) EvalError!Value {
     if (args.len != 1) return EvalError.TypeError;
     const str = try args[0].to_string(interp.str_alloc());
     interp.output.print("{s}\n", .{str}) catch return EvalError.OutOfMemory;
+    interp.output.flush() catch return EvalError.OutOfMemory;
     return Value{ .null_val = {} };
 }
 

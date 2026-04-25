@@ -36,6 +36,10 @@ pub fn describe_error(err: anyerror) []const u8 {
         error.Timeout => "Operasjonen gjekk ut på tid",
         error.SystemResources => "Operativsystemet manglar ressursar til nettverksoperasjonen",
         error.SocketLimitExceeded => "For mange opne soklar",
+        error.FileNotFound => "Fann ikkje fila",
+        error.PermissionDenied => "Manglar løyve til å lesa fila",
+        error.FileTooLarge => "Fila er for stor",
+        error.MalformedHttpRequest => "Ugyldig HTTP-førespurnad",
         // Parserfeil
         error.UnexpectedToken => "Uventa teikn i koden",
         error.ExpectedIdentifier => "Forventa eit namn her",
@@ -60,6 +64,7 @@ pub fn describe_error(err: anyerror) []const u8 {
 
 pub const RunContext = struct {
     parse_diagnostic: ?parser.ParseDiagnostic = null,
+    undefined_name: []const u8 = "",
     debug: bool = false,
 };
 
@@ -139,6 +144,8 @@ pub fn main(init: std.process.Init.Minimal) !void {
             } else {
                 stderr_fw.interface.print("Feil: {s}\n", .{describe_error(err)}) catch {};
             }
+        } else if (err == error.UndefinedVariable and context.undefined_name.len > 0) {
+            stderr_fw.interface.print("Feil: {s}: '{s}'\n", .{ describe_error(err), context.undefined_name }) catch {};
         } else {
             stderr_fw.interface.print("Feil: {s}\n", .{describe_error(err)}) catch {};
         }
@@ -206,5 +213,8 @@ pub fn run_with_context(
     var interp = interpreter.Interpreter.init(alloc, output, base_dir, script_args);
     interp.debug = if (comptime is_wasm) false else context.debug;
     defer interp.deinit();
-    _ = try interp.eval(program, &interp.global);
+    _ = interp.eval(program, &interp.global) catch |err| {
+        context.undefined_name = interp.last_undefined_name;
+        return err;
+    };
 }

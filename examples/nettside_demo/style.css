@@ -1,0 +1,62 @@
+:root {
+  color-scheme: light;
+  --bakgrunn: #f6efe5;
+  --flate: #fff8ef;
+  --kant: #d7bfa4;
+  --tekst: #382616;
+  --mjuk: #7b614c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Georgia, serif;
+  color: var(--tekst);
+  background:
+    radial-gradient(circle at top, rgba(215, 191, 164, 0.45), transparent 38%),
+    linear-gradient(180deg, var(--bakgrunn), #efe2d1);
+  display: grid;
+  place-items: center;
+}
+
+.flate {
+  width: min(44rem, calc(100vw - 2rem));
+  padding: 2.5rem;
+  border: 1px solid var(--kant);
+  border-radius: 1.5rem;
+  background: var(--flate);
+  box-shadow: 0 20px 50px rgba(56, 38, 22, 0.12);
+}
+
+.merke {
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--mjuk);
+  font-size: 0.8rem;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+}
+
+p {
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+a {
+  color: inherit;
+}
+
+code {
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.4rem;
+  background: rgba(215, 191, 164, 0.28);
+}

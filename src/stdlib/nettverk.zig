@@ -13,8 +13,8 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
     const members = try alloc.dupe(ModuleMember, &[_]ModuleMember{
         .{ .name = "lytt",      .value = .{ .builtin_fn = lytt } },
         .{ .name = "port",      .value = .{ .builtin_fn = port } },
-        .{ .name = "godta",     .value = .{ .builtin_fn = godta } },
-        .{ .name = "kopleTil",  .value = .{ .builtin_fn = kople_til } },
+        .{ .name = "vent",       .value = .{ .builtin_fn = vent } },
+        .{ .name = "kopla",     .value = .{ .builtin_fn = kopla } },
         .{ .name = "les",       .value = .{ .builtin_fn = les } },
         .{ .name = "skriv",     .value = .{ .builtin_fn = skriv } },
         .{ .name = "lukk",      .value = .{ .builtin_fn = lukk } },
@@ -134,7 +134,7 @@ fn port(args: []const Value, interp: *Interpreter) EvalError!Value {
     return .{ .integer = try interp.local_port(args[0]) };
 }
 
-fn godta(args: []const Value, interp: *Interpreter) EvalError!Value {
+fn vent(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 1) return EvalError.TypeError;
     const server = try interp.require_listener(args[0]);
@@ -142,7 +142,7 @@ fn godta(args: []const Value, interp: *Interpreter) EvalError!Value {
     return interp.register_stream(stream);
 }
 
-fn kople_til(args: []const Value, interp: *Interpreter) EvalError!Value {
+fn kopla(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 2) return EvalError.TypeError;
     const host = try args[0].as_str();
@@ -163,10 +163,11 @@ fn les(args: []const Value, interp: *Interpreter) EvalError!Value {
     const dest = interp.str_alloc().alloc(u8, @intCast(max_bytes)) catch return EvalError.OutOfMemory;
     var reader_buffer: [1024]u8 = undefined;
     var reader = stream.reader(io, &reader_buffer);
-    const n = reader.interface.readSliceShort(dest) catch |err| switch (err) {
+    var vecs: [1][]u8 = .{dest};
+    const n = reader.interface.readVec(&vecs) catch |err| switch (err) {
         error.ReadFailed => return map_read_error(reader.err orelse err),
+        error.EndOfStream => return .{ .null_val = {} },
     };
-    if (n == 0) return .{ .null_val = {} };
     return .{ .string = dest[0..n] };
 }
 

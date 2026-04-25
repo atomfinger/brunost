@@ -9,9 +9,21 @@ fn run_script(source: []const u8) ![]u8 {
 }
 
 fn run_script_with_args(source: []const u8, script_args: []const []const u8) ![]u8 {
+    return run_script_with_base_dir_and_args(source, "", script_args);
+}
+
+fn run_script_with_base_dir(source: []const u8, base_dir: []const u8) ![]u8 {
+    return run_script_with_base_dir_and_args(source, base_dir, &.{});
+}
+
+fn run_script_with_base_dir_and_args(
+    source: []const u8,
+    base_dir: []const u8,
+    script_args: []const []const u8,
+) ![]u8 {
     var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer aw.deinit();
-    try main.run_with_args(std.testing.allocator, source, &aw.writer, "", script_args);
+    try main.run_with_args(std.testing.allocator, source, &aw.writer, base_dir, script_args);
     return aw.toOwnedSlice();
 }
 
@@ -51,10 +63,19 @@ const ThreadedScriptResult = struct {
 };
 
 fn run_script_in_thread(result: *ThreadedScriptResult, source: []const u8, script_args: []const []const u8) void {
+    run_script_in_thread_with_base_dir(result, source, "", script_args);
+}
+
+fn run_script_in_thread_with_base_dir(
+    result: *ThreadedScriptResult,
+    source: []const u8,
+    base_dir: []const u8,
+    script_args: []const []const u8,
+) void {
     var aw: std.Io.Writer.Allocating = .init(std.heap.page_allocator);
     defer aw.deinit();
 
-    main.run_with_args(std.heap.page_allocator, source, &aw.writer, "", script_args) catch |err| {
+    main.run_with_args(std.heap.page_allocator, source, &aw.writer, base_dir, script_args) catch |err| {
         result.err = err;
         return;
     };
@@ -707,6 +728,36 @@ test "nettverk: lytt, godta, port og lukk" {
     try std.testing.expect(parsed_port > 0);
 }
 
+test "fil: les og finnas" {
+    const out = try run_script_with_base_dir(
+        \\bruk fil
+        \\bruk streng
+        \\bruk terminal
+        \\
+        \\låst tekst er fil.les("www/index.html")
+        \\terminal.skriv(streng.inneheld(tekst, "Brunost testside"))
+        \\terminal.skriv(fil.finnas("www/style.css"))
+        \\terminal.skriv(fil.finnas("www/manglar.txt"))
+        ,
+        "src/tests",
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("sant\nsant\nusant\n", out);
+}
+
+test "http: svar byggjer gyldig respons" {
+    const out = try run_script(
+        \\bruk http
+        \\bruk terminal
+        \\
+        \\terminal.skriv(http.svar(200, "text/plain; charset=utf-8", "Hei"))
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expect(std.mem.indexOf(u8, out, "HTTP/1.1 200 OK\r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out, "Content-Length: 3\r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out, "\r\n\r\nHei\n") != null);
+}
+
 test "nettverk: Brunost kan vere server" {
     const port = try choose_loopback_port();
     const port_arg = try std.fmt.allocPrint(std.testing.allocator, "{d}", .{port});
@@ -758,4 +809,65 @@ test "nettverk: Brunost kan vere server" {
     defer if (server_result.output.len > 0) std.heap.page_allocator.free(server_result.output);
     try std.testing.expectEqualStrings("ping\n", server_result.output);
     try std.testing.expectEqualStrings("pong", reply[0..reply_len]);
+}
+
+test "http: Brunost kan serve statiske filer" {
+    const port = try choose_loopback_port();
+    const port_arg = try std.fmt.allocPrint(std.testing.allocator, "{d}", .{port});
+    defer std.testing.allocator.free(port_arg);
+
+    var server_result: ThreadedScriptResult = .{};
+    const server_thread = try std.Thread.spawn(.{}, run_script_in_thread_with_base_dir, .{
+        &server_result,
+        \\bruk nettverk
+        \\bruk http
+        \\bruk streng
+        \\bruk terminal
+        \\
+        \\låst tal er streng.tilTal(terminal.argument(0))
+        \\låst lyttar er nettverk.lytt("127.0.0.1", tal)
+        \\låst klient er nettverk.godta(lyttar)
+        \\låst tekst er nettverk.les(klient, 4096)
+        \\nettverk.skriv(klient, http.statisk("www", tekst))
+        \\nettverk.lukk(klient)
+        \\nettverk.lukk(lyttar)
+        ,
+        "src/tests",
+        &.{port_arg},
+    });
+
+    var stream = connect_loopback_with_retry(port) catch |err| {
+        server_thread.join();
+        if (server_result.err) |thread_err| return thread_err;
+        return err;
+    };
+    defer stream.close(io);
+
+    var writer_buffer: [256]u8 = undefined;
+    var writer = stream.writer(io, &writer_buffer);
+    try writer.interface.writeAll("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
+    try writer.interface.flush();
+
+    var reader_buffer: [256]u8 = undefined;
+    var reader = stream.reader(io, &reader_buffer);
+    const response = try reader.interface.allocRemaining(std.testing.allocator, .limited(8192));
+    defer std.testing.allocator.free(response);
+
+    server_thread.join();
+
+    try std.testing.expect(server_result.err == null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "HTTP/1.1 200 OK\r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "Content-Type: text/html; charset=utf-8\r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "Brunost testside") != null);
+}
+
+test "http: statisk sperrar vegklatring" {
+    const out = try run_script(
+        \\bruk http
+        \\bruk terminal
+        \\
+        \\terminal.skriv(http.statisk("www", "GET /../hemmelig.txt HTTP/1.1\r\n\r\n"))
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expect(std.mem.indexOf(u8, out, "HTTP/1.1 403 Forbidden\r\n") != null);
 }

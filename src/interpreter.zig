@@ -8,6 +8,8 @@ const stdlib_streng = @import("stdlib/streng.zig");
 const stdlib_liste = @import("stdlib/liste.zig");
 const stdlib_prosess = @import("stdlib/prosess.zig");
 const stdlib_kart = @import("stdlib/kart.zig");
+const stdlib_fil = @import("stdlib/fil.zig");
+const stdlib_http = @import("stdlib/http.zig");
 const stdlib_nettverk = @import("stdlib/nettverk.zig");
 
 pub const EvalError = error{
@@ -42,6 +44,10 @@ pub const EvalError = error{
     Timeout,
     SystemResources,
     SocketLimitExceeded,
+    FileNotFound,
+    PermissionDenied,
+    FileTooLarge,
+    MalformedHttpRequest,
 };
 
 pub const Signal = union(enum) {
@@ -331,6 +337,7 @@ pub const Interpreter = struct {
     module_envs: std.ArrayList(*Environment),
     resource_slots: std.ArrayList(ResourceSlot),
     debug: bool,
+    last_undefined_name: []const u8,
 
     pub fn init(
         alloc: std.mem.Allocator,
@@ -349,6 +356,7 @@ pub const Interpreter = struct {
             .module_envs = .empty,
             .resource_slots = .empty,
             .debug = false,
+            .last_undefined_name = "",
         };
     }
 
@@ -512,7 +520,10 @@ pub const Interpreter = struct {
 
     fn eval_assign(self: *Interpreter, a: ast.AssignStmt, env: *Environment) EvalError!Value {
         const value = try self.eval(a.value, env);
-        try env.assign(a.name, value);
+        env.assign(a.name, value) catch |err| {
+            if (err == EvalError.UndefinedVariable) self.last_undefined_name = a.name;
+            return err;
+        };
         self.dbg("set '{s}' = {s}", .{ a.name, self.dbg_val(value) });
         return Value{ .null_val = {} };
     }
@@ -669,6 +680,8 @@ pub const Interpreter = struct {
             .{ .name = "liste",    .make = stdlib_liste.make    },
             .{ .name = "prosess",  .make = stdlib_prosess.make  },
             .{ .name = "kart",     .make = stdlib_kart.make     },
+            .{ .name = "fil",      .make = stdlib_fil.make      },
+            .{ .name = "http",     .make = stdlib_http.make     },
             .{ .name = "nettverk", .make = stdlib_nettverk.make },
         };
 
@@ -755,8 +768,9 @@ pub const Interpreter = struct {
         return Value{ .hashmap = map };
     }
 
-    fn eval_identifier(_: *Interpreter, i: ast.Identifier, env: *Environment) EvalError!Value {
+    fn eval_identifier(self: *Interpreter, i: ast.Identifier, env: *Environment) EvalError!Value {
         if (env.get(i.name)) |entry| return entry.value;
+        self.last_undefined_name = i.name;
         return EvalError.UndefinedVariable;
     }
 
@@ -925,7 +939,10 @@ pub const Interpreter = struct {
     }
 
     fn eval_struct_lit(self: *Interpreter, lit: ast.StructLit, env: *Environment) EvalError!Value {
-        const entry = env.get(lit.type_name) orelse return EvalError.UndefinedVariable;
+        const entry = env.get(lit.type_name) orelse {
+            self.last_undefined_name = lit.type_name;
+            return EvalError.UndefinedVariable;
+        };
         const schema = switch (entry.value) {
             .struct_type => |t| t,
             else => return EvalError.NotAStructType,
@@ -952,8 +969,11 @@ pub const Interpreter = struct {
         return .{ .struct_instance = instance };
     }
 
-    fn eval_field_access(_: *Interpreter, access: ast.FieldAccess, env: *Environment) EvalError!Value {
-        const obj_entry = env.get(access.object) orelse return EvalError.UndefinedVariable;
+    fn eval_field_access(self: *Interpreter, access: ast.FieldAccess, env: *Environment) EvalError!Value {
+        const obj_entry = env.get(access.object) orelse {
+            self.last_undefined_name = access.object;
+            return EvalError.UndefinedVariable;
+        };
         const instance = switch (obj_entry.value) {
             .struct_instance => |s| s,
             else => return EvalError.TypeError,
@@ -965,7 +985,10 @@ pub const Interpreter = struct {
     }
 
     fn eval_field_assign(self: *Interpreter, a: ast.FieldAssign, env: *Environment) EvalError!Value {
-        const obj_entry = env.get(a.object) orelse return EvalError.UndefinedVariable;
+        const obj_entry = env.get(a.object) orelse {
+            self.last_undefined_name = a.object;
+            return EvalError.UndefinedVariable;
+        };
         const instance = switch (obj_entry.value) {
             .struct_instance => |s| s,
             else => return EvalError.TypeError,
@@ -982,14 +1005,20 @@ pub const Interpreter = struct {
     }
 
     fn eval_member_call(self: *Interpreter, expr: ast.MemberCall, env: *Environment) EvalError!Value {
-        const entry = env.get(expr.object) orelse return EvalError.UndefinedVariable;
+        const entry = env.get(expr.object) orelse {
+            self.last_undefined_name = expr.object;
+            return EvalError.UndefinedVariable;
+        };
         const members = switch (entry.value) {
             .module => |m| m,
             else => return EvalError.TypeError,
         };
         const member_val = for (members) |m| {
             if (std.mem.eql(u8, m.name, expr.member)) break m.value;
-        } else return EvalError.UndefinedVariable;
+        } else {
+            self.last_undefined_name = expr.member;
+            return EvalError.UndefinedVariable;
+        };
         var args_buf: [16]Value = undefined;
         const args_slice: []Value = if (expr.args.len <= args_buf.len) blk: {
             for (expr.args, 0..) |arg_node, ai| {

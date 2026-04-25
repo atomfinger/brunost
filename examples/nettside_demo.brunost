@@ -1,0 +1,24 @@
+bruk nettverk
+bruk http
+bruk streng
+bruk terminal
+
+open port er 8080
+
+prøv {
+    port er streng.tilTal(terminal.argument(0))
+} fang (feil) {
+}
+
+terminal.skriv("Startar nettside-demo på http://127.0.0.1:" + port)
+terminal.skriv("Serverer filer fra examples/nettside_demo/")
+
+låst lyttar er nettverk.lytt("127.0.0.1", port)
+
+medan (sant) gjer {
+    låst tilkopling er nettverk.vent(lyttar)
+    låst tekst er nettverk.les(tilkopling, 4096)
+    terminal.skriv("Sti: " + http.sti(tekst))
+    nettverk.skriv(tilkopling, http.statisk("nettside_demo", tekst))
+    nettverk.lukk(tilkopling)
+}
