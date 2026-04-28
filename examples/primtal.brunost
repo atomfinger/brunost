@@ -6,21 +6,21 @@ gjer sjekkPrimtal(tall) {
         gjevTilbake usant
     }
 
-    open teller er 2
-    medan (teller erMindreEnn tall) gjer {
-        låst mod er matte.modulus(tall, teller)
+    open teljar er 2
+    medan (teljar erMindreEnn tall) gjer {
+        låst mod er matte.modulus(tall, teljar)
         viss (mod erSameSom 0) gjer {
             gjevTilbake usant
         }
-        teller er teller + 1
+        teljar er teljar + 1
     }
 
     gjevTilbake sant
 }
 
-open teller er 0
-medan (teller erMindreEnn 50) gjer {
-    låst erPrimtal er sjekkPrimtal(teller)
-    terminal.skriv(teller + " er eit primtal: " + erPrimtal)
-    teller er teller + 1
+open teljar er 0
+medan (teljar erMindreEnn 50) gjer {
+    låst erPrimtal er sjekkPrimtal(teljar)
+    terminal.skriv(teljar + " er eit primtal: " + erPrimtal)
+    teljar er teljar + 1
 }
