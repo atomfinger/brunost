@@ -11,9 +11,6 @@ const plural_suffixes = [_][]const u8{
 };
 
 fn isWordInDict(word: []const u8) bool {
-    var latin1_buf: [256]u8 = undefined;
-    const lookup = utf8ToLatin1(word, latin1_buf[0..]) orelse return false;
-
     var low: usize = 0;
     var high: usize = dictionary.len;
 
@@ -32,7 +29,7 @@ fn isWordInDict(word: []const u8) bool {
 
         const line = dictionary[start..end];
 
-        const cmp = std.mem.order(u8, lookup, line);
+        const cmp = std.mem.order(u8, word, line);
         switch (cmp) {
             .eq => return true,
             .lt => {
@@ -45,20 +42,6 @@ fn isWordInDict(word: []const u8) bool {
         }
     }
     return false;
-}
-
-fn utf8ToLatin1(word: []const u8, out: []u8) ?[]const u8 {
-    var view = std.unicode.Utf8View.init(word) catch return null;
-    var iter = view.iterator();
-    var len: usize = 0;
-
-    while (iter.nextCodepoint()) |cp| {
-        if (cp > 0xFF or len >= out.len) return null;
-        out[len] = @intCast(cp);
-        len += 1;
-    }
-
-    return out[0..len];
 }
 
 fn isValidWordForm(word: []const u8) bool {
