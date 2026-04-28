@@ -88,16 +88,16 @@ pub const Token = struct {
             .{ "medan", .while_loop },
             .{ "forKvart", .foreach_loop },
             .{ "i", .in_op },
-            .{ "prøv", .try_op }, // prøv in UTF-8
+            .{ "prøv", .try_op },
             .{ "fang", .catch_op },
             .{ "kast", .throw_op },
             .{ "bruk", .import_op },
             .{ "modul", .module_op },
             .{ "som", .as_op },
             .{ "type", .type_op },
-            .{ "erStørreEnn", .gt }, // erStørreEnn
+            .{ "erStørreEnn", .gt },
             .{ "erMindreEnn", .lt },
-            .{ "erSameEllerStørreEnn", .gte }, // erSameEllerStørreEnn
+            .{ "erSameEllerStørreEnn", .gte },
             .{ "erSameEllerMindreEnn", .lte },
         });
         return map.get(identifier);
