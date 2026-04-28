@@ -331,6 +331,7 @@ pub const Interpreter = struct {
     str_arena: std.heap.ArenaAllocator,
     global: Environment,
     signal: ?Signal,
+    io: std.Io,
     output: *std.Io.Writer,
     base_dir: []const u8,
     script_args: []const []const u8,
@@ -341,6 +342,7 @@ pub const Interpreter = struct {
 
     pub fn init(
         alloc: std.mem.Allocator,
+        io: std.Io,
         output: *std.Io.Writer,
         base_dir: []const u8,
         script_args: []const []const u8,
@@ -350,6 +352,7 @@ pub const Interpreter = struct {
             .str_arena = std.heap.ArenaAllocator.init(alloc),
             .global = Environment.init(alloc, null),
             .signal = null,
+            .io = io,
             .output = output,
             .base_dir = base_dir,
             .script_args = script_args,

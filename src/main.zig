@@ -84,12 +84,11 @@ fn print_parse_error(writer: *std.Io.Writer, diagnostic: parser.ParseDiagnostic)
     );
 }
 
-pub fn main(init: std.process.Init.Minimal) !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const alloc = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const arena = init.arena.allocator();
 
-    const io = std.Options.debug_io;
+    const io = init.io;
 
     var stdout_buf: [16384]u8 = undefined;
     var stdout_fw = std.Io.File.stdout().writer(io, &stdout_buf);
@@ -99,45 +98,43 @@ pub fn main(init: std.process.Init.Minimal) !void {
     var stderr_fw = std.Io.File.stderr().writer(io, &stderr_buf);
     defer stderr_fw.flush() catch {};
 
-    var args_it = if (comptime builtin.os.tag == .windows)
-        try std.process.Args.Iterator.initAllocator(init.args, alloc)
-    else
-        std.process.Args.Iterator.init(init.args);
-    defer if (comptime builtin.os.tag == .windows) args_it.deinit();
-    _ = args_it.skip(); // skip argv[0]
-    const first_arg = args_it.next() orelse {
-        stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
-        stderr_fw.flush() catch {};
-        std.process.exit(1);
-    };
-    var debug = false;
-    const filename: []const u8 = blk: {
-        if (std.mem.eql(u8, first_arg, "--debug")) {
-            debug = true;
-            break :blk args_it.next() orelse {
-                stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
-                stderr_fw.flush() catch {};
-                std.process.exit(1);
-            };
+    const debug, const filename, const script_args = arg_blk: {
+        var args_it = try init.minimal.args.iterateAllocator(gpa);
+        defer args_it.deinit();
+        _ = args_it.skip(); // skip argv[0]
+        const first_arg = args_it.next() orelse {
+            stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+            stderr_fw.flush() catch {};
+            std.process.exit(1);
+        };
+        var debug = false;
+        const filename: []const u8 = try arena.dupe(u8, blk: {
+            if (std.mem.eql(u8, first_arg, "--debug")) {
+                debug = true;
+                break :blk args_it.next() orelse {
+                    stderr_fw.interface.print("Bruk: brunost [--debug] <fil.brunost>\n", .{}) catch {};
+                    stderr_fw.flush() catch {};
+                    std.process.exit(1);
+                };
+            }
+            break :blk first_arg;
+        });
+        var script_args: std.ArrayList([]const u8) = .empty;
+        while (args_it.next()) |arg| {
+            try script_args.append(arena, try arena.dupe(u8, arg));
         }
-        break :blk first_arg;
+        break :arg_blk .{ debug, filename, script_args };
     };
-    var script_args: std.ArrayList([]const u8) = .empty;
-    defer script_args.deinit(alloc);
-    while (args_it.next()) |arg| {
-        try script_args.append(alloc, arg);
-    }
 
-    const source = std.Io.Dir.cwd().readFileAlloc(io, filename, alloc, .limited(10 * 1024 * 1024)) catch |err| {
+    const source = std.Io.Dir.cwd().readFileAlloc(io, filename, arena, .limited(10 * 1024 * 1024)) catch |err| {
         stderr_fw.interface.print("Feil: Kunne ikkje lesa fila '{s}': {s}\n", .{ filename, describe_error(err) }) catch {};
         stderr_fw.flush() catch {};
         std.process.exit(1);
     };
-    defer alloc.free(source);
 
     const base_dir = std.fs.path.dirname(filename) orelse ".";
     var context: RunContext = .{ .debug = debug };
-    run_with_context(alloc, source, &stdout_fw.interface, base_dir, script_args.items, &context) catch |err| {
+    run_with_context(gpa, io, source, &stdout_fw.interface, base_dir, script_args.items, &context) catch |err| {
         if (err == error.ParseFailed) {
             if (context.parse_diagnostic) |diagnostic| {
                 print_parse_error(&stderr_fw.interface, diagnostic) catch {};
@@ -154,23 +151,25 @@ pub fn main(init: std.process.Init.Minimal) !void {
     };
 }
 
-pub fn run(alloc: std.mem.Allocator, source: []const u8, output: *std.Io.Writer, base_dir: []const u8) !void {
-    try run_with_args(alloc, source, output, base_dir, &.{});
+pub fn run(alloc: std.mem.Allocator, io: std.Io, source: []const u8, output: *std.Io.Writer, base_dir: []const u8) !void {
+    try run_with_args(alloc, io, source, output, base_dir, &.{});
 }
 
 pub fn run_with_args(
     alloc: std.mem.Allocator,
+    io: std.Io,
     source: []const u8,
     output: *std.Io.Writer,
     base_dir: []const u8,
     script_args: []const []const u8,
 ) !void {
     var context: RunContext = .{};
-    try run_with_context(alloc, source, output, base_dir, script_args, &context);
+    try run_with_context(alloc, io, source, output, base_dir, script_args, &context);
 }
 
 pub fn run_with_context(
-    alloc: std.mem.Allocator,
+    gpa: std.mem.Allocator,
+    io: std.Io,
     source: []const u8,
     output: *std.Io.Writer,
     base_dir: []const u8,
@@ -192,7 +191,7 @@ pub fn run_with_context(
         }
     }
 
-    var arena = std.heap.ArenaAllocator.init(alloc);
+    var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
     const arena_alloc = arena.allocator();
 
@@ -210,7 +209,7 @@ pub fn run_with_context(
         }
     }
 
-    var interp = interpreter.Interpreter.init(alloc, output, base_dir, script_args);
+    var interp = interpreter.Interpreter.init(gpa, io, output, base_dir, script_args);
     interp.debug = if (comptime is_wasm) false else context.debug;
     defer interp.deinit();
     _ = interp.eval(program, &interp.global) catch |err| {

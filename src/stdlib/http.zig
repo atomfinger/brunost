@@ -6,7 +6,6 @@ const EvalError = interp_mod.EvalError;
 const Interpreter = interp_mod.Interpreter;
 const ModuleMember = interp_mod.ModuleMember;
 
-const io = std.Options.debug_io;
 const file_limit = std.Io.Limit.limited(50 * 1024 * 1024);
 
 const RequestLine = struct {
@@ -179,7 +178,7 @@ fn statisk(args: []const Value, interp: *Interpreter) EvalError!Value {
         else => return err,
     };
 
-    const body = std.Io.Dir.cwd().readFileAlloc(io, file_path, interp.str_alloc(), file_limit) catch |err| switch (map_file_error(err)) {
+    const body = std.Io.Dir.cwd().readFileAlloc(interp.io, file_path, interp.str_alloc(), file_limit) catch |err| switch (map_file_error(err)) {
         EvalError.FileNotFound => return build_response(interp, 404, "text/plain; charset=utf-8", "Not Found"),
         EvalError.AccessDenied, EvalError.PermissionDenied => return build_response(interp, 403, "text/plain; charset=utf-8", "Forbidden"),
         else => return build_response(interp, 500, "text/plain; charset=utf-8", "Internal Server Error"),

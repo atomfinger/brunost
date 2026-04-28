@@ -2,8 +2,6 @@ const std = @import("std");
 const main = @import("main.zig");
 const parser = @import("parser.zig");
 
-const io = std.Options.debug_io;
-
 fn run_script(source: []const u8) ![]u8 {
     return run_script_with_args(source, &.{});
 }
@@ -23,7 +21,7 @@ fn run_script_with_base_dir_and_args(
 ) ![]u8 {
     var aw: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer aw.deinit();
-    try main.run_with_args(std.testing.allocator, source, &aw.writer, base_dir, script_args);
+    try main.run_with_args(std.testing.allocator, std.testing.io, source, &aw.writer, base_dir, script_args);
     return aw.toOwnedSlice();
 }
 
@@ -32,7 +30,7 @@ fn expect_error(source: []const u8, expected: anyerror) !void {
     defer aw.deinit();
     try std.testing.expectError(
         expected,
-        main.run(std.testing.allocator, source, &aw.writer, ""),
+        main.run(std.testing.allocator, std.testing.io, source, &aw.writer, ""),
     );
 }
 
@@ -45,6 +43,7 @@ fn expect_parse_error(source: []const u8, expected: parser.ParseError) !main.Run
         error.ParseFailed,
         main.run_with_context(
             std.testing.allocator,
+            std.testing.io,
             source,
             &aw.writer,
             "",
@@ -75,7 +74,7 @@ fn run_script_in_thread_with_base_dir(
     var aw: std.Io.Writer.Allocating = .init(std.heap.page_allocator);
     defer aw.deinit();
 
-    main.run_with_args(std.heap.page_allocator, source, &aw.writer, base_dir, script_args) catch |err| {
+    main.run_with_args(std.heap.page_allocator, std.testing.io, source, &aw.writer, base_dir, script_args) catch |err| {
         result.err = err;
         return;
     };
@@ -94,23 +93,23 @@ const EchoServerResult = struct {
 
 fn run_echo_server(result: *EchoServerResult, server: std.Io.net.Server) void {
     var local_server = server;
-    defer local_server.deinit(io);
+    defer local_server.deinit(std.testing.io);
 
-    var stream = local_server.accept(io) catch |err| {
+    var stream = local_server.accept(std.testing.io) catch |err| {
         result.err = err;
         return;
     };
-    defer stream.close(io);
+    defer stream.close(std.testing.io);
 
     var reader_buffer: [128]u8 = undefined;
-    var reader = stream.reader(io, &reader_buffer);
+    var reader = stream.reader(std.testing.io, &reader_buffer);
     result.received_len = reader.interface.readSliceShort(result.received[0..4]) catch |err| {
         result.err = reader.err orelse err;
         return;
     };
 
     var writer_buffer: [128]u8 = undefined;
-    var writer = stream.writer(io, &writer_buffer);
+    var writer = stream.writer(std.testing.io, &writer_buffer);
     writer.interface.writeAll("pong") catch |err| {
         result.err = writer.err orelse err;
         return;
@@ -123,8 +122,8 @@ fn run_echo_server(result: *EchoServerResult, server: std.Io.net.Server) void {
 
 fn choose_loopback_port() !u16 {
     const address = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(0) };
-    var server = try address.listen(io, .{ .reuse_address = true });
-    defer server.deinit(io);
+    var server = try address.listen(std.testing.io, .{ .reuse_address = true });
+    defer server.deinit(std.testing.io);
     return server.socket.address.getPort();
 }
 
@@ -132,10 +131,10 @@ fn connect_loopback_with_retry(port: u16) !std.Io.net.Stream {
     const address = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(port) };
     var attempts: usize = 0;
     while (true) : (attempts += 1) {
-        return address.connect(io, .{ .mode = .stream, .protocol = .tcp }) catch |err| switch (err) {
+        return address.connect(std.testing.io, .{ .mode = .stream, .protocol = .tcp }) catch |err| switch (err) {
             error.ConnectionRefused => {
                 if (attempts >= 19) return err;
-                std.Io.sleep(io, .fromMilliseconds(25), .awake) catch {};
+                std.Io.sleep(std.testing.io, .fromMilliseconds(25), .awake) catch {};
                 continue;
             },
             else => return err,
@@ -275,6 +274,7 @@ test "fil-import: bruk hjelp.rekning som rekn" {
     defer aw.deinit();
     try main.run(
         std.testing.allocator,
+        std.testing.io,
         @embedFile("tests/fil_import_alias.brunost"),
         &aw.writer,
         "src/tests",
@@ -289,6 +289,7 @@ test "fil-import: bruk hjelp.rekning" {
     defer aw.deinit();
     try main.run(
         std.testing.allocator,
+        std.testing.io,
         @embedFile("tests/fil_import.brunost"),
         &aw.writer,
         "src/tests",
@@ -361,7 +362,7 @@ test "terminal argument les frå script-argument" {
         \\bruk terminal
         \\terminal.skriv(terminal.argument(0))
         \\terminal.skriv(terminal.argument(1))
-        ,
+    ,
         &.{ "12", "34" },
     );
     defer std.testing.allocator.free(out);
@@ -682,7 +683,7 @@ test "feil: feltnamn er ikkje nynorsk" {
 
 test "nettverk: kopleTil, skriv, les og lukk" {
     const address = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(0) };
-    const server = try address.listen(io, .{ .reuse_address = true });
+    const server = try address.listen(std.testing.io, .{ .reuse_address = true });
     const port = server.socket.address.getPort();
 
     var server_result: EchoServerResult = .{};
@@ -702,7 +703,7 @@ test "nettverk: kopleTil, skriv, les og lukk" {
         \\låst svar er nettverk.les(sokkel, 4)
         \\terminal.skriv(svar)
         \\nettverk.lukk(sokkel)
-        ,
+    ,
         &.{port_arg},
     );
     defer std.testing.allocator.free(out);
@@ -738,7 +739,7 @@ test "fil: les og finnas" {
         \\terminal.skriv(streng.inneheld(tekst, "Brunost testside"))
         \\terminal.skriv(fil.finnas("www/style.css"))
         \\terminal.skriv(fil.finnas("www/manglar.txt"))
-        ,
+    ,
         "src/tests",
     );
     defer std.testing.allocator.free(out);
@@ -788,15 +789,15 @@ test "nettverk: Brunost kan vere server" {
         if (server_result.err) |thread_err| return thread_err;
         return err;
     };
-    defer stream.close(io);
+    defer stream.close(std.testing.io);
 
     var writer_buffer: [128]u8 = undefined;
-    var writer = stream.writer(io, &writer_buffer);
+    var writer = stream.writer(std.testing.io, &writer_buffer);
     try writer.interface.writeAll("ping");
     try writer.interface.flush();
 
     var reader_buffer: [128]u8 = undefined;
-    var reader = stream.reader(io, &reader_buffer);
+    var reader = stream.reader(std.testing.io, &reader_buffer);
     var reply: [4]u8 = undefined;
     const reply_len = try reader.interface.readSliceShort(&reply);
 
@@ -841,15 +842,15 @@ test "http: Brunost kan serve statiske filer" {
         if (server_result.err) |thread_err| return thread_err;
         return err;
     };
-    defer stream.close(io);
+    defer stream.close(std.testing.io);
 
     var writer_buffer: [256]u8 = undefined;
-    var writer = stream.writer(io, &writer_buffer);
+    var writer = stream.writer(std.testing.io, &writer_buffer);
     try writer.interface.writeAll("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
     try writer.interface.flush();
 
     var reader_buffer: [256]u8 = undefined;
-    var reader = stream.reader(io, &reader_buffer);
+    var reader = stream.reader(std.testing.io, &reader_buffer);
     const response = try reader.interface.allocRemaining(std.testing.allocator, .limited(8192));
     defer std.testing.allocator.free(response);
 
