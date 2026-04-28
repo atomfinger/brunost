@@ -7,9 +7,9 @@ gjer rekke(grense) {
     gjevTilbake rekke(grense - 1) + rekke(grense - 2)
 }
 
-open tellar er 0
-medan (tellar erMindreEnn 15) gjer {
-    låst kalkulasjon er rekke(tellar)
+open teljar er 0
+medan (teljar erMindreEnn 15) gjer {
+    låst kalkulasjon er rekke(teljar)
     terminal.skriv(kalkulasjon)
-    tellar er tellar + 1
+    teljar er teljar + 1
 }
