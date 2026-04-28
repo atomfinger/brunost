@@ -73,7 +73,7 @@ pub const Token = struct {
     pub fn keyword(identifier: []const u8) ?token_types {
         const map = std.StaticStringMap(token_types).initComptime(.{
             .{ "open", .let_mutable },
-            .{ "l\xc3\xa5st", .let_immutable },
+            .{ "låst", .let_immutable },
             .{ "gjer", .function },
             .{ "sant", .true_val },
             .{ "usant", .false_val },
@@ -88,16 +88,16 @@ pub const Token = struct {
             .{ "medan", .while_loop },
             .{ "forKvart", .foreach_loop },
             .{ "i", .in_op },
-            .{ "pr\xc3\xb8v", .try_op }, // prøv in UTF-8
+            .{ "prøv", .try_op }, // prøv in UTF-8
             .{ "fang", .catch_op },
             .{ "kast", .throw_op },
             .{ "bruk", .import_op },
             .{ "modul", .module_op },
             .{ "som", .as_op },
             .{ "type", .type_op },
-            .{ "erSt\xc3\xb8rreEnn", .gt }, // erStørreEnn
+            .{ "erStørreEnn", .gt }, // erStørreEnn
             .{ "erMindreEnn", .lt },
-            .{ "erSameEllerSt\xc3\xb8rreEnn", .gte }, // erSameEllerStørreEnn
+            .{ "erSameEllerStørreEnn", .gte }, // erSameEllerStørreEnn
             .{ "erSameEllerMindreEnn", .lte },
         });
         return map.get(identifier);
