@@ -7,7 +7,7 @@ const interpreter = @import("interpreter.zig");
 pub fn describe_error(err: anyerror) []const u8 {
     return switch (err) {
         // Tolkarfeil
-        error.ImmutableAssignment => "Kan ikkje endra ein uforanderleg variabel (deklarert med 'l\xc3\xa5st')",
+        error.ImmutableAssignment => "Kan ikkje endra ein uforanderleg variabel (deklarert med 'låst')",
         error.UndefinedVariable => "Variabelen er ikkje definert",
         error.TypeError => "Typefeil: operasjonen støttar ikkje desse typane",
         error.DivisionByZero => "Kan ikkje dela på null",
@@ -17,7 +17,7 @@ pub fn describe_error(err: anyerror) []const u8 {
         error.ModuleNameCollision => "Modulnamn-konflikt — bruk 'som' for å gje modulen eit anna namn",
         error.ModuleNotFound => "Kunne ikkje finna modulfila",
         error.UndefinedField => "Feltet er ikkje definert i typen",
-        error.ImmutableField => "Kan ikkje endra eit uforanderleg felt (deklarert med 'l\xc3\xa5st')",
+        error.ImmutableField => "Kan ikkje endra eit uforanderleg felt (deklarert med 'låst')",
         error.NotAStructType => "Namnet er ikkje ein kjend type",
         error.InvalidAddress => "Ugyldig IP-adresse",
         error.InvalidPort => "Ugyldig portnummer",
