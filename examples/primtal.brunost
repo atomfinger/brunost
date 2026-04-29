@@ -1,14 +1,14 @@
 bruk terminal
 bruk matte
 
-gjer sjekkPrimtal(tall) {
-    viss (tall erSameSom 1) gjer {
+gjer sjekkPrimtal(tal) {
+    viss (tal erSameSom 1) gjer {
         gjevTilbake usant
     }
 
     open teljar er 2
-    medan (teljar erMindreEnn tall) gjer {
-        låst mod er matte.modulus(tall, teljar)
+    medan (teljar erMindreEnn tal) gjer {
+        låst mod er matte.modulus(tal, teljar)
         viss (mod erSameSom 0) gjer {
             gjevTilbake usant
         }
