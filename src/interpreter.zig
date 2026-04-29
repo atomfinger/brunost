@@ -9,6 +9,8 @@ const stdlib_liste = @import("stdlib/liste.zig");
 const stdlib_prosess = @import("stdlib/prosess.zig");
 const stdlib_kart = @import("stdlib/kart.zig");
 
+pub const Io = if (@import("builtin").cpu.arch != .wasm32) std.Io else void;
+
 pub const EvalError = error{
     TypeError,
     UndefinedVariable,
@@ -331,7 +333,7 @@ pub const Interpreter = struct {
     str_arena: std.heap.ArenaAllocator,
     global: Environment,
     signal: ?Signal,
-    io: std.Io,
+    io: Io,
     output: *std.Io.Writer,
     base_dir: []const u8,
     script_args: []const []const u8,
@@ -342,7 +344,7 @@ pub const Interpreter = struct {
 
     pub fn init(
         alloc: std.mem.Allocator,
-        io: std.Io,
+        io: Io,
         output: *std.Io.Writer,
         base_dir: []const u8,
         script_args: []const []const u8,
@@ -680,11 +682,11 @@ pub const Interpreter = struct {
             make: *const fn (std.mem.Allocator) EvalError!Value,
         }{
             .{ .name = "terminal", .make = stdlib_terminal.make },
-            .{ .name = "matte",    .make = stdlib_matte.make    },
-            .{ .name = "streng",   .make = stdlib_streng.make   },
-            .{ .name = "liste",    .make = stdlib_liste.make    },
-            .{ .name = "prosess",  .make = stdlib_prosess.make  },
-            .{ .name = "kart",     .make = stdlib_kart.make     },
+            .{ .name = "matte", .make = stdlib_matte.make },
+            .{ .name = "streng", .make = stdlib_streng.make },
+            .{ .name = "liste", .make = stdlib_liste.make },
+            .{ .name = "prosess", .make = stdlib_prosess.make },
+            .{ .name = "kart", .make = stdlib_kart.make },
         };
 
         for (builtins) |b| {
@@ -914,7 +916,7 @@ pub const Interpreter = struct {
         var call_env = Environment.init(self.alloc, func.env);
         defer call_env.deinit();
         if (self.debug) {
-             self.dbg("kall '{s}' ({d} arg(ar)):", .{ fn_name, expr.args.len });
+            self.dbg("kall '{s}' ({d} arg(ar)):", .{ fn_name, expr.args.len });
         }
         for (func.params, expr.args) |param, arg_node| {
             const arg_val = try self.eval(arg_node, env);

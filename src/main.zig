@@ -151,13 +151,13 @@ pub fn main(init: std.process.Init) !void {
     };
 }
 
-pub fn run(alloc: std.mem.Allocator, io: std.Io, source: []const u8, output: *std.Io.Writer, base_dir: []const u8) !void {
+pub fn run(alloc: std.mem.Allocator, io: interpreter.Io, source: []const u8, output: *std.Io.Writer, base_dir: []const u8) !void {
     try run_with_args(alloc, io, source, output, base_dir, &.{});
 }
 
 pub fn run_with_args(
     alloc: std.mem.Allocator,
-    io: std.Io,
+    io: interpreter.Io,
     source: []const u8,
     output: *std.Io.Writer,
     base_dir: []const u8,
@@ -169,7 +169,7 @@ pub fn run_with_args(
 
 pub fn run_with_context(
     gpa: std.mem.Allocator,
-    io: std.Io,
+    io: interpreter.Io,
     source: []const u8,
     output: *std.Io.Writer,
     base_dir: []const u8,
