@@ -370,8 +370,8 @@ pub const Interpreter = struct {
             for (self.resource_slots.items) |*slot| {
                 if (!slot.active) continue;
                 switch (slot.resource) {
-                    .listener => |*server| server.deinit(std.Options.debug_io),
-                    .stream => |*stream| stream.close(std.Options.debug_io),
+                    .listener => |*server| server.deinit(self.io),
+                    .stream => |*stream| stream.close(self.io),
                 }
                 slot.active = false;
             }
@@ -450,8 +450,8 @@ pub const Interpreter = struct {
         const handle = try value.as_resource_handle();
         const slot = try self.get_active_slot(handle);
         switch (slot.resource) {
-            .listener => |*server| server.deinit(std.Options.debug_io),
-            .stream => |*stream| stream.close(std.Options.debug_io),
+            .listener => |*server| server.deinit(self.io),
+            .stream => |*stream| stream.close(self.io),
         }
         slot.active = false;
     }
@@ -718,7 +718,7 @@ pub const Interpreter = struct {
         const path = std.fmt.allocPrint(self.str_alloc(), "{s}.brunost", .{joined}) catch return EvalError.OutOfMemory;
 
         const source = std.Io.Dir.cwd().readFileAlloc(
-            std.Options.debug_io,
+            self.io,
             path,
             self.str_alloc(),
             .unlimited,
