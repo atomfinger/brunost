@@ -1044,7 +1044,7 @@ forKvart nummer i [1, 2, 3, 4, 5] {
                     lang = stored;
                 } else {
                     const userLang = navigator.language || "";
-                    lang = /^n[bo]/i.test(userLang) ? "nn" : "en";
+                    lang = /^n[nbo]/i.test(userLang) ? "nn" : "en";
                 }
                 setLanguage(lang);
             })();
