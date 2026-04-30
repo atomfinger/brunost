@@ -52,7 +52,8 @@ export fn evaluate(source_ptr: [*]const u8, source_len: usize) void {
 
     const source = source_ptr[0..source_len];
 
-    main.run(std.heap.page_allocator, source, &aw.writer, "") catch |err| {
+    // hack?
+    main.run(std.heap.page_allocator, {}, source, &aw.writer, "") catch |err| {
         output_is_error = true;
         aw.deinit();
         aw = .init(std.heap.page_allocator);

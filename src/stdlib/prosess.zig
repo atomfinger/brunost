@@ -12,12 +12,12 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
     return Value{ .module = members };
 }
 
-fn sov(args: []const Value, _: *Interpreter) EvalError!Value {
+fn sov(args: []const Value, interp: *Interpreter) EvalError!Value {
     if (args.len != 1) return EvalError.TypeError;
     const ms = try args[0].as_int();
     if (ms > 0) {
         if (comptime @import("builtin").cpu.arch != .wasm32) {
-            std.Io.sleep(std.Options.debug_io, .fromMilliseconds(@intCast(ms)), .awake) catch {};
+            std.Io.sleep(interp.io, .fromMilliseconds(@intCast(ms)), .awake) catch {};
         }
     }
     return Value{ .null_val = {} };
