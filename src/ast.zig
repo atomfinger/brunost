@@ -30,6 +30,7 @@ pub const Node = union(enum) {
     prefix_expr: PrefixExpr,
     call_expr: CallExpr,
     member_call: MemberCall,
+    lambda_expr: LambdaExpr,
     struct_lit: StructLit,
     field_access: FieldAccess,
 };
@@ -149,6 +150,11 @@ pub const MemberCall = struct {
     object: []const u8,
     member: []const u8,
     args: []*Node,
+};
+
+pub const LambdaExpr = struct {
+    params: [][]const u8,
+    body: *Node,
 };
 
 /// bruk ekstra.noe (som noko)

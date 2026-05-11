@@ -54,8 +54,9 @@ pub const Signal = union(enum) {
 
 pub const Function = struct {
     params: [][]const u8,
-    body: *ast.Node, // Block
+    body: *ast.Node,
     env: *Environment,
+    implicit_return: bool,
 };
 
 pub const ModuleMember = struct {
@@ -492,6 +493,7 @@ pub const Interpreter = struct {
             .prefix_expr => |p| self.eval_prefix(p, env),
             .call_expr => |c| self.eval_call(c, env),
             .member_call => |m| self.eval_member_call(m, env),
+            .lambda_expr => |l| self.eval_lambda_expr(l, env),
         };
     }
 
@@ -545,10 +547,19 @@ pub const Interpreter = struct {
     }
 
     fn eval_fn_decl(self: *Interpreter, f: ast.FnDecl, env: *Environment) EvalError!Value {
-        const func = Value{ .function = .{ .params = f.params, .body = f.body, .env = env } };
+        const func = Value{ .function = .{ .params = f.params, .body = f.body, .env = env, .implicit_return = false } };
         try env.define(f.name, .{ .value = func, .mutable = false });
         self.dbg("gjer '{s}' ({d} param(ar))", .{ f.name, f.params.len });
         return Value{ .null_val = {} };
+    }
+
+    fn eval_lambda_expr(_: *Interpreter, l: ast.LambdaExpr, env: *Environment) EvalError!Value {
+        return Value{ .function = .{
+            .params = l.params,
+            .body = l.body,
+            .env = env,
+            .implicit_return = true,
+        } };
     }
 
     fn eval_if(self: *Interpreter, stmt: ast.IfStmt, env: *Environment) EvalError!Value {
@@ -661,7 +672,12 @@ pub const Interpreter = struct {
             const f = fn_node.fn_decl;
             members.append(self.str_alloc(), .{
                 .name = f.name,
-                .value = .{ .function = .{ .params = f.params, .body = f.body, .env = env } },
+                .value = .{ .function = .{
+                    .params = f.params,
+                    .body = f.body,
+                    .env = env,
+                    .implicit_return = false,
+                } },
             }) catch return EvalError.OutOfMemory;
         }
         const mod = Value{ .module = members.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory };
@@ -884,7 +900,7 @@ pub const Interpreter = struct {
         for (func.params, args) |param, arg_val| {
             try call_env.define(param, .{ .value = arg_val, .mutable = false });
         }
-        _ = try self.eval(func.body, &call_env);
+        const result = try self.eval(func.body, &call_env);
         if (self.signal) |sig| {
             switch (sig) {
                 .return_val => |v| {
@@ -894,44 +910,49 @@ pub const Interpreter = struct {
                 else => {},
             }
         }
+        if (func.implicit_return) return result;
         return Value{ .null_val = {} };
+    }
+
+    pub fn call_callable(self: *Interpreter, callable: Value, args: []const Value) EvalError!Value {
+        return switch (callable) {
+            .builtin_fn => |f| try f(args, self),
+            .function => |f| try self.call_function(f, args),
+            else => EvalError.TypeError,
+        };
     }
 
     fn eval_call(self: *Interpreter, expr: ast.CallExpr, env: *Environment) EvalError!Value {
         const callee_val = try self.eval(expr.callee, env);
-        const func = switch (callee_val) {
-            .function => |f| f,
-            else => return EvalError.TypeError,
-        };
-        if (expr.args.len != func.params.len) return EvalError.TypeError;
         const fn_name = switch (expr.callee.*) {
             .identifier => |id| id.name,
             else => "<uttrykk>",
         };
-        var call_env = Environment.init(self.alloc, func.env);
-        defer call_env.deinit();
+        var args_buf: [16]Value = undefined;
+        const args_slice: []Value = if (expr.args.len <= args_buf.len) blk: {
+            for (expr.args, 0..) |arg_node, ai| {
+                args_buf[ai] = try self.eval(arg_node, env);
+            }
+            break :blk args_buf[0..expr.args.len];
+        } else blk: {
+            var args_list: std.ArrayList(Value) = .empty;
+            for (expr.args) |arg_node| {
+                const v = try self.eval(arg_node, env);
+                args_list.append(self.str_alloc(), v) catch return EvalError.OutOfMemory;
+            }
+            break :blk args_list.toOwnedSlice(self.str_alloc()) catch return EvalError.OutOfMemory;
+        };
         if (self.debug) {
-             self.dbg("kall '{s}' ({d} arg(ar)):", .{ fn_name, expr.args.len });
-        }
-        for (func.params, expr.args) |param, arg_node| {
-            const arg_val = try self.eval(arg_node, env);
-            if (self.debug) {
-                self.dbg("  {s} = {s}", .{ param, self.dbg_val(arg_val) });
-            }
-            try call_env.define(param, .{ .value = arg_val, .mutable = false });
-        }
-        _ = try self.eval(func.body, &call_env);
-        if (self.signal) |sig| {
-            switch (sig) {
-                .return_val => |v| {
-                    self.signal = null;
-                    self.dbg("  '{s}' returnerte {s}", .{ fn_name, self.dbg_val(v) });
-                    return v;
-                },
-                else => {},
+            self.dbg("kall '{s}' ({d} arg(ar)):", .{ fn_name, args_slice.len });
+            for (args_slice, 0..) |arg, i| {
+                self.dbg("  arg[{d}] = {s}", .{ i, self.dbg_val(arg) });
             }
         }
-        return Value{ .null_val = {} };
+        const result = try self.call_callable(callee_val, args_slice);
+        if (self.debug and self.signal == null) {
+            self.dbg("  '{s}' returnerte {s}", .{ fn_name, self.dbg_val(result) });
+        }
+        return result;
     }
 
     fn eval_struct_decl(self: *Interpreter, decl: ast.StructDecl, env: *Environment) EvalError!Value {
@@ -1044,11 +1065,7 @@ pub const Interpreter = struct {
                 self.dbg("  arg[{d}] = {s}", .{ i, self.dbg_val(arg) });
             }
         }
-        const result = switch (member_val) {
-            .builtin_fn => |f| try f(args_slice, self),
-            .function => |f| try self.call_function(f, args_slice),
-            else => return EvalError.TypeError,
-        };
+        const result = try self.call_callable(member_val, args_slice);
         if (self.debug) self.dbg("  → {s}", .{self.dbg_val(result)});
         return result;
     }

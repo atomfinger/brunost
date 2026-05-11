@@ -1,6 +1,18 @@
 bruk terminal
 bruk liste
 
+gjer dobbel(tal) {
+  gjevTilbake tal * 2
+}
+
+gjer storNok(tal) {
+  gjevTilbake tal erStørreEnn 50
+}
+
+gjer summer(sum, tal) {
+  gjevTilbake sum + tal
+}
+
 låst minListe er [10, 20, 30]
 terminal.skriv(liste.lengd(minListe))
 terminal.skriv(liste.fyrste(minListe))
@@ -8,3 +20,26 @@ terminal.skriv(liste.siste(minListe))
 
 låst nyListe er liste.leggTil(minListe, 40)
 terminal.skriv(liste.lengd(nyListe))
+
+låst dobbelListe er liste.gjerOm(nyListe, dobbel)
+terminal.skriv(liste.hent(dobbelListe, 0))
+terminal.skriv(liste.hent(dobbelListe, 3))
+
+låst storeTal er liste.filtrer(dobbelListe, storNok)
+terminal.skriv(liste.lengd(storeTal))
+terminal.skriv(liste.hent(storeTal, 0))
+
+terminal.skriv(liste.reduser(storeTal, 0, summer))
+
+låst korteTal er liste.ta(dobbelListe, 2)
+terminal.skriv(liste.lengd(korteTal))
+terminal.skriv(liste.hent(korteTal, 1))
+
+terminal.skriv(liste.inneheld(dobbelListe, { tal -> tal erSameSom 60 }))
+terminal.skriv(liste.inneheld(dobbelListe, { tal -> tal erSameSom 61 }))
+
+terminal.skriv(liste.finn(dobbelListe, { tal -> tal erSameSom 40 }))
+terminal.skriv(liste.finn(dobbelListe, { tal -> tal erSameSom 41 }))
+
+terminal.skriv(liste.alle(dobbelListe, { tal -> tal erStørreEnn 10 }))
+terminal.skriv(liste.alle(dobbelListe, { tal -> tal erStørreEnn 20 }))

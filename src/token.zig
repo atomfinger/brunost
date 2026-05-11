@@ -13,6 +13,7 @@ pub const token_types = enum {
     assign, // er (context-dependent)
     plus,
     minus,
+    arrow,
     bang,
     asterisk,
     fslash,
@@ -211,7 +212,15 @@ pub const Lexer = struct {
             ':' => tok.type = .colon,
             ';' => tok.type = .semicolon,
             '+' => tok.type = .plus,
-            '-' => tok.type = .minus,
+            '-' => {
+                if (self.peek_char() == '>') {
+                    const literal = self.input[start .. start + 2];
+                    self.read_char();
+                    self.read_char();
+                    return Token.init(.arrow, literal, start);
+                }
+                tok.type = .minus;
+            },
             '*' => tok.type = .asterisk,
             '/' => tok.type = .fslash,
             '{' => tok.type = .lbrace,

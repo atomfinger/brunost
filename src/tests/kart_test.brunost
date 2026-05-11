@@ -1,6 +1,14 @@
 bruk kart
 bruk terminal
 
+gjer gangMedTi(nøkkel, verdi) {
+  gjevTilbake verdi * 10
+}
+
+gjer behaldBerre(nøkkel, verdi) {
+  gjevTilbake nøkkel erSameSom "b"
+}
+
 // Basic creation and lookup
 låst minKart er kart.sett(kart.sett({}, "a", 1), "b", 2)
 terminal.skriv(kart.hent(minKart, "a"))
@@ -23,3 +31,11 @@ terminal.skriv(kart.hent(endraKart, "a"))
 låst storKart er { "x": 10, "y": 20 }
 terminal.skriv(kart.hent(storKart, "x"))
 terminal.skriv(kart.hent(storKart, "y"))
+
+låst gangMedTiKart er kart.gjerOm(minKart, gangMedTi)
+terminal.skriv(kart.hent(gangMedTiKart, "a"))
+terminal.skriv(kart.hent(gangMedTiKart, "b"))
+
+låst berreAndre er kart.filtrer(gangMedTiKart, behaldBerre)
+terminal.skriv(kart.lengd(berreAndre))
+terminal.skriv(kart.hent(berreAndre, "b"))

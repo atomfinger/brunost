@@ -1,0 +1,20 @@
+bruk terminal
+bruk liste
+
+gjer dobbel(tal) {
+  gjevTilbake tal * 2
+}
+
+gjer endreListe(rekkje, funksjon) {
+  gjevTilbake liste.gjerOm(rekkje, funksjon)
+}
+
+gjer sendVidare(verktøy, rekkje, funksjon) {
+  gjevTilbake verktøy(rekkje, funksjon)
+}
+
+låst svar er sendVidare(endreListe, [2, 4, 6], dobbel)
+terminal.skriv(liste.lengd(svar))
+terminal.skriv(liste.hent(svar, 0))
+terminal.skriv(liste.hent(svar, 1))
+terminal.skriv(liste.hent(svar, 2))

@@ -167,6 +167,18 @@ test "functions" {
     try std.testing.expectEqualStrings("10\nHei, Ola!\n", out);
 }
 
+test "user-defined higher-order functions" {
+    const out = try run_script(@embedFile("tests/funksjon_hof.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("3\n4\n8\n12\n", out);
+}
+
+test "lambda functions and trailing lambdas" {
+    const out = try run_script(@embedFile("tests/lambda_funksjon.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("10\n12\n12\n3\n5\n7\n6\n", out);
+}
+
 test "control flow" {
     const out = try run_script(@embedFile("tests/control_flow.brunost"));
     defer std.testing.allocator.free(out);
@@ -255,7 +267,7 @@ test "stdlib streng" {
 test "stdlib liste" {
     const out = try run_script(@embedFile("tests/stdlib_liste.brunost"));
     defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("3\n10\n30\n4\n", out);
+    try std.testing.expectEqualStrings("3\n10\n30\n4\n20\n80\n2\n60\n140\n2\n40\nsant\nusant\n40\ninkje\nsant\nusant\n", out);
 }
 
 test "brukar modul" {
@@ -497,7 +509,7 @@ test "desimaltal stdlib matte" {
 test "kart (hashmap)" {
     const out = try run_script(@embedFile("tests/kart_test.brunost"));
     defer std.testing.allocator.free(out);
-    try std.testing.expectEqualStrings("1\n2\n2\nsant\nusant\n1\n99\n10\n20\n", out);
+    try std.testing.expectEqualStrings("1\n2\n2\nsant\nusant\n1\n99\n10\n20\n10\n20\n1\n20\n", out);
 }
 
 test "prøv/fang fangar kast" {

@@ -16,6 +16,8 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
         .{ .name = "inneheld", .value = .{ .builtin_fn = inneheld } },
         .{ .name = "nøklar",   .value = .{ .builtin_fn = noklar } },
         .{ .name = "verdiar",  .value = .{ .builtin_fn = verdiar } },
+        .{ .name = "gjerOm",   .value = .{ .builtin_fn = gjer_om } },
+        .{ .name = "filtrer",  .value = .{ .builtin_fn = filtrer } },
     });
     return Value{ .module = members };
 }
@@ -85,4 +87,41 @@ fn verdiar(args: []const Value, interp: *Interpreter) EvalError!Value {
         vals[i] = entry.value_ptr.*;
     }
     return Value{ .list = .{ .items = vals, .cap = vals.len } };
+}
+
+fn gjer_om(args: []const Value, interp: *Interpreter) EvalError!Value {
+    if (args.len != 2) return EvalError.TypeError;
+    const h = try args[0].as_hashmap();
+    const new_map = interp.str_alloc().create(HashMap) catch return EvalError.OutOfMemory;
+    new_map.* = .{};
+    var it = h.iterator();
+    while (it.next()) |entry| {
+        const callback_args = [_]Value{
+            Value{ .string = entry.key_ptr.* },
+            entry.value_ptr.*,
+        };
+        const mapped = try interp.call_callable(args[1], callback_args[0..]);
+        if (interp.signal != null) return Value{ .null_val = {} };
+        new_map.put(interp.str_alloc(), entry.key_ptr.*, mapped) catch return EvalError.OutOfMemory;
+    }
+    return Value{ .hashmap = new_map };
+}
+
+fn filtrer(args: []const Value, interp: *Interpreter) EvalError!Value {
+    if (args.len != 2) return EvalError.TypeError;
+    const h = try args[0].as_hashmap();
+    const new_map = interp.str_alloc().create(HashMap) catch return EvalError.OutOfMemory;
+    new_map.* = .{};
+    var it = h.iterator();
+    while (it.next()) |entry| {
+        const callback_args = [_]Value{
+            Value{ .string = entry.key_ptr.* },
+            entry.value_ptr.*,
+        };
+        const keep = try interp.call_callable(args[1], callback_args[0..]);
+        if (interp.signal != null) return Value{ .null_val = {} };
+        if (!keep.is_truthy()) continue;
+        new_map.put(interp.str_alloc(), entry.key_ptr.*, entry.value_ptr.*) catch return EvalError.OutOfMemory;
+    }
+    return Value{ .hashmap = new_map };
 }
