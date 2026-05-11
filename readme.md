@@ -310,11 +310,11 @@ Nokre vanlege listeoperasjonar:
 bruk terminal
 bruk liste
 
-låst tal er [10, 20, 30, 40]
+låst tala er [10, 20, 30, 40]
 
-terminal.skriv(liste.ta(tal, 2))                               // [10, 20]
-terminal.skriv(liste.finn(tal, { t -> t erSameSom 30 }))      // 30
-terminal.skriv(liste.inneheld(tal, { t -> t erSameSom 50 }))  // usant
+terminal.skriv(liste.ta(tala, 2))                                  // [10, 20]
+terminal.skriv(liste.finn(tala, { tal -> tal erSameSom 30 }))      // 30
+terminal.skriv(liste.inneheld(tala, { tal -> tal erSameSom 50 }))  // usant
 ```
 
 ### Brukar-definerte modular (inline)
