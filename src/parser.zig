@@ -15,6 +15,7 @@ pub const ParseError = error{
     ExpectedOpenBrace,
     ExpectedCloseBrace,
     ExpectedCloseBracket,
+    ExpectedArrow,
     InvalidInteger,
     InvalidFloat,
     OutOfMemory,
@@ -347,9 +348,12 @@ pub const Parser = struct {
                 const value = try self.parse_expr(0);
                 return self.alloc_node(.{ .field_assign = .{ .object = obj, .field = member, .value = value } });
             }
-            if (self.curr.type == .lparen) {
+            if (self.curr.type == .lparen or self.is_lambda_start()) {
                 // Member call as expression statement: obj.member(args)
-                const args = try self.parse_call_args();
+                const args = if (self.curr.type == .lparen)
+                    try self.parse_call_args()
+                else
+                    try self.parse_implicit_lambda_call_args();
                 const call_node = try self.alloc_node(.{ .member_call = .{ .object = obj, .member = member, .args = args } });
                 return self.alloc_node(.{ .expr_stmt = .{ .expr = call_node } });
             }
@@ -474,6 +478,9 @@ pub const Parser = struct {
                 return self.parse_list();
             },
             .lbrace => {
+                if (self.is_lambda_start()) {
+                    return self.parse_lambda_expr();
+                }
                 return self.parse_hashmap();
             },
             .identifier => {
@@ -487,6 +494,10 @@ pub const Parser = struct {
                     self.advance();
                     if (self.curr.type == .lparen) {
                         const args = try self.parse_call_args();
+                        return self.alloc_node(.{ .member_call = .{ .object = name, .member = member, .args = args } });
+                    }
+                    if (self.is_lambda_start()) {
+                        const args = try self.parse_implicit_lambda_call_args();
                         return self.alloc_node(.{ .member_call = .{ .object = name, .member = member, .args = args } });
                     }
                     // Field access (no parentheses): obj.field
@@ -518,6 +529,11 @@ pub const Parser = struct {
                     const args = try self.parse_call_args();
                     return self.alloc_node(.{ .call_expr = .{ .callee = callee, .args = args } });
                 }
+                if (self.is_lambda_start()) {
+                    const callee = try self.alloc_node(.{ .identifier = .{ .name = name } });
+                    const args = try self.parse_implicit_lambda_call_args();
+                    return self.alloc_node(.{ .call_expr = .{ .callee = callee, .args = args } });
+                }
                 return self.alloc_node(.{ .identifier = .{ .name = name } });
             },
             else => return ParseError.UnexpectedToken,
@@ -533,7 +549,66 @@ pub const Parser = struct {
             if (self.curr.type == .comma) self.advance();
         }
         try self.expect(.rparen);
+        try self.maybe_append_trailing_lambda(&args);
         return args.toOwnedSlice(self.arena);
+    }
+
+    fn parse_implicit_lambda_call_args(self: *Parser) ParseError![]*ast.Node {
+        var args: std.ArrayList(*ast.Node) = .empty;
+        try self.maybe_append_trailing_lambda(&args);
+        return args.toOwnedSlice(self.arena);
+    }
+
+    fn maybe_append_trailing_lambda(self: *Parser, args: *std.ArrayList(*ast.Node)) ParseError!void {
+        if (!self.is_lambda_start()) return;
+        const lambda = try self.parse_lambda_expr();
+        try args.append(self.arena, lambda);
+    }
+
+    fn is_lambda_start(self: *Parser) bool {
+        if (self.curr.type != .lbrace) return false;
+
+        var look_token = self.peek;
+        var look_lexer = self.lexer;
+
+        if (look_token.type == .arrow) return true;
+        if (look_token.type != .identifier) return false;
+
+        while (true) {
+            const next = look_lexer.next_token();
+            switch (next.type) {
+                .arrow => return true,
+                .comma => {
+                    look_token = look_lexer.next_token();
+                    if (look_token.type != .identifier) return false;
+                },
+                else => return false,
+            }
+        }
+    }
+
+    fn parse_lambda_expr(self: *Parser) ParseError!*ast.Node {
+        try self.expect(.lbrace);
+        var params: std.ArrayList([]const u8) = .empty;
+        if (self.curr.type != .arrow) {
+            while (true) {
+                if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+                if (!nynorsk.isValidIdentifier(self.curr.literal)) return ParseError.NotNynorsk;
+                try params.append(self.arena, self.curr.literal);
+                self.advance();
+                if (self.curr.type != .comma) break;
+                self.advance();
+            }
+        }
+        if (self.curr.type != .arrow) return ParseError.ExpectedArrow;
+        self.advance();
+        const body = try self.parse_expr(0);
+        if (self.curr.type != .rbrace) return ParseError.ExpectedCloseBrace;
+        self.advance();
+        return self.alloc_node(.{ .lambda_expr = .{
+            .params = try params.toOwnedSlice(self.arena),
+            .body = body,
+        } });
     }
 
     fn parse_list(self: *Parser) ParseError!*ast.Node {

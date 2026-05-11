@@ -18,19 +18,21 @@ Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje ber
 
 Ingen framandord. Ingen rar import-hierarki. Berre kode som flyt like mjukt som brunost over ein nysteikt vaffel.
 
-> **Merk:** Brunost er under aktiv utvikling. Enkle einfilsskript fungerer godt. `prøv`/`fang` fangar berre feil kasta med `kast` — ikkje interne køyretidsfeil.
+> **Merk:** Brunost er under aktiv utvikling. Enkle einfilsskript fungerer godt. `prøv`/`fang` fangar både verdiar kasta med `kast` og fleire vanlege køyretidsfeil.
 
 ---
 
 ## Hovudtrekk
 
-| Eigenskap          | Brunost                                            |
-| ------------------ | -------------------------------------------------- |
-| **Løkker**         | `forKvart` og `medan`-syntaks som les seg naturleg |
-| **Feilhandtering** | `prøv`/`fang`-blokker for reine feilflyt           |
-| **Modular**        | Innebygde, brukar-definerte og fil-baserte modular |
-| **Mutabilitet**    | Eksplisitt `låst`/`open` — aldri uventa endringar  |
-| **Typar**          | Eigendefinerte datatypar med feltmutabilitet       |
+| Eigenskap          | Brunost                                                          |
+| ------------------ | ---------------------------------------------------------------- |
+| **Løkker**         | `forKvart` og `medan`-syntaks som les seg naturleg               |
+| **Lambdaer**       | Anonyme funksjonar som `{ tal -> tal + 1 }` og trailing lambdas  |
+| **Lister og kart** | Innebygde modular for transformasjonar og oppslagstabellar       |
+| **Feilhandtering** | `prøv`/`fang`-blokker for kasta verdiar og vanlege køyretidsfeil |
+| **Modular**        | Innebygde, brukar-definerte og fil-baserte modular               |
+| **Mutabilitet**    | Eksplisitt `låst`/`open` — aldri uventa endringar                |
+| **Typar**          | Eigendefinerte datatypar med feltmutabilitet                     |
 
 ---
 
@@ -98,6 +100,17 @@ gjer kroppsMasseIndeks(vekt, høgd) {
 låst resultat er kroppsMasseIndeks(70, 175)
 ```
 
+Brunost støttar også anonyme funksjonar og høgareordens funksjonar:
+
+```python
+bruk terminal
+bruk liste
+
+låst svar er liste.gjerOm([2, 4, 6]) { tal -> tal + 1 }
+terminal.skriv(liste.hent(svar, 0)) // 3
+terminal.skriv(liste.reduser(svar, 0) { sum, tal -> sum + tal }) // 15
+```
+
 ### Vilkårsutsagn
 
 ```python
@@ -143,7 +156,7 @@ medan (teller erStørreEnn 0) gjer {
 
 ### Feilhandtering
 
-`prøv`/`fang` fangar feil kasta med `kast`:
+`prøv`/`fang` fangar både feil kasta med `kast` og fleire vanlege køyretidsfeil:
 
 ```python
 bruk terminal
@@ -160,6 +173,19 @@ prøv {
   terminal.skriv("Svar: " + svar)
 } fang (feil) {
   terminal.skriv("Feil oppstod: " + feil)
+}
+```
+
+Dette gjer det også mogleg å fange til dømes manglande nøklar i `kart`:
+
+```python
+bruk kart
+bruk terminal
+
+prøv {
+  terminal.skriv(kart.hent({}, "manglar"))
+} fang (feil) {
+  terminal.skriv("Fanga: " + feil)
 }
 ```
 
@@ -256,7 +282,17 @@ Brunost støttar tre typar modular for å organisere koden din.
 bruk terminal   // Inn- og utdata
 bruk matte      // Matematiske funksjonar
 bruk streng     // Strengmanipulasjon
-bruk liste      // Listeoperasjonar
+bruk liste      // Listeoperasjonar og HOF
+bruk kart       // Oppslagstabellar
+bruk prosess    // Kommandolinjeargument og prosessinfo
+```
+
+Ved native køyring finst òg:
+
+```python
+bruk fil        // Filsystem
+bruk nettverk   // TCP-server/klient
+bruk http       // Enkel HTTP-hjelp
 ```
 
 ```python
@@ -266,6 +302,19 @@ bruk matte
 terminal.skriv(matte.abs(-42))    // 42
 terminal.skriv(matte.maks(7, 13)) // 13
 terminal.skriv(matte.min(7, 13))  // 7
+```
+
+Nokre vanlege listeoperasjonar:
+
+```python
+bruk terminal
+bruk liste
+
+låst tala er [10, 20, 30, 40]
+
+terminal.skriv(liste.ta(tala, 2))                                  // [10, 20]
+terminal.skriv(liste.finn(tala, { tal -> tal erSameSom 30 }))      // 30
+terminal.skriv(liste.inneheld(tala, { tal -> tal erSameSom 50 }))  // usant
 ```
 
 ### Brukar-definerte modular (inline)

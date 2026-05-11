@@ -1,0 +1,30 @@
+bruk terminal
+bruk liste
+
+gjer brukFunksjon(funksjon, tal) {
+  gjevTilbake funksjon(tal)
+}
+
+gjer sendVidare(verktøy, funksjon, tal) {
+  gjevTilbake verktøy(funksjon, tal)
+}
+
+gjer endreListe(rekkje, funksjon) {
+  gjevTilbake liste.gjerOm(rekkje, funksjon)
+}
+
+gjer brukVerktøy(verktøy, rekkje, funksjon) {
+  gjevTilbake verktøy(rekkje, funksjon)
+}
+
+låst auke er { tal -> tal + 1 }
+terminal.skriv(brukFunksjon(auke, 9))
+terminal.skriv(brukFunksjon({ tal -> tal * 3 }, 4))
+terminal.skriv(sendVidare(brukFunksjon, { tal -> tal + 5 }, 7))
+
+låst svar er brukVerktøy(endreListe, [2, 4, 6]) { tal -> tal + 1 }
+terminal.skriv(liste.hent(svar, 0))
+terminal.skriv(liste.hent(svar, 1))
+terminal.skriv(liste.hent(svar, 2))
+
+terminal.skriv(liste.reduser([1, 2, 3], 0) { sum, tal -> sum + tal })
