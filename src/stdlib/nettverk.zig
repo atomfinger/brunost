@@ -6,7 +6,6 @@ const EvalError = interp_mod.EvalError;
 const Interpreter = interp_mod.Interpreter;
 const ModuleMember = interp_mod.ModuleMember;
 
-const io = std.Options.debug_io;
 const net = std.Io.net;
 
 pub fn make(alloc: std.mem.Allocator) EvalError!Value {
@@ -124,7 +123,7 @@ fn lytt(args: []const Value, interp: *Interpreter) EvalError!Value {
     const host = try args[0].as_str();
     const port_num = try parse_port(args[1]);
     const address = try parse_ip_address(host, port_num);
-    const server = address.listen(io, .{ .reuse_address = true }) catch |err| return map_listen_error(err);
+    const server = address.listen(interp.io, .{ .reuse_address = true }) catch |err| return map_listen_error(err);
     return interp.register_listener(server);
 }
 
@@ -138,7 +137,7 @@ fn godta(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 1) return EvalError.TypeError;
     const server = try interp.require_listener(args[0]);
-    const stream = server.accept(io) catch |err| return map_accept_error(err);
+    const stream = server.accept(interp.io) catch |err| return map_accept_error(err);
     return interp.register_stream(stream);
 }
 
@@ -148,7 +147,7 @@ fn kopleTil(args: []const Value, interp: *Interpreter) EvalError!Value {
     const host = try args[0].as_str();
     const port_num = try parse_port(args[1]);
     const address = try parse_ip_address(host, port_num);
-    const stream = address.connect(io, .{ .mode = .stream, .protocol = .tcp }) catch |err| return map_connect_error(err);
+    const stream = address.connect(interp.io, .{ .mode = .stream, .protocol = .tcp }) catch |err| return map_connect_error(err);
     return interp.register_stream(stream);
 }
 
@@ -162,7 +161,7 @@ fn les(args: []const Value, interp: *Interpreter) EvalError!Value {
 
     const dest = interp.str_alloc().alloc(u8, @intCast(max_bytes)) catch return EvalError.OutOfMemory;
     var reader_buffer: [1024]u8 = undefined;
-    var reader = stream.reader(io, &reader_buffer);
+    var reader = stream.reader(interp.io, &reader_buffer);
     var vecs: [1][]u8 = .{dest};
     const n = reader.interface.readVec(&vecs) catch |err| switch (err) {
         error.ReadFailed => return map_read_error(reader.err orelse err),
@@ -177,7 +176,7 @@ fn skriv(args: []const Value, interp: *Interpreter) EvalError!Value {
     const stream = try interp.require_stream(args[0]);
     const bytes = try args[1].to_string(interp.str_alloc());
     var writer_buffer: [1024]u8 = undefined;
-    var writer = stream.writer(io, &writer_buffer);
+    var writer = stream.writer(interp.io, &writer_buffer);
     writer.interface.writeAll(bytes) catch |err| switch (err) {
         error.WriteFailed => return map_write_error(writer.err orelse err),
     };

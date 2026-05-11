@@ -6,12 +6,11 @@ const EvalError = interp_mod.EvalError;
 const Interpreter = interp_mod.Interpreter;
 const ModuleMember = interp_mod.ModuleMember;
 
-const io = std.Options.debug_io;
 const file_limit = std.Io.Limit.limited(50 * 1024 * 1024);
 
 pub fn make(alloc: std.mem.Allocator) EvalError!Value {
     const members = try alloc.dupe(ModuleMember, &[_]ModuleMember{
-        .{ .name = "les",   .value = .{ .builtin_fn = les } },
+        .{ .name = "les", .value = .{ .builtin_fn = les } },
         .{ .name = "finnas", .value = .{ .builtin_fn = finnas } },
     });
     return Value{ .module = members };
@@ -45,7 +44,7 @@ fn les(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 1) return EvalError.TypeError;
     const path = try resolve_path(interp, try args[0].as_str());
-    const contents = std.Io.Dir.cwd().readFileAlloc(io, path, interp.str_alloc(), file_limit) catch |err| {
+    const contents = std.Io.Dir.cwd().readFileAlloc(interp.io, path, interp.str_alloc(), file_limit) catch |err| {
         return map_file_error(err);
     };
     return .{ .string = contents };
@@ -55,10 +54,10 @@ fn finnas(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 1) return EvalError.TypeError;
     const path = try resolve_path(interp, try args[0].as_str());
-    var file = std.Io.Dir.cwd().openFile(io, path, .{}) catch |err| switch (err) {
+    var file = std.Io.Dir.cwd().openFile(interp.io, path, .{}) catch |err| switch (err) {
         error.FileNotFound, error.NotDir => return .{ .boolean = false },
         else => return map_file_error(err),
     };
-    defer file.close(io);
+    defer file.close(interp.io);
     return .{ .boolean = true };
 }
