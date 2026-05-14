@@ -78,6 +78,10 @@ export default defineConfig({
   title: 'Brunost',
   appearance: 'force-dark',
 
+  head: [
+    ['meta', { name: 'color-scheme', content: 'dark' }],
+  ],
+
   markdown: {
     languages: [
       brunostGrammar as any,
