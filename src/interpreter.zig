@@ -111,6 +111,9 @@ else
 pub const ResourceSlot = struct {
     active: bool,
     resource: RuntimeResource,
+    // When set, closing this slot also deactivates the paired slot (without closing it).
+    // Used so a handler thread can close a mirrored listener and signal the main accept loop.
+    paired_slot: ?*ResourceSlot = null,
 };
 
 pub const Value = union(enum) {
@@ -366,10 +369,39 @@ pub const Interpreter = struct {
         };
     }
 
+    pub fn init_for_handler_thread(
+        alloc: std.mem.Allocator,
+        io: Io,
+        output: *std.Io.Writer,
+        base_dir: []const u8,
+        debug: bool,
+    ) Interpreter {
+        return .{
+            .alloc = alloc,
+            .str_arena = std.heap.ArenaAllocator.init(alloc),
+            .global = Environment.init(alloc, null),
+            .signal = null,
+            .io = io,
+            .output = output,
+            .base_dir = base_dir,
+            .script_args = &.{},
+            .module_envs = .empty,
+            .resource_slots = .empty,
+            .debug = debug,
+            .last_undefined_name = "",
+        };
+    }
+
     pub fn deinit(self: *Interpreter) void {
         if (comptime @import("builtin").cpu.arch != .wasm32) {
             for (self.resource_slots.items) |*slot| {
                 if (!slot.active) continue;
+                // Mirrored slots (paired_slot != null) are owned by the creator interpreter.
+                // Only close_handle may close them; deinit must not double-close the FD.
+                if (slot.paired_slot != null) {
+                    slot.active = false;
+                    continue;
+                }
                 switch (slot.resource) {
                     .listener => |*server| server.deinit(self.io),
                     .stream => |*stream| stream.close(self.io),
@@ -402,6 +434,27 @@ pub const Interpreter = struct {
                 .kind = .listener,
             },
         };
+    }
+
+    // Like register_listener, but the slot is linked to main_slot: when this slot is closed,
+    // main_slot.active is set to false (preventing a double-close in the main interpreter's deinit).
+    pub fn register_listener_mirrored(self: *Interpreter, server: std.Io.net.Server, main_slot: *ResourceSlot) EvalError!Value {
+        try self.resource_slots.append(self.alloc, .{
+            .active = true,
+            .resource = .{ .listener = server },
+            .paired_slot = main_slot,
+        });
+        return .{
+            .resource_handle = .{
+                .id = self.resource_slots.items.len,
+                .kind = .listener,
+            },
+        };
+    }
+
+    pub fn listener_slot(self: *Interpreter, value: Value) EvalError!*ResourceSlot {
+        const handle = try value.as_resource_handle();
+        return self.get_active_slot(handle);
     }
 
     pub fn register_stream(self: *Interpreter, stream: std.Io.net.Stream) EvalError!Value {
@@ -450,6 +503,7 @@ pub const Interpreter = struct {
     pub fn close_handle(self: *Interpreter, value: Value) EvalError!void {
         const handle = try value.as_resource_handle();
         const slot = try self.get_active_slot(handle);
+        if (slot.paired_slot) |paired| paired.active = false;
         switch (slot.resource) {
             .listener => |*server| server.deinit(self.io),
             .stream => |*stream| stream.close(self.io),

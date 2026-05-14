@@ -1003,6 +1003,153 @@ test "http: Brunost kan serve statiske filer" {
     try std.testing.expect(std.mem.indexOf(u8, response, "Brunost testside") != null);
 }
 
+test "nettverk: handter - enkelt ekko" {
+    const port = try choose_loopback_port();
+    const port_arg = try std.fmt.allocPrint(std.testing.allocator, "{d}", .{port});
+    defer std.testing.allocator.free(port_arg);
+
+    var server_result: ThreadedScriptResult = .{};
+    const server_thread = try std.Thread.spawn(.{}, run_script_in_thread, .{
+        &server_result,
+        \\bruk nettverk
+        \\bruk terminal
+        \\bruk streng
+        \\
+        \\låst tal er streng.tilTal(terminal.argument(0))
+        \\låst lyttar er nettverk.lytt("127.0.0.1", tal)
+        \\
+        \\gjer handlar(straum) {
+        \\    låst tekst er nettverk.les(straum, 1024)
+        \\    nettverk.skriv(straum, tekst)
+        \\    nettverk.lukk(straum)
+        \\    nettverk.lukk(lyttar)
+        \\}
+        \\
+        \\nettverk.handter(lyttar, handlar)
+        ,
+        &.{port_arg},
+    });
+
+    var stream = connect_loopback_with_retry(port) catch |err| {
+        server_thread.join();
+        if (server_result.err) |thread_err| {
+            std.debug.print("\nserver thread error: {}\n", .{thread_err});
+            return thread_err;
+        }
+        std.debug.print("\nclient connect error (server_result.err null): {}\n", .{err});
+        return err;
+    };
+    defer stream.close(std.testing.io);
+
+    var writer_buffer: [128]u8 = undefined;
+    var writer = stream.writer(std.testing.io, &writer_buffer);
+    try writer.interface.writeAll("ping");
+    try writer.interface.flush();
+
+    var reader_buffer: [128]u8 = undefined;
+    var reader = stream.reader(std.testing.io, &reader_buffer);
+    var reply: [4]u8 = undefined;
+    const reply_len = try reader.interface.readSliceShort(&reply);
+
+    server_thread.join();
+
+    try std.testing.expect(server_result.err == null);
+    try std.testing.expectEqualStrings("ping", reply[0..reply_len]);
+}
+
+test "nettverk: handter - samtidige tilkoplingar" {
+    const port = try choose_loopback_port();
+    const port_arg = try std.fmt.allocPrint(std.testing.allocator, "{d}", .{port});
+    defer std.testing.allocator.free(port_arg);
+
+    var server_result: ThreadedScriptResult = .{};
+    const server_thread = try std.Thread.spawn(.{}, run_script_in_thread, .{
+        &server_result,
+        // Handler echoes each message. Sending "stopp" closes the listener,
+        // causing accept to fail and handter to return. No shared mutable state.
+        \\bruk nettverk
+        \\bruk streng
+        \\bruk terminal
+        \\
+        \\låst tal er streng.tilTal(terminal.argument(0))
+        \\låst lyttar er nettverk.lytt("127.0.0.1", tal)
+        \\
+        \\gjer handlar(straum) {
+        \\    låst tekst er nettverk.les(straum, 1024)
+        \\    viss (tekst erSameSom "stopp") gjer {
+        \\        nettverk.lukk(straum)
+        \\        nettverk.lukk(lyttar)
+        \\    } elles {
+        \\        nettverk.skriv(straum, tekst)
+        \\        nettverk.lukk(straum)
+        \\    }
+        \\}
+        \\
+        \\nettverk.handter(lyttar, handlar)
+        ,
+        &.{port_arg},
+    });
+
+    const ClientResult = struct {
+        reply: [8]u8 = undefined,
+        reply_len: usize = 0,
+        err: ?anyerror = null,
+    };
+
+    const connect_and_exchange = struct {
+        fn run(result: *ClientResult, p: u16, msg: []const u8) void {
+            const addr = std.Io.net.IpAddress{ .ip4 = std.Io.net.Ip4Address.loopback(p) };
+            var attempts: usize = 0;
+            var s = while (true) : (attempts += 1) {
+                const conn = addr.connect(std.testing.io, .{ .mode = .stream, .protocol = .tcp }) catch |err| switch (err) {
+                    error.ConnectionRefused => {
+                        if (attempts >= 19) { result.err = err; return; }
+                        std.Io.sleep(std.testing.io, .fromMilliseconds(25), .awake) catch {};
+                        continue;
+                    },
+                    else => { result.err = err; return; },
+                };
+                break conn;
+            };
+            defer s.close(std.testing.io);
+            var wb: [32]u8 = undefined;
+            var w = s.writer(std.testing.io, &wb);
+            w.interface.writeAll(msg) catch |err| { result.err = err; return; };
+            w.interface.flush() catch |err| { result.err = err; return; };
+            var rb: [32]u8 = undefined;
+            var r = s.reader(std.testing.io, &rb);
+            result.reply_len = r.interface.readSliceShort(result.reply[0..msg.len]) catch |err| { result.err = err; return; };
+        }
+    }.run;
+
+    // Connect two clients simultaneously to exercise concurrent handling.
+    var r1: ClientResult = .{};
+    var r2: ClientResult = .{};
+    const t1 = try std.Thread.spawn(.{}, connect_and_exchange, .{ &r1, port, "hei" });
+    const t2 = try std.Thread.spawn(.{}, connect_and_exchange, .{ &r2, port, "bye" });
+    t1.join();
+    t2.join();
+
+    try std.testing.expect(r1.err == null);
+    try std.testing.expect(r2.err == null);
+    try std.testing.expectEqualStrings("hei", r1.reply[0..r1.reply_len]);
+    try std.testing.expectEqualStrings("bye", r2.reply[0..r2.reply_len]);
+
+    // Send stop message to shut down the server gracefully.
+    var stop_stream = connect_loopback_with_retry(port) catch |err| {
+        server_thread.join();
+        return err;
+    };
+    var wb: [8]u8 = undefined;
+    var w = stop_stream.writer(std.testing.io, &wb);
+    try w.interface.writeAll("stopp");
+    try w.interface.flush();
+    stop_stream.close(std.testing.io);
+
+    server_thread.join();
+    try std.testing.expect(server_result.err == null);
+}
+
 test "http: statisk sperrar vegklatring" {
     const out = try run_script(
         \\bruk http

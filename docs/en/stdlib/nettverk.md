@@ -73,7 +73,21 @@ nettverk.lukk(stream)
 nettverk.lukk(listener)
 ```
 
-## Example: echo server
+### `nettverk.handter(listener, handlerFn)`
+
+Accepts connections in a loop and calls `handlerFn(stream)` in a new thread for each one.
+Blocks until the listener is closed (e.g. with `nettverk.lukk(listener)` from inside the handler),
+then waits for all in-flight handler threads to finish before returning.
+
+```brunost
+nettverk.handter(listener, gjer handler(stream) {
+    låst req er nettverk.les(stream, 4096)
+    nettverk.skriv(stream, "HTTP/1.1 200 OK\r\n\r\nHello!")
+    nettverk.lukk(stream)
+})
+```
+
+## Example: concurrent echo server
 
 ```brunost
 bruk terminal
@@ -82,10 +96,12 @@ bruk nettverk
 låst listener er nettverk.lytt("127.0.0.1", 9000)
 terminal.skriv("Listening on port " + nettverk.port(listener))
 
-låst conn er nettverk.godta(listener)
-låst msg er nettverk.les(conn, 512)
-terminal.skriv("Got: " + msg)
-nettverk.skriv(conn, msg)
-nettverk.lukk(conn)
-nettverk.lukk(listener)
+gjer handler(conn) {
+    låst msg er nettverk.les(conn, 512)
+    terminal.skriv("Got: " + msg)
+    nettverk.skriv(conn, msg)
+    nettverk.lukk(conn)
+}
+
+nettverk.handter(listener, handler)
 ```

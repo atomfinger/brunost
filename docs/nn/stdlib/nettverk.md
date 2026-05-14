@@ -73,7 +73,21 @@ nettverk.lukk(straum)
 nettverk.lukk(lyttar)
 ```
 
-## Eksempel: ekkotenaren
+### `nettverk.handter(lyttar, handterFn)`
+
+Tek imot tilkoplingar i ei løkke og kallar `handterFn(straum)` i ein ny tråd for kvar tilkopling.
+Blokkerer til lyttaren vert lukka (t.d. med `nettverk.lukk(lyttar)` frå innsida av handteraren),
+og ventar på at alle pågåande handtertrådar er ferdige før han returnerer.
+
+```brunost
+nettverk.handter(lyttar, gjer handtar(straum) {
+    låst førespurnad er nettverk.les(straum, 4096)
+    nettverk.skriv(straum, "HTTP/1.1 200 OK\r\n\r\nHei!")
+    nettverk.lukk(straum)
+})
+```
+
+## Eksempel: samtidsekkotenaren
 
 ```brunost
 bruk terminal
@@ -82,10 +96,12 @@ bruk nettverk
 låst lyttar er nettverk.lytt("127.0.0.1", 9000)
 terminal.skriv("Lyttar på port " + nettverk.port(lyttar))
 
-låst kopling er nettverk.godta(lyttar)
-låst melding er nettverk.les(kopling, 512)
-terminal.skriv("Fekk: " + melding)
-nettverk.skriv(kopling, melding)
-nettverk.lukk(kopling)
-nettverk.lukk(lyttar)
+gjer handtar(kopling) {
+    låst tekst er nettverk.les(kopling, 512)
+    terminal.skriv("Fekk: " + tekst)
+    nettverk.skriv(kopling, tekst)
+    nettverk.lukk(kopling)
+}
+
+nettverk.handter(lyttar, handtar)
 ```

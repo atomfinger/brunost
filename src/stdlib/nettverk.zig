@@ -4,6 +4,7 @@ const interp_mod = @import("../interpreter.zig");
 const Value = interp_mod.Value;
 const EvalError = interp_mod.EvalError;
 const Interpreter = interp_mod.Interpreter;
+const Io = interp_mod.Io;
 const ModuleMember = interp_mod.ModuleMember;
 
 const net = std.Io.net;
@@ -17,6 +18,7 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
         .{ .name = "les",       .value = .{ .builtin_fn = les } },
         .{ .name = "skriv",     .value = .{ .builtin_fn = skriv } },
         .{ .name = "lukk",      .value = .{ .builtin_fn = lukk } },
+        .{ .name = "handter",   .value = .{ .builtin_fn = handter } },
     });
     return Value{ .module = members };
 }
@@ -190,5 +192,78 @@ fn lukk(args: []const Value, interp: *Interpreter) EvalError!Value {
     try ensure_native();
     if (args.len != 1) return EvalError.TypeError;
     try interp.close_handle(args[0]);
+    return .{ .null_val = {} };
+}
+
+const HandlerThreadContext = struct {
+    func: Value,
+    stream: net.Stream,
+    listener_server: net.Server,
+    main_listener_slot: *interp_mod.ResourceSlot,
+    alloc: std.mem.Allocator,
+    io: Io,
+    output: *std.Io.Writer,
+    base_dir: []const u8,
+    debug: bool,
+};
+
+fn handler_thread_fn(ctx: *HandlerThreadContext) void {
+    defer ctx.alloc.destroy(ctx);
+    var thread_interp = Interpreter.init_for_handler_thread(
+        ctx.alloc,
+        ctx.io,
+        ctx.output,
+        ctx.base_dir,
+        ctx.debug,
+    );
+    defer thread_interp.deinit();
+    // Register listener first (id=1) so it aligns with the closure's lyttar handle.
+    // Mirrored: closing this slot also deactivates the main interpreter's listener slot,
+    // which causes the main accept() call to fail and handter to return.
+    _ = thread_interp.register_listener_mirrored(ctx.listener_server, ctx.main_listener_slot) catch return;
+    const stream_val = thread_interp.register_stream(ctx.stream) catch return;
+    _ = thread_interp.call_callable(ctx.func, &[_]Value{stream_val}) catch {};
+}
+
+fn handter(args: []const Value, interp: *Interpreter) EvalError!Value {
+    try ensure_native();
+    if (args.len != 2) return EvalError.TypeError;
+    const server = try interp.require_listener(args[0]);
+    switch (args[1]) {
+        .function, .builtin_fn => {},
+        else => return EvalError.TypeError,
+    }
+    const callback = args[1];
+    const main_listener_slot = try interp.listener_slot(args[0]);
+
+    var threads: std.ArrayListUnmanaged(std.Thread) = .empty;
+    defer threads.deinit(interp.alloc);
+
+    while (true) {
+        const stream = server.accept(interp.io) catch break;
+        const ctx = interp.alloc.create(HandlerThreadContext) catch {
+            stream.close(interp.io);
+            break;
+        };
+        ctx.* = .{
+            .func = callback,
+            .stream = stream,
+            .listener_server = server.*,
+            .main_listener_slot = main_listener_slot,
+            .alloc = interp.alloc,
+            .io = interp.io,
+            .output = interp.output,
+            .base_dir = interp.base_dir,
+            .debug = interp.debug,
+        };
+        const thread = std.Thread.spawn(.{}, handler_thread_fn, .{ctx}) catch {
+            stream.close(interp.io);
+            interp.alloc.destroy(ctx);
+            continue;
+        };
+        threads.append(interp.alloc, thread) catch thread.detach();
+    }
+
+    for (threads.items) |t| t.join();
     return .{ .null_val = {} };
 }
