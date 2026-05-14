@@ -2,6 +2,7 @@ const std = @import("std");
 const token = @import("token.zig");
 const ast = @import("ast.zig");
 const nynorsk = @import("nynorsk.zig");
+const pexprs = @import("parser_exprs.zig");
 
 pub const ParseError = error{
     UnexpectedToken,
@@ -51,17 +52,17 @@ pub const Parser = struct {
         return p;
     }
 
-    fn advance(self: *Parser) void {
+    pub fn advance(self: *Parser) void {
         self.curr = self.peek;
         self.peek = self.lexer.next_token();
     }
 
-    fn expect(self: *Parser, kind: token.token_types) ParseError!void {
+    pub fn expect(self: *Parser, kind: token.token_types) ParseError!void {
         if (self.curr.type != kind) return ParseError.UnexpectedToken;
         self.advance();
     }
 
-    fn alloc_node(self: *Parser, node: ast.Node) ParseError!*ast.Node {
+    pub fn alloc_node(self: *Parser, node: ast.Node) ParseError!*ast.Node {
         const n = try self.arena.create(ast.Node);
         n.* = node;
         return n;
@@ -118,7 +119,7 @@ pub const Parser = struct {
             .type_op => self.parse_struct_decl(),
             .break_op => self.parse_break(),
             .continue_op => self.parse_continue(),
-            else => self.parse_assign_or_expr(),
+            else => pexprs.parse_assign_or_expr(self),
         };
     }
 
@@ -139,19 +140,19 @@ pub const Parser = struct {
         if (!nynorsk.isValidIdentifier(name)) return ParseError.NotNynorsk;
         self.advance();
         try self.expect(.assign); // er
-        const value = try self.parse_expr(0);
+        const value = try pexprs.parse_expr(self, 0);
         return self.alloc_node(.{ .var_decl = .{ .mutable = mutable, .name = name, .value = value } });
     }
 
     fn parse_return(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume gjevTilbake
-        const value = try self.parse_expr(0);
+        const value = try pexprs.parse_expr(self, 0);
         return self.alloc_node(.{ .return_stmt = .{ .value = value } });
     }
 
     fn parse_throw(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume kast
-        const value = try self.parse_expr(0);
+        const value = try pexprs.parse_expr(self, 0);
         return self.alloc_node(.{ .throw_stmt = .{ .value = value } });
     }
 
@@ -183,7 +184,7 @@ pub const Parser = struct {
         self.advance(); // consume viss
         if (self.curr.type != .lparen) return ParseError.ExpectedOpenParen;
         self.advance();
-        const condition = try self.parse_expr(0);
+        const condition = try pexprs.parse_expr(self, 0);
         if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
         self.advance();
         // gjer (the "do" keyword)
@@ -210,7 +211,7 @@ pub const Parser = struct {
         self.advance(); // consume medan
         if (self.curr.type != .lparen) return ParseError.ExpectedOpenParen;
         self.advance();
-        const condition = try self.parse_expr(0);
+        const condition = try pexprs.parse_expr(self, 0);
         if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
         self.advance();
         if (self.curr.type != .function) return ParseError.ExpectedDo;
@@ -230,7 +231,7 @@ pub const Parser = struct {
         if (self.curr.type != .in_op) return ParseError.ExpectedIn;
         self.advance();
         self.no_struct_lit = true;
-        const iterable = try self.parse_expr(0);
+        const iterable = try pexprs.parse_expr(self, 0);
         self.no_struct_lit = false;
         const body = try self.parse_block();
         return self.alloc_node(.{ .foreach_stmt = .{
@@ -309,7 +310,7 @@ pub const Parser = struct {
             var default_value: ?*ast.Node = null;
             if (self.curr.type == .assign) {
                 self.advance(); // consume er
-                default_value = try self.parse_expr(0);
+                default_value = try pexprs.parse_expr(self, 0);
             }
             try fields.append(self.arena, .{
                 .name = field_name,
@@ -362,65 +363,6 @@ pub const Parser = struct {
         } });
     }
 
-    fn parse_assign_or_expr(self: *Parser) ParseError!*ast.Node {
-        // Field assignment or member call: identifier.member ...
-        if (self.curr.type == .identifier and self.peek.type == .dot) {
-            const obj = self.curr.literal;
-            self.advance(); // consume object name
-            self.advance(); // consume .
-            if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
-            const member = self.curr.literal;
-            self.advance(); // consume member name
-            if (self.curr.type == .assign) {
-                // Field assignment: obj.member er expr
-                self.advance(); // consume er
-                const value = try self.parse_expr(0);
-                return self.alloc_node(.{ .field_assign = .{ .object = obj, .field = member, .value = value } });
-            }
-            if (self.curr.type == .lparen or self.is_lambda_start()) {
-                // Member call as expression statement: obj.member(args)
-                const args = if (self.curr.type == .lparen)
-                    try self.parse_call_args()
-                else
-                    try self.parse_implicit_lambda_call_args();
-                const call_node = try self.alloc_node(.{ .member_call = .{ .object = obj, .member = member, .args = args } });
-                return self.alloc_node(.{ .expr_stmt = .{ .expr = call_node } });
-            }
-            // Field access as expression statement (uncommon but valid)
-            const fa = try self.alloc_node(.{ .field_access = .{ .object = obj, .field = member } });
-            return self.alloc_node(.{ .expr_stmt = .{ .expr = fa } });
-        }
-        // Compound assignment: name += expr, name -= expr, etc.
-        if (self.curr.type == .identifier) {
-            const name = self.curr.literal;
-            const compound_op: ?[]const u8 = switch (self.peek.type) {
-                .plus_assign => "+",
-                .minus_assign => "-",
-                .star_assign => "*",
-                .slash_assign => "/",
-                else => null,
-            };
-            if (compound_op) |op| {
-                self.advance(); // consume identifier
-                self.advance(); // consume compound assignment token
-                const rhs = try self.parse_expr(0);
-                const name_node = try self.alloc_node(.{ .identifier = .{ .name = name } });
-                const bin_node = try self.alloc_node(.{ .infix_expr = .{ .op = op, .left = name_node, .right = rhs } });
-                return self.alloc_node(.{ .assign_stmt = .{ .name = name, .value = bin_node } });
-            }
-        }
-        // Simple variable assignment: name er expr
-        if (self.curr.type == .identifier and self.peek.type == .assign) {
-            const name = self.curr.literal;
-            self.advance(); // consume identifier
-            self.advance(); // consume er
-            const value = try self.parse_expr(0);
-            return self.alloc_node(.{ .assign_stmt = .{ .name = name, .value = value } });
-        }
-        const expr = try self.parse_expr(0);
-        return self.alloc_node(.{ .expr_stmt = .{ .expr = expr } });
-    }
-
     fn parse_block(self: *Parser) ParseError!*ast.Node {
         if (self.curr.type != .lbrace) return ParseError.ExpectedOpenBrace;
         self.advance();
@@ -434,267 +376,7 @@ pub const Parser = struct {
         return self.alloc_node(.{ .block = .{ .statements = try stmts.toOwnedSlice(self.arena) } });
     }
 
-    fn infix_precedence(tok: token.token_types) u8 {
-        return switch (tok) {
-            .or_op => 1,
-            .and_op => 2,
-            .assign, .equal => 3, // er / erSameSom as equality in expression context
-            .ltag, .rtag, .lt, .gt, .lte, .gte => 4,
-            .plus, .minus => 5,
-            .asterisk, .fslash => 6,
-            else => 0,
-        };
-    }
-
-    const logical_not_precedence = 2;
-
     pub fn parse_expr(self: *Parser, min_prec: u8) ParseError!*ast.Node {
-        var left = try self.parse_primary();
-        while (true) {
-            // Subscript: expr[index]
-            if (self.curr.type == .lbracket) {
-                self.advance(); // consume [
-                const index = try self.parse_expr(0);
-                if (self.curr.type != .rbracket) return ParseError.ExpectedCloseBracket;
-                self.advance(); // consume ]
-                left = try self.alloc_node(.{ .index_expr = .{ .object = left, .index = index } });
-                continue;
-            }
-            const prec = infix_precedence(self.curr.type);
-            if (prec <= min_prec) break;
-            const op_tok = self.curr;
-            self.advance();
-            const right = try self.parse_expr(prec);
-            const op_str: []const u8 = switch (op_tok.type) {
-                .or_op => "eller",
-                .and_op => "og",
-                .assign => "er",
-                .equal => "erSameSom",
-                .plus => "+",
-                .minus => "-",
-                .asterisk => "*",
-                .fslash => "/",
-                .ltag, .lt => "<",
-                .rtag, .gt => ">",
-                .lte => "<=",
-                .gte => ">=",
-                else => op_tok.literal,
-            };
-            left = try self.alloc_node(.{ .infix_expr = .{ .op = op_str, .left = left, .right = right } });
-        }
-        return left;
+        return pexprs.parse_expr(self, min_prec);
     }
-
-    fn parse_primary(self: *Parser) ParseError!*ast.Node {
-        switch (self.curr.type) {
-            .integer => {
-                const val = std.fmt.parseInt(i64, self.curr.literal, 10) catch return ParseError.InvalidInteger;
-                const node = try self.alloc_node(.{ .integer_lit = .{ .value = val } });
-                self.advance();
-                return node;
-            },
-            .float => {
-                const val = std.fmt.parseFloat(f64, self.curr.literal) catch return ParseError.InvalidFloat;
-                const node = try self.alloc_node(.{ .float_lit = .{ .value = val } });
-                self.advance();
-                return node;
-            },
-            .string => {
-                const node = try self.alloc_node(.{ .string_lit = .{ .value = self.curr.literal } });
-                self.advance();
-                return node;
-            },
-            .true_val => {
-                const node = try self.alloc_node(.{ .bool_lit = .{ .value = true } });
-                self.advance();
-                return node;
-            },
-            .false_val => {
-                const node = try self.alloc_node(.{ .bool_lit = .{ .value = false } });
-                self.advance();
-                return node;
-            },
-            .bang, .not_op => {
-                self.advance();
-                const right = try self.parse_expr(logical_not_precedence);
-                return self.alloc_node(.{ .prefix_expr = .{ .op = "!", .right = right } });
-            },
-            .minus => {
-                self.advance();
-                const right = try self.parse_primary();
-                return self.alloc_node(.{ .prefix_expr = .{ .op = "-", .right = right } });
-            },
-            .lparen => {
-                self.advance();
-                const expr = try self.parse_expr(0);
-                if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
-                self.advance();
-                return expr;
-            },
-            .lbracket => {
-                return self.parse_list();
-            },
-            .lbrace => {
-                if (self.is_lambda_start()) {
-                    return self.parse_lambda_expr();
-                }
-                return self.parse_hashmap();
-            },
-            .identifier => {
-                const name = self.curr.literal;
-                self.advance();
-                // member access or field access
-                if (self.curr.type == .dot) {
-                    self.advance();
-                    if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
-                    const member = self.curr.literal;
-                    self.advance();
-                    if (self.curr.type == .lparen) {
-                        const args = try self.parse_call_args();
-                        return self.alloc_node(.{ .member_call = .{ .object = name, .member = member, .args = args } });
-                    }
-                    if (self.is_lambda_start()) {
-                        const args = try self.parse_implicit_lambda_call_args();
-                        return self.alloc_node(.{ .member_call = .{ .object = name, .member = member, .args = args } });
-                    }
-                    // Field access (no parentheses): obj.field
-                    return self.alloc_node(.{ .field_access = .{ .object = name, .field = member } });
-                }
-                // Struct literal: TypeName { felt er verdi, ... }
-                if (!self.no_struct_lit and self.curr.type == .lbrace) {
-                    self.advance(); // consume {
-                    var lit_fields: std.ArrayList(ast.StructLitField) = .empty;
-                    while (self.curr.type != .rbrace and self.curr.type != .eof) {
-                        if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
-                        const field_name = self.curr.literal;
-                        if (!nynorsk.isValidIdentifier(field_name)) return ParseError.NotNynorsk;
-                        self.advance();
-                        try self.expect(.assign); // er
-                        const val = try self.parse_expr(0);
-                        try lit_fields.append(self.arena, .{ .name = field_name, .value = val });
-                        if (self.curr.type == .comma) self.advance();
-                    }
-                    if (self.curr.type != .rbrace) return ParseError.UnexpectedToken;
-                    self.advance();
-                    return self.alloc_node(.{ .struct_lit = .{
-                        .type_name = name,
-                        .fields = try lit_fields.toOwnedSlice(self.arena),
-                    } });
-                }
-                if (self.curr.type == .lparen) {
-                    const callee = try self.alloc_node(.{ .identifier = .{ .name = name } });
-                    const args = try self.parse_call_args();
-                    return self.alloc_node(.{ .call_expr = .{ .callee = callee, .args = args } });
-                }
-                if (self.is_lambda_start()) {
-                    const callee = try self.alloc_node(.{ .identifier = .{ .name = name } });
-                    const args = try self.parse_implicit_lambda_call_args();
-                    return self.alloc_node(.{ .call_expr = .{ .callee = callee, .args = args } });
-                }
-                return self.alloc_node(.{ .identifier = .{ .name = name } });
-            },
-            else => return ParseError.UnexpectedToken,
-        }
-    }
-
-    fn parse_call_args(self: *Parser) ParseError![]*ast.Node {
-        try self.expect(.lparen);
-        var args: std.ArrayList(*ast.Node) = .empty;
-        while (self.curr.type != .rparen and self.curr.type != .eof) {
-            const arg = try self.parse_expr(0);
-            try args.append(self.arena, arg);
-            if (self.curr.type == .comma) self.advance();
-        }
-        try self.expect(.rparen);
-        try self.maybe_append_trailing_lambda(&args);
-        return args.toOwnedSlice(self.arena);
-    }
-
-    fn parse_implicit_lambda_call_args(self: *Parser) ParseError![]*ast.Node {
-        var args: std.ArrayList(*ast.Node) = .empty;
-        try self.maybe_append_trailing_lambda(&args);
-        return args.toOwnedSlice(self.arena);
-    }
-
-    fn maybe_append_trailing_lambda(self: *Parser, args: *std.ArrayList(*ast.Node)) ParseError!void {
-        if (!self.is_lambda_start()) return;
-        const lambda = try self.parse_lambda_expr();
-        try args.append(self.arena, lambda);
-    }
-
-    fn is_lambda_start(self: *Parser) bool {
-        if (self.curr.type != .lbrace) return false;
-
-        var look_token = self.peek;
-        var look_lexer = self.lexer;
-
-        if (look_token.type == .arrow) return true;
-        if (look_token.type != .identifier) return false;
-
-        while (true) {
-            const next = look_lexer.next_token();
-            switch (next.type) {
-                .arrow => return true,
-                .comma => {
-                    look_token = look_lexer.next_token();
-                    if (look_token.type != .identifier) return false;
-                },
-                else => return false,
-            }
-        }
-    }
-
-    fn parse_lambda_expr(self: *Parser) ParseError!*ast.Node {
-        try self.expect(.lbrace);
-        var params: std.ArrayList([]const u8) = .empty;
-        if (self.curr.type != .arrow) {
-            while (true) {
-                if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
-                if (!nynorsk.isValidIdentifier(self.curr.literal)) return ParseError.NotNynorsk;
-                try params.append(self.arena, self.curr.literal);
-                self.advance();
-                if (self.curr.type != .comma) break;
-                self.advance();
-            }
-        }
-        if (self.curr.type != .arrow) return ParseError.ExpectedArrow;
-        self.advance();
-        const body = try self.parse_expr(0);
-        if (self.curr.type != .rbrace) return ParseError.ExpectedCloseBrace;
-        self.advance();
-        return self.alloc_node(.{ .lambda_expr = .{
-            .params = try params.toOwnedSlice(self.arena),
-            .body = body,
-        } });
-    }
-
-    fn parse_list(self: *Parser) ParseError!*ast.Node {
-        self.advance(); // consume [
-        var elements: std.ArrayList(*ast.Node) = .empty;
-        while (self.curr.type != .rbracket and self.curr.type != .eof) {
-            const elem = try self.parse_expr(0);
-            try elements.append(self.arena, elem);
-            if (self.curr.type == .comma) self.advance();
-        }
-        if (self.curr.type != .rbracket) return ParseError.ExpectedCloseBracket;
-        self.advance();
-        return self.alloc_node(.{ .list_lit = .{ .elements = try elements.toOwnedSlice(self.arena) } });
-    }
-
-    fn parse_hashmap(self: *Parser) ParseError!*ast.Node {
-        self.advance(); // consume {
-        var pairs: std.ArrayList(ast.HashmapPair) = .empty;
-        while (self.curr.type != .rbrace and self.curr.type != .eof) {
-            const key = try self.parse_expr(0);
-            if (self.curr.type != .colon) return ParseError.UnexpectedToken;
-            self.advance(); // consume :
-            const value = try self.parse_expr(0);
-            try pairs.append(self.arena, .{ .key = key, .value = value });
-            if (self.curr.type == .comma) self.advance();
-        }
-        if (self.curr.type != .rbrace) return ParseError.UnexpectedToken;
-        self.advance();
-        return self.alloc_node(.{ .hashmap_lit = .{ .pairs = try pairs.toOwnedSlice(self.arena) } });
-    }
-
 };
