@@ -1,0 +1,313 @@
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+/* ─── Brunost colour palette ─────────────────────────────────────────────── */
+:root {
+  --brunost-ink:      #1a0f00;
+  --brunost-parchment:#f5edd8;
+  --brunost-cream:    #faf6ec;
+  --brunost-red:      #9b2215;
+  --brunost-gold:     #c8881a;
+  --brunost-gold-lt:  #e8b84b;
+  --brunost-blue:     #2a4a72;
+  --brunost-green:    #2d5a27;
+  --brunost-bg:       #1c0e06;
+  --brunost-panel:    #251408;
+  --brunost-panel2:   #2e1608;
+  --brunost-border:   #7a4e1a;
+}
+
+/* Force dark mode always — brunost is a dark theme */
+:root, .dark {
+  --vp-c-bg:          var(--brunost-bg);
+  --vp-c-bg-soft:     var(--brunost-panel);
+  --vp-c-bg-elv:      var(--brunost-panel2);
+  --vp-c-bg-alt:      #160a03;
+
+  --vp-c-brand-1:     var(--brunost-gold);
+  --vp-c-brand-2:     var(--brunost-gold-lt);
+  --vp-c-brand-3:     #a0600a;
+  --vp-c-brand-soft:  rgba(200, 136, 26, 0.14);
+
+  --vp-c-text-1:      var(--brunost-parchment);
+  --vp-c-text-2:      #d9c9a8;
+  --vp-c-text-3:      #b09878;
+
+  --vp-c-border:      var(--brunost-border);
+  --vp-c-divider:     rgba(122, 78, 26, 0.35);
+  --vp-c-gutter:      var(--brunost-bg);
+
+  --vp-c-neutral:       var(--brunost-gold);
+  --vp-c-neutral-inverse: var(--brunost-ink);
+
+  --vp-c-danger-1:    var(--brunost-red);
+  --vp-c-danger-2:    #c42a1a;
+  --vp-c-danger-soft: rgba(155, 34, 21, 0.14);
+
+  --vp-c-tip-1:       var(--brunost-gold);
+  --vp-c-tip-2:       var(--brunost-gold-lt);
+  --vp-c-tip-soft:    rgba(200, 136, 26, 0.14);
+
+  color-scheme: dark;
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────────── */
+:root {
+  --vp-font-family-base:  'Lora', Georgia, serif;
+  --vp-font-family-mono:  'Source Code Pro', 'Courier New', monospace;
+}
+
+/* ─── Nav bar ─────────────────────────────────────────────────────────────── */
+.VPNav {
+  background: rgba(28, 14, 6, 0.92) !important;
+  border-bottom: 1px solid var(--brunost-border) !important;
+  backdrop-filter: blur(8px);
+}
+
+.VPNavBar .title {
+  font-family: 'UnifrakturMaguntia', serif;
+  font-size: 1.4rem;
+  background: linear-gradient(160deg, var(--brunost-gold-lt) 20%, var(--brunost-gold) 55%, #a0600a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
+.VPSidebar {
+  background: var(--brunost-panel) !important;
+  border-right: 1px solid rgba(122, 78, 26, 0.35) !important;
+}
+
+.VPSidebarItem .text {
+  color: #d9c9a8;
+}
+
+.VPSidebarItem.is-active > .item > .VPLink > .text,
+.VPSidebarItem.is-active > .item > .text {
+  color: var(--brunost-gold-lt);
+}
+
+/* ─── Content area ────────────────────────────────────────────────────────── */
+.VPContent {
+  background: var(--brunost-bg);
+}
+
+.vp-doc h1 {
+  font-family: 'UnifrakturMaguntia', serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  background: linear-gradient(160deg, var(--brunost-gold-lt) 20%, var(--brunost-gold) 55%, #a0600a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 6px rgba(200, 136, 26, 0.3));
+  border-bottom: 1px solid rgba(122, 78, 26, 0.35);
+  padding: 0.1em 0.1em 0.5rem 0.12em;
+  overflow: visible;
+}
+
+.vp-doc h2 {
+  font-family: 'Lora', serif;
+  color: var(--brunost-gold-lt);
+  border-top: 1px solid rgba(122, 78, 26, 0.35);
+}
+
+.vp-doc h3 {
+  color: var(--brunost-gold);
+}
+
+.vp-doc a {
+  color: var(--brunost-gold-lt);
+  text-decoration: underline;
+  text-decoration-color: rgba(232, 184, 75, 0.35);
+}
+
+.vp-doc a:hover {
+  color: var(--brunost-parchment);
+  text-decoration-color: var(--brunost-gold);
+}
+
+/* ─── Code blocks ─────────────────────────────────────────────────────────── */
+.vp-doc div[class*="language-"] {
+  background: #0e0600 !important;
+  border: 1px solid rgba(122, 78, 26, 0.45);
+  border-radius: 6px;
+}
+
+.vp-doc div[class*="language-"] pre {
+  background: transparent !important;
+}
+
+/* Language label */
+.vp-doc div[class*="language-"]::before {
+  color: rgba(200, 136, 26, 0.6);
+}
+
+/* Inline code */
+.vp-doc :not(pre) > code {
+  background: rgba(37, 20, 8, 0.8);
+  border: 1px solid rgba(122, 78, 26, 0.35);
+  color: var(--brunost-gold-lt);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.88em;
+}
+
+/* ─── Brunost syntax token colours ───────────────────────────────────────── */
+/* These override the Shiki github-dark tokens for brunost code blocks */
+.vp-doc .language-brunost .token.comment,
+.vp-doc [class*="language-brunost"] span[style*="color:#6E7781"],
+.vp-doc [class*="language-brunost"] span[style*="color:#8B949E"] {
+  color: #8aaf7d !important;
+  font-style: italic;
+}
+
+/* Shiki outputs inline styles; we patch the known github-dark colours */
+/* keyword: github-dark uses #FF7B72 — close enough to our #ff8257 */
+/* string:  github-dark uses #A5D6FF — we remap to #ffcc45 */
+/* number:  github-dark uses #79C0FF — we remap to #5ecfff */
+
+.vp-doc [class*="language-brunost"] code {
+  --shiki-token-comment:    #8aaf7d;
+  --shiki-token-string:     #ffcc45;
+  --shiki-token-keyword:    #ff8257;
+  --shiki-token-constant:   #5ecfff;
+  --shiki-token-number:     #5ecfff;
+  --shiki-token-function:   #ff5684;
+  --shiki-token-parameter:  #f5edd8;
+  --shiki-token-property:   #72faa8;
+  --shiki-token-punctuation:#f3d68e;
+  --shiki-foreground:       #c9b99a;
+  --shiki-background:       #0e0600;
+}
+
+/* Fallback: apply brunost colours via attribute selectors on Shiki spans */
+.vp-doc [class*="language-brunost"] .line span {
+  font-family: 'Source Code Pro', monospace;
+}
+
+/* ─── Badges & tips ───────────────────────────────────────────────────────── */
+.vp-doc .custom-block.tip {
+  background: rgba(200, 136, 26, 0.08);
+  border-color: var(--brunost-gold);
+}
+
+.vp-doc .custom-block.warning {
+  background: rgba(200, 136, 26, 0.08);
+  border-color: var(--brunost-gold-lt);
+}
+
+.vp-doc .custom-block.danger {
+  background: rgba(155, 34, 21, 0.1);
+  border-color: var(--brunost-red);
+}
+
+.vp-doc .custom-block.info {
+  background: rgba(42, 74, 114, 0.15);
+  border-color: var(--brunost-blue);
+}
+
+/* ─── Tables ──────────────────────────────────────────────────────────────── */
+.vp-doc table {
+  border-collapse: collapse;
+}
+
+.vp-doc table th {
+  background: var(--brunost-panel);
+  color: var(--brunost-gold-lt);
+  border: 1px solid var(--brunost-border);
+}
+
+.vp-doc table td {
+  border: 1px solid rgba(122, 78, 26, 0.35);
+}
+
+.vp-doc table tr:nth-child(even) {
+  background: rgba(37, 20, 8, 0.4);
+}
+
+/* ─── Hero / home page ────────────────────────────────────────────────────── */
+.VPHero .name {
+  font-family: 'UnifrakturMaguntia', serif !important;
+  background: linear-gradient(160deg, var(--brunost-gold-lt) 20%, var(--brunost-gold) 55%, #a0600a 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.VPHero .tagline {
+  color: #d9c9a8;
+  font-family: 'Lora', serif;
+  font-style: italic;
+}
+
+.VPButton.medium.brand {
+  background: var(--brunost-gold);
+  color: var(--brunost-ink) !important;
+  border-color: var(--brunost-gold);
+  font-family: 'Lora', serif;
+  font-weight: 600;
+}
+
+.VPButton.medium.brand:hover {
+  background: var(--brunost-gold-lt);
+  border-color: var(--brunost-gold-lt);
+}
+
+.VPButton.medium.alt {
+  border-color: var(--brunost-border);
+  color: var(--brunost-parchment) !important;
+}
+
+.VPButton.medium.alt:hover {
+  border-color: var(--brunost-gold);
+  color: var(--brunost-gold-lt) !important;
+}
+
+/* ─── Feature cards ───────────────────────────────────────────────────────── */
+.VPFeature {
+  background: var(--brunost-panel) !important;
+  border: 1px solid rgba(122, 78, 26, 0.35) !important;
+}
+
+
+.VPFeature .title {
+  color: var(--brunost-gold-lt) !important;
+}
+
+/* ─── Outline / ToC ───────────────────────────────────────────────────────── */
+.VPDocAsideOutline .outline-link.active {
+  color: var(--brunost-gold-lt);
+}
+
+/* ─── Footer ──────────────────────────────────────────────────────────────── */
+.VPFooter {
+  display: block !important;
+  background: var(--brunost-panel) !important;
+  border-top: 1px solid rgba(122, 78, 26, 0.35) !important;
+  color: #b09878;
+}
+
+.VPFooter .message,
+.VPFooter .copyright {
+  color: #b09878;
+}
+
+.VPFooter .copyright a {
+  color: #b09878;
+  text-decoration: underline;
+  text-decoration-color: rgba(176, 152, 120, 0.4);
+}
+
+.VPFooter .copyright a:hover {
+  color: var(--brunost-parchment);
+}
+
+/* ─── Noise texture (matches landing page) ────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}

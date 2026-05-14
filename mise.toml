@@ -28,3 +28,15 @@ run = "python3 -m http.server 8765"
 [tasks."demo:stop"]
 description = "Stop the brunost demo HTML server"
 run = "pkill -f 'http.server 8765' || true"
+
+[tasks."docs:build"]
+description = "Build the VitePress documentation site"
+run = "npm run docs:build"
+
+[tasks."docs:dev"]
+description = "Start the VitePress documentation dev server on http://localhost:5173"
+run = "npm run docs:dev"
+
+[tasks."docs:preview"]
+description = "Preview the built VitePress documentation on http://localhost:4173"
+run = "npm run docs:preview"

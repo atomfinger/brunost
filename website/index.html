@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="nn">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Brunost — Programmeringsspråket</title>
+		<link rel="icon" href="/favicon.ico" type="image/x-icon">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+		<script src="https://prismjs.com/prism.js"></script>
+		<script>
+			Prism.languages.brunost = {
+				comment: {
+					pattern: /\/\/.*/,
+					greedy: true,
+					},
+					string: {
+						pattern: /"(?:\\.|[^"\\])*"/,
+						greedy: true,
+						},
+						keyword:
+						/\b(?:bruk|endelig|fang|forKvart|gjer|gjevTilbake|ikkje|i|kast|låst|medan|modul|open|prøv|som|type|viss|elles)\b/,
+						boolean: /\b(?:sant|usant)\b/,
+						number: /\b\d+(?:\.\d+)?\b/,
+						operator:
+						/\b(?:erSameEllerMindreEnn|erSameEllerStørreEnn|erMindreEnn|erStørreEnn|erSameSom|er|og|eller)\b|[+\-*/]/,
+						"class-name": {
+							pattern: /(\btype\s+)[A-ZÆØÅ][\wÆØÅæøå]*/u,
+							lookbehind: true,
+							},
+							function: /\b[\wÆØÅæøå]+(?=\s*\()/u,
+							namespace: /\b(?:terminal|matte|streng|liste|kart|prosess|fil|http|nettverk)(?=\.)/,
+							punctuation: /[{}[\](),.:]/,
+							};
+		</script>
+		<script src="https://live.prismjs.com/src/prism-live.js?load=none"></script>
+
+		<style>
+			:root {
+				--ink: #1a0f00;
+				--parchment: #f5edd8;
+				--cream: #faf6ec;
+				--red: #9b2215;
+				--gold: #c8881a;
+				--gold-lt: #e8b84b;
+				--blue: #2a4a72;
+				--green: #2d5a27;
+				--bg: #1c0e06;
+				--panel: #251408;
+				--border: #7a4e1a;
+			}
+			
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			
+			body {
+				font-family: "Lora", Georgia, serif;
+				background: var(--bg);
+				color: var(--parchment);
+				min-height: 100vh;
+				overflow-x: hidden;
+			}
+			
+			body::before {
+				content: "";
+				position: fixed;
+				inset: 0;
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+				pointer-events: none;
+				z-index: 0;
+			}
+			
+			.page {
+				position: relative;
+				z-index: 1;
+				max-width: 760px;
+				margin: 0 auto;
+				padding: 3rem 1.5rem 5rem;
+			}
+			
+			header {
+				text-align: center;
+				padding: 2rem 0 1.5rem;
+				position: relative;
+			}
+			
+			.rosemaling-top {
+				width: 100%;
+				margin-bottom: 1rem;
+			}
+			
+			h1 {
+				font-family: "UnifrakturMaguntia", serif;
+				font-size: clamp(3.5rem, 12vw, 6.5rem);
+				line-height: 1;
+				background: linear-gradient(
+				160deg,
+				var(--gold-lt) 20%,
+				var(--gold) 55%,
+				#a0600a 100%
+				);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+				filter: drop-shadow(0 2px 8px rgba(200, 136, 26, 0.35));
+				letter-spacing: 0.02em;
+			}
+			
+			.tagline {
+				font-family: "Lora", serif;
+				font-style: italic;
+				color: var(--gold-lt);
+				font-size: 0.95rem;
+				margin-top: 0.5rem;
+				letter-spacing: 0.04em;
+				opacity: 0.85;
+			}
+			
+			.rosemaling-bottom {
+				width: 100%;
+				margin-top: 1rem;
+			}
+			
+			.blurb {
+				background: linear-gradient(135deg, #2e1608 0%, #1e0d05 100%);
+				border: 1px solid var(--border);
+				border-radius: 6px;
+				padding: 1.25rem 1.75rem;
+				margin: 1.75rem 0;
+				position: relative;
+				font-size: 0.92rem;
+				line-height: 1.75;
+				color: #d9c9a8;
+			}
+			.blurb::before,
+			.blurb::after {
+				content: "";
+				position: absolute;
+				top: 6px;
+				bottom: 6px;
+				left: 6px;
+				right: 6px;
+				border: 1px solid rgba(200, 136, 26, 0.15);
+				border-radius: 4px;
+				pointer-events: none;
+			}
+			.blurb::after {
+				display: none;
+			}
+			
+			.blurb-corner {
+				position: absolute;
+				width: 28px;
+				height: 28px;
+				fill: var(--gold);
+				opacity: 0.6;
+			}
+			.blurb-corner.tl {
+				top: -4px;
+				left: -4px;
+			}
+			.blurb-corner.tr {
+				top: -4px;
+				right: -4px;
+				transform: scaleX(-1);
+			}
+			.blurb-corner.bl {
+				bottom: -4px;
+				left: -4px;
+				transform: scaleY(-1);
+			}
+			.blurb-corner.br {
+				bottom: -4px;
+				right: -4px;
+				transform: scale(-1);
+			}
+			
+			.editor-wrap {
+				margin-bottom: 1rem;
+			}
+			
+			.editor-label {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				font-family: "Lora", serif;
+				font-style: italic;
+				font-size: 0.78rem;
+				color: var(--gold);
+				letter-spacing: 0.06em;
+				margin-bottom: 0.4rem;
+				text-transform: uppercase;
+			}
+			.editor-label svg {
+				flex-shrink: 0;
+			}
+			
+			.editor-shell {
+				border: 1px solid var(--border);
+				border-radius: 6px;
+				overflow: hidden;
+				background: #120800;
+				position: relative;
+			}
+			
+			/* Rosemaling side accent */
+			.editor-shell::before {
+				content: "";
+				position: absolute;
+				left: 0;
+				top: 0;
+				bottom: 0;
+				width: 3px;
+				opacity: 0.8;
+			}
+			
+			.editor-bar {
+				background: #1c0d04;
+				border-bottom: 1px solid rgba(122, 78, 26, 0.4);
+				padding: 0.45rem 1rem 0.45rem 1.5rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.72rem;
+				color: #6b4e28;
+			}
+			.status-dot {
+				display: inline-block;
+				width: 6px;
+				height: 6px;
+				border-radius: 50%;
+				background: #4a4a4a;
+				margin-right: 0.4rem;
+				transition: background 0.4s;
+			}
+			.status-dot.ready {
+				background: var(--green);
+				box-shadow: 0 0 4px var(--green);
+			}
+			.status-dot.loading {
+				background: var(--gold);
+				animation: pulse 1s infinite;
+			}
+			
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.3;
+				}
+			}
+			
+			textarea {
+				width: 100%;
+				height: 290px;
+				background: #0e0600;
+				color: #c9b99a;
+				border: none;
+				padding: 1rem 1rem 1rem 1.5rem;
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.875rem;
+				line-height: 1.7;
+				resize: vertical;
+				outline: none;
+				tab-size: 2;
+				caret-color: var(--gold-lt);
+			}
+			
+			.editor-shell .prism-live {
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.875rem;
+				line-height: 1.7;
+				border-radius: 0;
+			}
+			
+			.editor-shell div.prism-live {
+				background: #0e0600;
+			}
+			
+			.editor-shell textarea.prism-live,
+			.editor-shell pre.prism-live {
+				margin: 0;
+				padding: 1rem 1rem 1rem 1.5rem;
+				min-height: 290px;
+				background: transparent;
+				border: none;
+				caret-color: var(--gold-lt);
+				tab-size: 2;
+				white-space: pre-wrap;
+			}
+			
+			.editor-shell textarea.prism-live {
+				color: transparent;
+			}
+			
+			.editor-shell pre.prism-live {
+				color: #c9b99a;
+			}
+			
+			.editor-shell textarea.prism-live {
+				resize: vertical;
+				outline: none;
+			}
+			
+			.editor-shell pre.prism-live {
+				overflow: auto;
+			}
+			
+			.editor-shell .token.comment,
+			.qr-card .token.comment {
+				color: #8aaf7d;
+				font-style: italic;
+			}
+			
+			.editor-shell .token.string,
+			.qr-card .token.string {
+				color: #ffcc45;
+			}
+			
+			.editor-shell .token.keyword,
+			.qr-card .token.keyword {
+				color: #ff8257;
+				font-weight: 600;
+			}
+			
+			.editor-shell .token.boolean,
+			.editor-shell .token.number,
+			.qr-card .token.boolean,
+			.qr-card .token.number {
+				color: #5ecfff;
+				font-weight: 600;
+			}
+			
+			.editor-shell .token.operator,
+			.editor-shell .token.punctuation,
+			.qr-card .token.operator,
+			.qr-card .token.punctuation {
+				color: #f3d68e;
+			}
+			
+			.editor-shell .token.function,
+			.qr-card .token.function {
+				color: #ff5684;
+				font-weight: 600;
+			}
+			
+			.editor-shell .token.class-name,
+			.editor-shell .token.namespace,
+			.qr-card .token.class-name,
+			.qr-card .token.namespace {
+				color: #72faa8;
+				font-weight: 600;
+			}
+			
+			.demo-picker {
+				margin: 0.9rem 0 1.1rem;
+			}
+			
+			.demo-picker-label {
+				display: block;
+				margin-bottom: 0.55rem;
+				font-family: "Lora", serif;
+				font-size: 0.78rem;
+				font-style: italic;
+				color: var(--gold);
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+			}
+			
+			.demo-buttons {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.6rem;
+			}
+			
+			.demo-btn {
+				border: 1px solid rgba(200, 136, 26, 0.28);
+				background: linear-gradient(135deg, #211106 0%, #160a03 100%);
+				color: #d8c59e;
+				border-radius: 999px;
+				padding: 0.5rem 0.9rem;
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.74rem;
+				cursor: pointer;
+				transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s,
+				color 0.2s;
+			}
+			
+			.demo-btn:hover {
+				border-color: var(--gold);
+				color: var(--parchment);
+				transform: translateY(-1px);
+			}
+			
+			.demo-btn.active {
+				background: linear-gradient(
+				135deg,
+				rgba(155, 34, 21, 0.95) 0%,
+				rgba(122, 26, 15, 0.95) 100%
+				);
+				border-color: rgba(232, 184, 75, 0.55);
+				color: var(--parchment);
+				box-shadow: 0 0 16px rgba(155, 34, 21, 0.2);
+			}
+			
+			.actions {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				margin: 1rem 0;
+			}
+			
+			.run-btn {
+				font-family: "Lora", serif;
+				font-size: 0.9rem;
+				font-style: italic;
+				letter-spacing: 0.05em;
+				padding: 0.55rem 1.8rem;
+				background: linear-gradient(
+				135deg,
+				var(--red) 0%,
+				#7a1a0f 100%
+				);
+				color: var(--parchment);
+				border: 1px solid rgba(200, 136, 26, 0.4);
+				border-radius: 4px;
+				cursor: pointer;
+				transition: all 0.2s;
+				position: relative;
+				overflow: hidden;
+			}
+			.run-btn::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(
+				135deg,
+				rgba(200, 136, 26, 0.15) 0%,
+				transparent 60%
+				);
+				opacity: 0;
+				transition: opacity 0.2s;
+			}
+			.run-btn:hover:not(:disabled)::before {
+				opacity: 1;
+			}
+			.run-btn:hover:not(:disabled) {
+				border-color: var(--gold);
+				box-shadow: 0 0 12px rgba(200, 136, 26, 0.25);
+			}
+			.run-btn:disabled {
+				opacity: 0.35;
+				cursor: default;
+			}
+			.shortcut {
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.7rem;
+				color: #5a3e1e;
+				letter-spacing: 0.04em;
+			}
+			
+			.output-shell {
+				border: 1px solid var(--border);
+				border-radius: 6px;
+				overflow: hidden;
+				background: var(--panel);
+				position: relative;
+			}
+			.output-shell::before {
+				content: "";
+				position: absolute;
+				left: 0;
+				top: 0;
+				bottom: 0;
+				width: 3px;
+				opacity: 0.7;
+			}
+			
+			.output-bar {
+				background: #1c0d04;
+				border-bottom: 1px solid rgba(122, 78, 26, 0.3);
+				padding: 0.45rem 1rem 0.45rem 1.5rem;
+				font-family: "Lora", serif;
+				font-style: italic;
+				font-size: 0.72rem;
+				color: #6b4e28;
+				letter-spacing: 0.05em;
+				text-transform: uppercase;
+			}
+			
+			pre#output {
+				padding: 1rem 1rem 1rem 1.5rem;
+				min-height: 100px;
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.875rem;
+				line-height: 1.7;
+				white-space: pre-wrap;
+				word-break: break-all;
+				color: #b8d4a0;
+				background: transparent;
+				border: none;
+				border-radius: 0;
+			}
+			pre#output.error {
+				color: #e87060;
+			}
+			pre#output.empty {
+				color: #3a2510;
+				font-style: italic;
+			}
+			
+			/* ══ DIVIDER / FOOTER ════════════════════════════ */
+			.footer-divider {
+				margin: 3rem auto 1.5rem;
+				display: block;
+			}
+			
+			footer {
+				text-align: center;
+				font-family: "Lora", serif;
+				font-style: italic;
+				font-size: 0.78rem;
+				color: #4a3218;
+				letter-spacing: 0.04em;
+			}
+			
+			/* ══ QUICK REF ═══════════════════════════════════ */
+			.quickref {
+				margin: 1.75rem 0;
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 0.75rem;
+			}
+			
+			@media (min-width: 600px) {
+				.quickref {
+					grid-template-columns: 1fr 1fr;
+				}
+			}
+			
+			.qr-card {
+				background: linear-gradient(135deg, #251408 0%, #1a0d05 100%);
+				border: 1px solid rgba(122, 78, 26, 0.45);
+				border-radius: 5px;
+				padding: 0.85rem 1rem;
+				position: relative;
+				overflow: hidden;
+			}
+			.qr-card::after {
+				content: "";
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: 40px;
+				height: 40px;
+				background: radial-gradient(
+				circle at top right,
+				rgba(200, 136, 26, 0.08),
+				transparent 70%
+				);
+			}
+			.qr-card h3 {
+				font-family: "Lora", serif;
+				font-size: 0.72rem;
+				font-style: italic;
+				letter-spacing: 0.07em;
+				text-transform: uppercase;
+				color: var(--gold);
+				margin-bottom: 0.5rem;
+			}
+			.qr-card code {
+				font-family: "Source Code Pro", monospace;
+				font-size: 0.78rem;
+				color: #d9d1bc;
+				display: block;
+				line-height: 1.65;
+				background: rgba(11, 5, 1, 0.55);
+				border-radius: 0;
+				padding: 0.1rem 0.35rem;
+				margin: 0 -0.15rem;
+			}
+			.qr-card code:first-of-type {
+				border-radius: 4px 4px 0 0;
+				padding-top: 0.25rem;
+			}
+			.qr-card code:last-of-type {
+				border-radius: 0 0 4px 4px;
+				padding-bottom: 0.25rem;
+			}
+			.qr-card code:only-of-type {
+				border-radius: 4px;
+				padding: 0.25rem 0.35rem;
+			}
+			.qr-card code[class*="language-"] {
+				white-space: pre-wrap;
+			}
+			
+			/* ── Scroll reveal animation ───────── */
+			.reveal {
+				opacity: 0;
+				transform: translateY(16px);
+				animation: fadeUp 0.6s ease forwards;
+			}
+			.reveal:nth-child(1) {
+				animation-delay: 0.05s;
+			}
+			.reveal:nth-child(2) {
+				animation-delay: 0.15s;
+			}
+			.reveal:nth-child(3) {
+				animation-delay: 0.25s;
+			}
+			.reveal:nth-child(4) {
+				animation-delay: 0.35s;
+			}
+			.reveal:nth-child(5) {
+				animation-delay: 0.45s;
+			}
+			.reveal:nth-child(6) {
+				animation-delay: 0.55s;
+			}
+			@keyframes fadeUp {
+				to {
+					opacity: 1;
+					transform: none;
+				}
+			}
+			a {
+				color: var(--gold-lt);
+				text-decoration: none;
+				border-bottom: 1px solid rgba(232, 184, 75, 0.35);
+				transition: all 0.15s ease;
+			}
+			a:hover {
+				color: #f2cc73;
+				border-bottom-color: rgba(232, 184, 75, 0.8);
+			}
+			a:active {
+				color: var(--gold);
+			}
+			
+			.lang-toggle {
+				position: fixed;
+				top: 1rem;
+				right: 1rem;
+				z-index: 100;
+				font-family: "Lora", serif;
+				font-style: italic;
+				font-size: 0.78rem;
+				padding: 0.35rem 0.85rem;
+				background: var(--panel);
+				color: var(--gold-lt);
+				border: 1px solid rgba(122, 78, 26, 0.6);
+				border-radius: 4px;
+				cursor: pointer;
+				letter-spacing: 0.04em;
+				transition:
+				border-color 0.15s,
+				box-shadow 0.15s;
+			}
+			.lang-toggle:hover {
+				border-color: var(--gold);
+				box-shadow: 0 0 8px rgba(200, 136, 26, 0.2);
+			}
+		</style>
+	</head>
+	<body>
+		<button class="lang-toggle"
+		        id="langToggle"
+		        onclick="toggleLanguage()"
+		></button>
+
+		<div class="page">
+			<!-- ══ HEADER ══ -->
+			<header class="reveal">
+				<!-- Top rosemaling border -->
+				<svg class="rosemaling-top"
+				     viewBox="0 0 700 60"
+				     xmlns="http://www.w3.org/2000/svg"
+				     aria-hidden="true"
+				>
+					<g fill="none"
+					   stroke-linecap="round"
+					   stroke-linejoin="round"
+					>
+						<!-- Central stem -->
+						<path d="M0,30 Q175,12 350,30 Q525,48 700,30" stroke="#c8881a" stroke-width="1.5" fill="none"/>
+						<!-- Leaf pairs along the stem -->
+						<!-- Leaf cluster 1 -->
+						<path d="M175,18 Q160,4 148,8 Q155,20 175,18Z" fill="#2d5a27" opacity="0.85"/>
+						<path d="M175,18 Q190,4 202,8 Q195,20 175,18Z" fill="#2d5a27" opacity="0.85"/>
+						<circle cx="175" cy="12" r="5" fill="#9b2215" opacity="0.9"/>
+						<circle cx="175" cy="12" r="2.5" fill="#e8b84b"/>
+						<!-- Leaf cluster 2 -->
+						<path d="M350,30 Q335,14 322,18 Q330,30 350,30Z" fill="#2d5a27" opacity="0.85"/>
+						<path d="M350,30 Q365,14 378,18 Q370,30 350,30Z" fill="#2d5a27" opacity="0.85"/>
+						<circle cx="350" cy="22" r="6" fill="#9b2215" opacity="0.9"/>
+						<circle cx="350" cy="22" r="3" fill="#e8b84b"/>
+						<!-- Leaf cluster 3 -->
+						<path d="M525,42 Q510,28 498,32 Q505,44 525,42Z" fill="#2d5a27" opacity="0.85"/>
+						<path d="M525,42 Q540,28 552,32 Q545,44 525,42Z" fill="#2d5a27" opacity="0.85"/>
+						<circle cx="525" cy="36" r="5" fill="#9b2215" opacity="0.9"/>
+						<circle cx="525" cy="36" r="2.5" fill="#e8b84b"/>
+						<!-- Small accent flowers at ends -->
+						<circle cx="40" cy="30" r="4" fill="#9b2215" opacity="0.7"/>
+						<circle cx="40" cy="30" r="2" fill="#e8b84b" opacity="0.7"/>
+						<circle cx="660" cy="30" r="4" fill="#9b2215" opacity="0.7"/>
+						<circle cx="660" cy="30" r="2" fill="#e8b84b" opacity="0.7"/>
+						<!-- Scrollwork -->
+						<path d="M60,30 Q80,15 100,30" stroke="#7a4e1a" stroke-width="1" fill="none" opacity="0.6"/>
+						<path d="M600,30 Q620,45 640,30" stroke="#7a4e1a" stroke-width="1" fill="none" opacity="0.6"/>
+						<!-- Gold end lines -->
+						<line x1="0" y1="30" x2="30" y2="30" stroke="#c8881a" stroke-width="1" opacity="0.4"/>
+						<line x1="670" y1="30" x2="700" y2="30" stroke="#c8881a" stroke-width="1" opacity="0.4"/>
+					</g>
+				</svg>
+
+				<h1>Brunost</h1>
+				<p class="tagline" data-i18n="tagline">
+					Programmeringsspråket med smak av Noreg
+				</p>
+
+				<!-- Bottom rosemaling border (mirrored) -->
+				<svg class="rosemaling-bottom"
+				     viewBox="0 0 700 60"
+				     xmlns="http://www.w3.org/2000/svg"
+				     aria-hidden="true"
+				>
+					<g fill="none"
+					   stroke-linecap="round"
+					   stroke-linejoin="round"
+					>
+						<path d="M0,30 Q175,48 350,30 Q525,12 700,30" stroke="#c8881a" stroke-width="1.5" fill="none"/>
+						<path d="M175,42 Q160,56 148,52 Q155,40 175,42Z" fill="#2d5a27" opacity="0.85"/>
+						<path d="M175,42 Q190,56 202,52 Q195,40 175,42Z" fill="#2d5a27" opacity="0.85"/>
+						<circle cx="175" cy="48" r="5" fill="#9b2215" opacity="0.9"/>
+						<circle cx="175" cy="48" r="2.5" fill="#e8b84b"/>
+						<path d="M350,30 Q335,46 322,42 Q330,30 350,30Z" fill="#2d5a27" opacity="0.85"/>
+						<path d="M350,30 Q365,46 378,42 Q370,30 350,30Z" fill="#2d5a27" opacity="0.85"/>
+						<circle cx="350" cy="38" r="6" fill="#9b2215" opacity="0.9"/>
+						<circle cx="350" cy="38" r="3" fill="#e8b84b"/>
+						<path d="M525,18 Q510,32 498,28 Q505,16 525,18Z" fill="#2d5a27" opacity="0.85"/>
+						<path d="M525,18 Q540,32 552,28 Q545,16 525,18Z" fill="#2d5a27" opacity="0.85"/>
+						<circle cx="525" cy="24" r="5" fill="#9b2215" opacity="0.9"/>
+						<circle cx="525" cy="24" r="2.5" fill="#e8b84b"/>
+						<circle cx="40" cy="30" r="4" fill="#9b2215" opacity="0.7"/>
+						<circle cx="40" cy="30" r="2" fill="#e8b84b" opacity="0.7"/>
+						<circle cx="660" cy="30" r="4" fill="#9b2215" opacity="0.7"/>
+						<circle cx="660" cy="30" r="2" fill="#e8b84b" opacity="0.7"/>
+					</g>
+				</svg>
+			</header>
+
+			<!-- ══ BLURB ══ -->
+			<div class="blurb reveal">
+				<svg class="blurb-corner tl" viewBox="0 0 28 28">
+					<path d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z" fill="currentColor" opacity="0.5"/>
+					<circle cx="6" cy="6" r="3" fill="currentColor"/>
+				</svg>
+				<svg class="blurb-corner tr" viewBox="0 0 28 28">
+					<path d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z" fill="currentColor" opacity="0.5"/>
+					<circle cx="6" cy="6" r="3" fill="currentColor"/>
+				</svg>
+				<svg class="blurb-corner bl" viewBox="0 0 28 28">
+					<path d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z" fill="currentColor" opacity="0.5"/>
+					<circle cx="6" cy="6" r="3" fill="currentColor"/>
+				</svg>
+				<svg class="blurb-corner br" viewBox="0 0 28 28">
+					<path d="M2,2 Q14,2 26,14 Q14,14 2,26 Q2,14 2,2Z" fill="currentColor" opacity="0.5"/>
+					<circle cx="6" cy="6" r="3" fill="currentColor"/>
+				</svg>
+				<span data-i18n="blurb">Brunost er eit programmeringsspråk designa for dei som
+					meiner at kode ikkje berre skal vere funksjonell — han skal
+					ha <em>sjel</em>. Skriv med ekte nynorsk terminologi:
+					<code style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        ">forKvart</code>,
+					<code style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        ">gjevTilbake</code>,
+					<code style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        ">prøv</code>
+					og
+					<code style="
+                            background: rgba(200, 136, 26, 0.1);
+                            padding: 0.1em 0.35em;
+                            border-radius: 3px;
+                            font-size: 0.85em;
+                            color: #e8b84b;
+                        ">fang</code>. Kode som flyt like mjukt som brunost over ein nysteikt
+					vaffel. Du kan lese meir om Brunost på
+					<a href="https://github.com/atomfinger/brunost">GitHub</a></span>
+			</div>
+
+			<div class="quickref reveal">
+				<div class="qr-card">
+					<h3 data-i18n="qr-variables">Variablar</h3>
+					<code class="language-brunost">låst namn er "Noreg"</code>
+					<code class="language-brunost">open tal er 0</code>
+				</div>
+				<div class="qr-card">
+					<h3 data-i18n="qr-loops">Løkker</h3>
+					<code class="language-brunost">forKvart x i liste { }</code>
+					<code class="language-brunost">medan (vilkår) gjer { }</code>
+				</div>
+				<div class="qr-card">
+					<h3 data-i18n="qr-functions">Funksjonar</h3>
+					<code class="language-brunost">gjer namn(a, b) {</code>
+					<code class="language-brunost">&nbsp;&nbsp;gjevTilbake a + b</code>
+					<code class="language-brunost">}</code>
+				</div>
+				<div class="qr-card">
+					<h3 data-i18n="qr-errors">Feilhandtering</h3>
+					<code class="language-brunost">prøv {</code>
+					<code class="language-brunost">&nbsp;&nbsp;kast "feil"</code>
+					<code class="language-brunost">} fang (e) { }</code>
+				</div>
+				<div class="qr-card">
+					<h3 data-i18n="qr-types">Eigne typar</h3>
+					<code class="language-brunost">type Båt { open knop er 0 }</code>
+					<code class="language-brunost">låst båt er Båt { knop er 12 }</code>
+				</div>
+				<div class="qr-card">
+					<h3 data-i18n="qr-lists">Lister</h3>
+					<code class="language-brunost">låst tal er [10, 20, 30]</code>
+					<code class="language-brunost">liste.fyrste(tal)</code>
+				</div>
+			</div>
+
+			<div class="editor-wrap reveal">
+				<div class="editor-label" data-i18n="editor-label">
+					Prøv ut Brunost i nettlesaren!
+				</div>
+				<div class="demo-picker">
+					<div class="demo-buttons">
+						<button class="demo-btn active" id="demo-basic" data-demo="basic" data-i18n="demo-basic">
+							Grunnleggjande
+						</button>
+						<button class="demo-btn" id="demo-lists" data-demo="lists" data-i18n="demo-lists">
+							Lister
+						</button>
+						<button class="demo-btn" id="demo-flow" data-demo="flow" data-i18n="demo-flow">
+							Flyt og feil
+						</button>
+						<button class="demo-btn" id="demo-types" data-demo="types" data-i18n="demo-types">
+							Typar
+						</button>
+						<button class="demo-btn" id="demo-strings" data-demo="strings" data-i18n="demo-strings">
+							Strengar
+						</button>
+					</div>
+				</div>
+				<div class="editor-shell">
+					<div class="editor-bar">
+						<span>skript.brunost</span>
+						<span><span class="status-dot loading"
+						      id="statusDot"
+						></span><span id="status"
+						      data-i18n="status-loading"
+						>lastar Brunost…</span></span>
+					</div>
+					<textarea id="code"
+					          class="prism-live language-brunost"
+					          spellcheck="false"
+					></textarea>
+				</div>
+			</div>
+
+			<div class="actions reveal">
+				<button class="run-btn" id="run" disabled data-i18n="run-btn">
+					Køyr skriptet
+				</button>
+			</div>
+
+			<div class="output-shell reveal">
+				<div class="output-bar" data-i18n="output-bar">Utdata</div>
+				<pre id="output" class="empty" data-i18n="output-empty-init">
+(ingen utdata endå)</pre>
+			</div>
+
+			<svg class="footer-divider"
+			     width="300"
+			     height="40"
+			     viewBox="0 0 300 40"
+			     xmlns="http://www.w3.org/2000/svg"
+			     aria-hidden="true"
+			>
+				<path d="M20,20 Q75,8 150,20 Q225,32 280,20" stroke="#7a4e1a" stroke-width="1" fill="none"/>
+				<path d="M150,20 Q140,10 132,14 Q138,22 150,20Z" fill="#2d5a27" opacity="0.7"/>
+				<path d="M150,20 Q160,10 168,14 Q162,22 150,20Z" fill="#2d5a27" opacity="0.7"/>
+				<circle cx="150" cy="14" r="4.5" fill="#9b2215" opacity="0.8"/>
+				<circle cx="150" cy="14" r="2" fill="#e8b84b" opacity="0.8"/>
+				<circle cx="20" cy="20" r="3" fill="#c8881a" opacity="0.5"/>
+				<circle cx="280" cy="20" r="3" fill="#c8881a" opacity="0.5"/>
+			</svg>
+
+			<footer>
+				<p>
+					<span data-i18n="footer-made-by">Laga med kjærleik og altfor mykje brunost av</span>
+					<a href="https://lindbakk.com/">John Mikael Lindbakk</a>
+				</p>
+				<p>
+					<span data-i18n="footer-read-more">Les meir om Brunost på</span>
+					<a href="https://github.com/atomfinger/brunost">GitHub</a>
+				</p>
+				<p>
+					<a href="./documentation/" data-i18n="footer-docs">Dokumentasjon</a>
+				</p>
+			</footer>
+		</div>
+
+		<script>
+			const CODE_STYLE =
+			"background:rgba(200,136,26,0.1);padding:0.1em 0.35em;border-radius:3px;font-size:0.85em;color:#e8b84b;";
+			const translations = {
+				nn: {
+					"page-title": "Brunost — Programmeringsspråket",
+					tagline: "Programmeringsspråket med smak av Noreg",
+					blurb: `Brunost er eit programmeringsspråk designa for dei som meiner at kode ikkje berre skal vere funksjonell — han skal ha <em>sjel</em>. Skriv med ekte nynorsk terminologi: <code style="${CODE_STYLE}">forKvart</code>, <code style="${CODE_STYLE}">gjevTilbake</code>, <code style="${CODE_STYLE}">prøv</code> og <code style="${CODE_STYLE}">fang</code>. Språket har både modular, kart, eigne <code style="${CODE_STYLE}">type</code>-deklarasjonar og tydeleg <code style="${CODE_STYLE}">låst</code>/<code style="${CODE_STYLE}">open</code>-mutabilitet. Du kan lese meir om Brunost på <a href="https://github.com/atomfinger/brunost">GitHub</a>`,
+					"qr-variables": "Variablar",
+					"qr-loops": "Løkker",
+					"qr-functions": "Funksjonar",
+					"qr-errors": "Feilhandtering",
+					"qr-types": "Eigne typar",
+					"qr-lists": "Lister",
+					"qr-maps": "Kart",
+					"editor-label": "Prøv ut Brunost i nettlesaren!",
+					"demo-picker-label": "Vel ein demo",
+					"demo-basic": "Grunnleggjande",
+					"demo-lists": "Lister",
+					"demo-flow": "Flyt og feil",
+					"demo-types": "Typar",
+					"demo-strings": "Strengar og matte",
+					"status-loading": "lastar Brunost…",
+					"status-ready": "Brunost er lasta!",
+					"status-error": "feil: kunne ikkje lasta Brunost",
+					"run-btn": "Køyr skriptet",
+					"output-bar": "Utdata",
+					"output-empty-init": "(ingen utdata endå)",
+					"output-empty": "(ingen utdata)",
+					"footer-made-by":
+					"Laga med kjærleik og altfor mykje brunost av",
+					"footer-read-more": "Les meir om Brunost på",
+					"footer-docs": "Dokumentasjon",
+					"lang-toggle": "🇬🇧 English",
+					},
+					en: {
+						"page-title": "Brunost — The Programming Language",
+						tagline: "The programming language with a taste of Norway",
+						blurb: `Brunost is a programming language designed for those who believe code shouldn't just be functional — it should have <em>soul</em>. Write with genuine Nynorsk terminology: <code style="${CODE_STYLE}">forKvart</code>, <code style="${CODE_STYLE}">gjevTilbake</code>, <code style="${CODE_STYLE}">prøv</code> and <code style="${CODE_STYLE}">fang</code>. The language also has modules, maps, custom <code style="${CODE_STYLE}">type</code> declarations, and explicit <code style="${CODE_STYLE}">låst</code>/<code style="${CODE_STYLE}">open</code> mutability. You can read more about Brunost on <a href="https://github.com/atomfinger/brunost">GitHub</a>`,
+						"qr-variables": "Variables",
+						"qr-loops": "Loops",
+						"qr-functions": "Functions",
+						"qr-errors": "Error Handling",
+						"qr-types": "Custom Types",
+						"qr-lists": "Lists",
+						"qr-maps": "Maps",
+						"editor-label": "Try Brunost in the browser!",
+						"demo-picker-label": "Pick a demo",
+						"demo-basic": "Basics",
+						"demo-lists": "Lists",
+						"demo-flow": "Flow & Errors",
+						"demo-types": "Types",
+						"demo-strings": "Strings & Math",
+						"status-loading": "loading Brunost…",
+						"status-ready": "Brunost is loaded!",
+						"status-error": "error: could not load Brunost",
+						"run-btn": "Run the script",
+						"output-bar": "Output",
+						"output-empty-init": "(no output yet)",
+						"output-empty": "(no output)",
+						"footer-made-by":
+						"Made with love and way too much brunost by",
+						"footer-read-more": "Read more about Brunost on",
+						"footer-docs": "Documentation",
+						"lang-toggle": "🇳🇴 Nynorsk",
+						},
+						};
+						
+						const HTML_KEYS = new Set(["blurb"]);
+						
+			            let currentLang = "nn";
+            let currentDemo = "basic";
+
+            // Tagged template that strips leading indentation so the linter
+            // cannot corrupt demo code by re-indenting template literals.
+            function dedent(strings) {
+                const lines = strings[0].split("\n");
+                while (lines.length && !lines[0].trim()) lines.shift();
+                while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+                const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+                return lines.map((l) => l.slice(indent)).join("\n");
+            }
+
+            const demoPrograms = {
+                basic: dedent`
+                    bruk terminal
+
+                    gjer kvadrat(tal) {
+                      gjevTilbake tal * tal
+                    }
+
+                    forKvart tal i [1, 2, 3, 4] {
+                      terminal.skriv(kvadrat(tal))
+                    }
+                `,
+                lists: dedent`
+                    bruk terminal
+                    bruk liste
+
+                    låst tal er [10, 20, 30]
+                    låst nyTal er liste.leggTil(tal, 40)
+
+                    terminal.skriv(liste.lengd(nyTal))
+                    terminal.skriv(liste.fyrste(nyTal))
+                    terminal.skriv(liste.siste(nyTal))
+
+                    forKvart tal i liste.ta(nyTal, 2) {
+                      terminal.skriv(tal)
+                    }
+                `,
+                flow: dedent`
+                    bruk terminal
+                    bruk kart
+
+                    gjer merkTemperatur(tal) {
+                      viss (tal erMindreEnn 0) gjer {
+                        gjevTilbake "kaldt"
+                      }
+                      gjevTilbake "mildt"
+                    }
+
+                    terminal.skriv(merkTemperatur(-3))
+                    terminal.skriv(merkTemperatur(7))
+
+                    prøv {
+                      låst tabell er { "vest": 3 }
+                      terminal.skriv(kart.hent(tabell, "aust"))
+                    } fang (feil) {
+                      terminal.skriv("fanga: " + feil)
+                    }
+                `,
+                types: dedent`
+                    bruk terminal
+
+                    type Båt {
+                      låst namn er "ukjend"
+                      open knop er 0
+                    }
+
+                    låst båt er Båt {
+                      namn er "Fjordglimt"
+                      knop er 12
+                    }
+
+                    terminal.skriv(båt.namn)
+                    terminal.skriv(båt.knop)
+
+                    viss (båt.knop erStørreEnn 10) gjer {
+                      terminal.skriv("klar for sjøen")
+                    }
+                `,
+                strings: dedent`
+                    bruk terminal
+                    bruk streng
+                    bruk matte
+
+                    låst namn er "Brunost"
+
+                    terminal.skriv(streng.lengd(namn))
+                    terminal.skriv(streng.reverser(namn))
+                    terminal.skriv(streng.inneheld(namn, "ost"))
+                    terminal.skriv(matte.abs(-7))
+                `,
+            };
+												
+												function setLanguage(lang) {
+													currentLang = lang;
+													const t = translations[lang];
+													document.documentElement.lang = lang;
+													document.title = t["page-title"];
+													document.getElementById("langToggle").textContent =
+													t["lang-toggle"];
+													document.querySelectorAll("[data-i18n]").forEach((el) => {
+														const key = el.dataset.i18n;
+														if (!(key in t)) return;
+														if (HTML_KEYS.has(key)) {
+															el.innerHTML = t[key];
+															} else {
+																el.textContent = t[key];
+															}
+															});
+															try {
+																localStorage.setItem("brunost-lang", lang);
+																} catch (_) {}
+															}
+															
+															function toggleLanguage() {
+																setLanguage(currentLang === "nn" ? "en" : "nn");
+															}
+															
+															// Initialise language on load
+															(function initLang() {
+																let stored = null;
+																try {
+																	stored = localStorage.getItem("brunost-lang");
+																	} catch (_) {}
+																	let lang;
+																	if (stored && translations[stored]) {
+																		lang = stored;
+																		} else {
+																			const userLang = navigator.language || "";
+																			lang = /^n[nbo]/i.test(userLang) ? "nn" : "en";
+																		}
+																		setLanguage(lang);
+																		})();
+																		
+																		let wasm = null;
+																		let mem = null;
+																		
+																		const codeEl = document.getElementById("code");
+																		const dot = document.getElementById("statusDot");
+																		const status = document.getElementById("status");
+																		const runBtn = document.getElementById("run");
+																		const demoButtons = Array.from(document.querySelectorAll(".demo-btn"));
+																		
+																		function setDemo(name) {
+																			currentDemo = name;
+																			codeEl.value = demoPrograms[name] || demoPrograms.basic;
+																			codeEl.dispatchEvent(new Event("input", { bubbles: true }));
+																			demoButtons.forEach((button) => {
+																				button.classList.toggle(
+																				"active",
+																				button.dataset.demo === name,
+																				);
+																				});
+																			}
+																			
+																			Prism.highlightAllUnder(document.querySelector(".quickref"));
+																			
+																			WebAssembly.instantiateStreaming(fetch("./brunost.wasm"), {
+																				env: {},
+																				})
+																				.then((r) => {
+																					wasm = r.instance.exports;
+																					mem = new Uint8Array(wasm.memory.buffer);
+																					dot.className = "status-dot ready";
+																					status.textContent =
+																					translations[currentLang]["status-ready"];
+																					runBtn.disabled = false;
+																					})
+																					.catch((err) => {
+																						dot.className = "status-dot";
+																						dot.style.background = "#9b2215";
+																						status.textContent =
+																						translations[currentLang]["status-error"];
+																						console.error(err);
+																						});
+																						
+																						function runCode() {
+																							if (!wasm) return;
+																							const encoded = new TextEncoder().encode(codeEl.value);
+																							mem = new Uint8Array(wasm.memory.buffer);
+																							const srcPtr = wasm.get_source_buf_ptr();
+																							mem.set(encoded, srcPtr);
+																							wasm.evaluate(srcPtr, encoded.length);
+																							mem = new Uint8Array(wasm.memory.buffer);
+																							const out = new TextDecoder().decode(
+																							mem.subarray(
+																							wasm.get_output_ptr(),
+																							wasm.get_output_ptr() + wasm.get_output_len(),
+																							),
+																							);
+																							const el = document.getElementById("output");
+																							el.className = wasm.get_output_is_error()
+																							? "error"
+																							: out === ""
+																							? "empty"
+																							: "";
+																							el.textContent =
+																							out || translations[currentLang]["output-empty"];
+																						}
+																						
+																						runBtn.addEventListener("click", runCode);
+																						demoButtons.forEach((button) => {
+																							button.addEventListener("click", () => setDemo(button.dataset.demo));
+																							});
+																							
+																							setDemo(currentDemo);
+																							
+																							codeEl.addEventListener("keydown", (e) => {
+																								if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runCode();
+																								if (e.key === "Tab") {
+																									e.preventDefault();
+																									const s = e.target.selectionStart;
+																									e.target.value =
+																									e.target.value.slice(0, s) +
+																									"  " +
+																									e.target.value.slice(e.target.selectionEnd);
+																									e.target.selectionStart = e.target.selectionEnd = s + 2;
+																								}
+																								});
+		</script>
+	</body>
+</html>
