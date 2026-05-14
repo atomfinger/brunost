@@ -82,8 +82,9 @@ pub const ForeachStmt = struct {
 
 pub const TryStmt = struct {
     body: *Node, // Block
-    error_name: []const u8,
-    catch_body: *Node, // Block
+    error_name: []const u8, // empty string when catch_body == null
+    catch_body: ?*Node, // Block
+    finally_body: ?*Node, // Block
 };
 
 pub const ThrowStmt = struct {

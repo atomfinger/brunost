@@ -52,6 +52,7 @@ pub const token_types = enum {
     try_op, // prøv
     catch_op, // fang
     throw_op, // kast
+    finally_op, // endelig
     import_op, // bruk
     module_op, // modul
     as_op, // som
@@ -92,6 +93,7 @@ pub const Token = struct {
             .{ "prøv", .try_op },
             .{ "fang", .catch_op },
             .{ "kast", .throw_op },
+            .{ "endelig", .finally_op },
             .{ "bruk", .import_op },
             .{ "modul", .module_op },
             .{ "som", .as_op },
