@@ -80,6 +80,7 @@ export default defineConfig({
 
   head: [
     ['meta', { name: 'color-scheme', content: 'dark' }],
+    ['meta', { name: 'darkreader-lock' }],
   ],
 
   markdown: {
