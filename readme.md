@@ -68,37 +68,34 @@ forKvart tur i turar {
 
 ---
 
-## Installasjon og bygging
+## Installasjon
 
-### Tilrådd: mise
+### Homebrew (macOS og Linux)
 
-[mise](https://mise.jdx.dev/) handterer alle avhengigheiter automatisk:
-
-```bash
-mise install        # Installer avhengigheiter
-mise run build      # Bygg prosjektet
-mise run test       # Køyr alle testar
-mise run demo:start # Start demo-server på http://localhost:8765
-mise run demo:stop  # Stopp demo-serveren
+```sh
+brew tap atomfinger/brunost
+brew install brunost
 ```
 
-### Manuell oppsett
+### asdf / mise (macOS og Linux)
 
-**Krav:** [Zig](https://ziglang.org/) 0.16 eller nyare.
-
-```bash
-zig build                            # Bygg prosjektet
-zig build run -- mittskript.brunost  # Køyr eit skript
-zig build test                       # Køyr alle testar
+```sh
+asdf plugin add brunost https://github.com/atomfinger/asdf-brunost
+asdf install brunost latest
+asdf global brunost latest
 ```
 
-Eller bruk den kompilerte binærfila direkte:
+Eller med mise:
 
-```bash
-./zig-out/bin/brunost mittskript.brunost
+```sh
+mise use -g brunost@latest
 ```
 
-### Alternativ: nix
+### Windows
+
+Last ned den nyaste binærfila frå [GitHub Releases](https://github.com/atomfinger/brunost/releases) og legg ho til i PATH.
+
+### Nix
 
 ```sh
 nix run github:atomfinger/brunost -- mittskript.brunost

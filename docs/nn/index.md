@@ -8,15 +8,36 @@ Den raskaste måten å utforske Brunost på er i den [interaktive nettlesarleike
 
 ## Installasjon
 
-Last ned ein ferdigbygd binær for plattforma di frå [GitHub Releases-sida](https://github.com/atomfinger/brunost/releases), eller bygg frå kjeldekode:
+### Homebrew (macOS og Linux)
 
 ```sh
-git clone https://github.com/atomfinger/brunost.git
-cd brunost
-zig build
+brew tap atomfinger/brunost
+brew install brunost
 ```
 
-Den kompilerte binærfila ligg i `zig-out/bin/brunost`.
+### asdf / mise (macOS og Linux)
+
+```sh
+asdf plugin add brunost https://github.com/atomfinger/asdf-brunost
+asdf install brunost latest
+asdf global brunost latest
+```
+
+Eller med mise:
+
+```sh
+mise use -g brunost@latest
+```
+
+### Windows
+
+Last ned den nyaste binærfila frå [GitHub Releases](https://github.com/atomfinger/brunost/releases) og legg ho til i PATH.
+
+### Nix
+
+```sh
+nix run github:atomfinger/brunost -- skriptet-ditt.brunost
+```
 
 ## Køyre eit skript
 

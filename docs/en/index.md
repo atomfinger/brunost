@@ -8,15 +8,36 @@ The fastest way to explore Brunost is in the [interactive browser playground](ht
 
 ## Installation
 
-Download a pre-built binary for your platform from the [GitHub Releases page](https://github.com/atomfinger/brunost/releases), or build from source:
+### Homebrew (macOS and Linux)
 
 ```sh
-git clone https://github.com/atomfinger/brunost.git
-cd brunost
-zig build
+brew tap atomfinger/brunost
+brew install brunost
 ```
 
-The compiled binary is placed in `zig-out/bin/brunost`.
+### asdf / mise (macOS and Linux)
+
+```sh
+asdf plugin add brunost https://github.com/atomfinger/asdf-brunost
+asdf install brunost latest
+asdf global brunost latest
+```
+
+Or with mise:
+
+```sh
+mise use -g brunost@latest
+```
+
+### Windows
+
+Download the latest binary from the [GitHub Releases page](https://github.com/atomfinger/brunost/releases) and add it to your PATH.
+
+### Nix
+
+```sh
+nix run github:atomfinger/brunost -- yourscript.brunost
+```
 
 ## Running a script
 
