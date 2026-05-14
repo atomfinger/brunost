@@ -33,11 +33,25 @@ jobs:
       - name: Build WASM
         run: zig build wasm
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install docs dependencies
+        run: npm ci
+
+      - name: Build docs
+        run: npm run docs:build
+
       - name: Prepare site
         run: |
           mkdir _site
-          cp wasm_test.html _site/index.html
+          cp website/index.html _site/index.html
+          cp website/favicon.ico _site/favicon.ico
           cp zig-out/wasm/brunost.wasm _site/brunost.wasm
+          cp -r docs/.vitepress/dist _site/documentation
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

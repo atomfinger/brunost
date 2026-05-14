@@ -1,0 +1,70 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "brunost",
+  "scopeName": "source.brunost",
+  "fileTypes": ["brunost"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#string" },
+    { "include": "#boolean" },
+    { "include": "#number" },
+    { "include": "#type-declaration" },
+    { "include": "#namespace" },
+    { "include": "#function-call" },
+    { "include": "#keyword" },
+    { "include": "#operator" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.double-slash.brunost",
+      "match": "//.*$"
+    },
+    "string": {
+      "name": "string.quoted.double.brunost",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.brunost",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "boolean": {
+      "name": "constant.language.boolean.brunost",
+      "match": "\\b(sant|usant)\\b"
+    },
+    "number": {
+      "name": "constant.numeric.brunost",
+      "match": "\\b\\d+(?:\\.\\d+)?\\b"
+    },
+    "type-declaration": {
+      "name": "entity.name.type.brunost",
+      "match": "(?<=\\btype\\s+)[A-ZÆØÅ][\\wÆØÅæøå]*",
+      "captures": {
+        "0": { "name": "entity.name.type.brunost" }
+      }
+    },
+    "namespace": {
+      "name": "entity.name.namespace.brunost",
+      "match": "\\b(terminal|matte|streng|liste|kart|prosess|fil|http|nettverk)(?=\\.)"
+    },
+    "function-call": {
+      "name": "entity.name.function.brunost",
+      "match": "\\b([\\wÆØÅæøå]+)(?=\\s*\\()"
+    },
+    "keyword": {
+      "name": "keyword.control.brunost",
+      "match": "\\b(bruk|endelig|fang|forKvart|gjer|gjevTilbake|ikkje|i|kast|låst|medan|modul|open|prøv|som|type|viss|elles)\\b"
+    },
+    "operator": {
+      "name": "keyword.operator.brunost",
+      "match": "\\b(erSameEllerMindreEnn|erSameEllerStørreEnn|erMindreEnn|erStørreEnn|erSameSom|er|og|eller)\\b|[+\\-*/]|->|->"
+    },
+    "punctuation": {
+      "name": "punctuation.brunost",
+      "match": "[{}\\[\\](),.:;]"
+    }
+  }
+}
