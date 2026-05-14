@@ -403,7 +403,10 @@ pub const Interpreter = struct {
                     continue;
                 }
                 switch (slot.resource) {
-                    .listener => |*server| server.deinit(self.io),
+                    .listener => |*server| {
+                        self.io.vtable.netShutdown(self.io.userdata, server.socket.handle, .recv) catch {};
+                        server.deinit(self.io);
+                    },
                     .stream => |*stream| stream.close(self.io),
                 }
                 slot.active = false;
@@ -505,7 +508,14 @@ pub const Interpreter = struct {
         const slot = try self.get_active_slot(handle);
         if (slot.paired_slot) |paired| paired.active = false;
         switch (slot.resource) {
-            .listener => |*server| server.deinit(self.io),
+            .listener => |*server| {
+                // shutdown(SHUT_RD) interrupts any thread blocked in accept() on the same fd.
+                // Required on Linux where close() alone does not unblock concurrent accept().
+                if (comptime @import("builtin").cpu.arch != .wasm32) {
+                    self.io.vtable.netShutdown(self.io.userdata, server.socket.handle, .recv) catch {};
+                }
+                server.deinit(self.io);
+            },
             .stream => |*stream| stream.close(self.io),
         }
         slot.active = false;
