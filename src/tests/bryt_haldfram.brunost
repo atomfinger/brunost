@@ -1,0 +1,30 @@
+bruk terminal
+
+/* test bryt (break) */
+open tal er 0
+medan (tal erMindreEnn 10) gjer {
+    viss (tal erSameSom 3) gjer {
+        bryt
+    }
+    terminal.skriv(tal)
+    tal += 1
+}
+
+/* test fortset (continue) */
+open neste er 0
+medan (neste erMindreEnn 5) gjer {
+    neste += 1
+    viss (neste erSameSom 3) gjer {
+        fortset
+    }
+    terminal.skriv(neste)
+}
+
+/* test bryt i forKvart */
+låst liste er [1, 2, 3, 4, 5]
+forKvart element i liste {
+    viss (element erSameSom 4) gjer {
+        bryt
+    }
+    terminal.skriv(element)
+}

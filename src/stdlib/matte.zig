@@ -21,6 +21,7 @@ pub fn make(alloc: std.mem.Allocator) EvalError!Value {
         .{ .name = "min", .value = .{ .builtin_fn = min } },
         .{ .name = "tilfeldig", .value = .{ .builtin_fn = tilfeldig } },
         .{ .name = "modulus", .value = .{ .builtin_fn = modulus } },
+        .{ .name = "potens", .value = .{ .builtin_fn = potens } },
     });
     return Value{ .module = members };
 }
@@ -80,4 +81,11 @@ fn modulus(args: []const Value, _: *Interpreter) EvalError!Value {
     const firstArg = try args[0].as_int();
     const secondArg = try args[1].as_int();
     return Value{ .integer = @rem(firstArg, secondArg) };
+}
+
+fn potens(args: []const Value, _: *Interpreter) EvalError!Value {
+    if (args.len != 2) return EvalError.TypeError;
+    const base = try args[0].as_float();
+    const exp = try args[1].as_float();
+    return Value{ .float = std.math.pow(f64, base, exp) };
 }

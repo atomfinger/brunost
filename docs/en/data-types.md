@@ -44,6 +44,21 @@ Concatenation with `+` coerces non-strings:
 terminal.skriv("Svaret er: " + 42)   // "Svaret er: 42"
 ```
 
+### Escape sequences
+
+| Sequence | Meaning |
+|----------|---------|
+| `\n` | Newline |
+| `\t` | Tab |
+| `\r` | Carriage return |
+| `\\` | Backslash |
+| `\"` | Double quote |
+
+```brunost
+terminal.skriv("linje1\nlinje2")   // prints on two lines
+terminal.skriv("sitat: \"hei\"")   // sitat: "hei"
+```
+
 String operations are available in the [`streng`](./stdlib/streng) module.
 
 ## Boolean
@@ -93,14 +108,14 @@ låst mixed er [1, "two", 3.0, sant]
 låst empty er []
 ```
 
-There is no built-in index syntax. Use the [`liste`](./stdlib/liste) module:
+Use `[]` to access elements by index (0-based):
 
 ```brunost
-bruk liste
-
-låst first er liste.hent(numbers, 0)    // 1
-låst len er liste.lengd(numbers)        // 5
+låst first er numbers[0]    // 1
+låst third er numbers[2]    // 3
 ```
+
+Additional list operations are available in the [`liste`](./stdlib/liste) module.
 
 ## Hashmap
 
@@ -111,12 +126,11 @@ låst person er {"name": "Kari", "age": 30}
 låst empty er {}
 ```
 
-Access values with the [`kart`](./stdlib/kart) module:
+Access values with `[]` subscript syntax or the [`kart`](./stdlib/kart) module:
 
 ```brunost
-bruk kart
-
-låst name er kart.hent(person, "name")  // "Kari"
+låst name er person["name"]    // "Kari"
+låst age er person["age"]      // 30
 ```
 
 ## Type coercion summary

@@ -46,6 +46,16 @@ terminal.skriv(matte.modulus(7, 2))    // 1
 terminal.skriv(matte.modulus(8, 4))    // 0
 ```
 
+### `matte.potens(grunntall, eksponent)`
+
+Returnerer `grunntall` opphøgd i `eksponent` som eit desimaltal.
+
+```brunost
+terminal.skriv(matte.potens(2.0, 10.0))   // 1024
+terminal.skriv(matte.potens(3.0, 3.0))    // 27
+terminal.skriv(matte.potens(4.0, 0.5))    // 2  (kvadratrota)
+```
+
 ### `matte.tilfeldig()` / `matte.tilfeldig(maks)` / `matte.tilfeldig(min, maks)`
 
 Returnerer eit tilfeldig heiltal. Åtferda avheng av talet på argument:

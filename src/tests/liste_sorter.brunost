@@ -1,0 +1,11 @@
+bruk terminal
+bruk liste
+
+låst tal er [3, 1, 4, 1, 5, 9, 2, 6]
+terminal.skriv(liste.sorter(tal))
+
+låst ord er ["banan", "eple", "appelsin"]
+terminal.skriv(liste.sorter(ord))
+
+låst baklengs er liste.sorter(tal, {fyrste, andre -> fyrste erStørreEnn andre})
+terminal.skriv(baklengs)

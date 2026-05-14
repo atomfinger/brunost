@@ -1,0 +1,12 @@
+bruk terminal
+bruk test
+
+test.krev(sant)
+test.krev(1 erSameSom 1)
+terminal.skriv("ok")
+
+prøv {
+    test.krev(usant, "feil!")
+} fang (feil) {
+    terminal.skriv(feil)
+}

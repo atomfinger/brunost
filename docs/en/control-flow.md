@@ -62,6 +62,43 @@ forKvart name i names {
 
 The loop variable (`name` above) is bound to each element in turn. There is no built-in index variable; if you need the index, use `liste.reduser` or a `medan` loop with a counter.
 
+## Break and continue — `bryt` / `fortset`
+
+Use `bryt` to exit a loop immediately and `fortset` to skip the rest of the current iteration:
+
+```brunost
+open teller er 0
+medan (teller erMindreEnn 10) gjer {
+  viss (teller erSameSom 5) gjer {
+    bryt
+  }
+  terminal.skriv(teller)
+  teller += 1
+}
+// prints 0 1 2 3 4
+
+forKvart tal i [1, 2, 3, 4, 5] {
+  viss (tal erSameSom 3) gjer {
+    fortset
+  }
+  terminal.skriv(tal)
+}
+// prints 1 2 4 5
+```
+
+Both keywords work in both `medan` and `forKvart` loops. They cannot escape function boundaries — `bryt` inside a function called from a loop does not break the outer loop.
+
+## Comments
+
+Line comments start with `//`. Block comments use `/* ... */` and can span multiple lines:
+
+```brunost
+// This is a line comment
+
+/* This is a
+   block comment */
+```
+
 ## Comparison operators
 
 | Operator | Meaning |

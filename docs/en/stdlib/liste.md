@@ -137,3 +137,17 @@ Returns the first element that matches `predicate`, or `inkje` if none match.
 låst first er liste.finn([1, 5, 3, 8]) { x -> x erStørreEnn 4 }
 terminal.skriv(first)   // 5
 ```
+
+### `liste.sorter(list)` / `liste.sorter(list, comparator)`
+
+Returns a new sorted list. Without a comparator, integers and floats are sorted numerically and strings lexicographically. With a comparator `fn(a, b) → boolean`, the function returns `sant` when `a` should come before `b`.
+
+```brunost
+terminal.skriv(liste.sorter([3, 1, 4, 1, 5]))   // [1, 1, 3, 4, 5]
+terminal.skriv(liste.sorter(["banan", "eple", "appelsin"]))
+// [appelsin, banan, eple]
+
+// Descending order with a custom comparator
+låst synkande er liste.sorter([3, 1, 4]) { fyrste, andre -> fyrste erStørreEnn andre }
+terminal.skriv(synkande)   // [4, 3, 1]
+```

@@ -1,0 +1,6 @@
+bruk terminal
+
+terminal.skriv("linje1\nlinje2")
+terminal.skriv("tab\there")
+terminal.skriv("skråstrek\\")
+terminal.skriv("sitat\"tekst\"")

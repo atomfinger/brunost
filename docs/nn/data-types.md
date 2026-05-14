@@ -44,6 +44,21 @@ Samanslåing med `+` tvingar ikkje-strengar:
 terminal.skriv("Svaret er: " + 42)   // "Svaret er: 42"
 ```
 
+### Skapekvensane
+
+| Sekvens | Tyding |
+|---------|--------|
+| `\n` | Ny linje |
+| `\t` | Tabulatorteikn |
+| `\r` | Vognretur |
+| `\\` | Omvendt skråstrek |
+| `\"` | Dobbelt hermeteikn |
+
+```brunost
+terminal.skriv("linje1\nlinje2")   // skriv ut på to linjer
+terminal.skriv("sitat: \"hei\"")   // sitat: "hei"
+```
+
 Strengoperasjonar er tilgjengelege i [`streng`](./stdlib/streng)-modulen.
 
 ## Boolsk
@@ -93,14 +108,14 @@ låst blanda er [1, "to", 3.0, sant]
 låst tom er []
 ```
 
-Det finst ingen innebygd indekssyntaks. Bruk [`liste`](./stdlib/liste)-modulen:
+Bruk `[]` for å hente element etter indeks (0-basert):
 
 ```brunost
-bruk liste
-
-låst fyrste er liste.hent(tal, 0)    // 1
-låst len er liste.lengd(tal)         // 5
+låst fyrste er tal[0]    // 1
+låst tredje er tal[2]    // 3
 ```
+
+Fleire listeoperasjonar er tilgjengelege i [`liste`](./stdlib/liste)-modulen.
 
 ## Kart (hashmap)
 
@@ -111,12 +126,11 @@ låst person er {"namn": "Kari", "alder": 30}
 låst tomt er {}
 ```
 
-Tilgang til verdiar med [`kart`](./stdlib/kart)-modulen:
+Tilgang til verdiar med `[]`-syntaks eller [`kart`](./stdlib/kart)-modulen:
 
 ```brunost
-bruk kart
-
-låst namn er kart.hent(person, "namn")  // Kari
+låst namn er person["namn"]    // Kari
+låst alder er person["alder"]  // 30
 ```
 
 ## Samanfatning av typetving

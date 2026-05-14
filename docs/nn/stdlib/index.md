@@ -17,6 +17,7 @@ bruk liste
 | [`streng`](./streng) | ✓ | Strengmanipulasjon |
 | [`liste`](./liste) | ✓ | Listeoperasjonar og høgareordningsfunksjonar |
 | [`kart`](./kart) | ✓ | Kartoperasjonar |
+| [`test`](./test) | ✓ | Påstandsverktøy |
 | [`prosess`](./prosess) | — | Sov / prosesskontroll |
 | [`fil`](./fil) | — | Filsystemtilgang |
 | [`nettverk`](./nettverk) | — | TCP-nettverk |

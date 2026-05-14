@@ -1,0 +1,9 @@
+bruk terminal
+
+låst liste er [10, 20, 30]
+terminal.skriv(liste[0])
+terminal.skriv(liste[2])
+
+låst kart er {"namn": "Ola", "alder": "42"}
+terminal.skriv(kart["namn"])
+terminal.skriv(kart["alder"])

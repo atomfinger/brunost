@@ -57,6 +57,12 @@ pub const token_types = enum {
     module_op, // modul
     as_op, // som
     type_op, // type
+    break_op, // bryt
+    continue_op, // fortset
+    plus_assign, // +=
+    minus_assign, // -=
+    star_assign, // *=
+    slash_assign, // /=
 };
 
 pub const Token = struct {
@@ -102,6 +108,8 @@ pub const Token = struct {
             .{ "erMindreEnn", .lt },
             .{ "erSameEllerStørreEnn", .gte },
             .{ "erSameEllerMindreEnn", .lte },
+            .{ "bryt", .break_op },
+            .{ "fortset", .continue_op },
         });
         return map.get(identifier);
     }
@@ -157,6 +165,18 @@ pub const Lexer = struct {
                 while (self.curr_char != '\n' and self.curr_char != 0) {
                     self.read_char();
                 }
+            } else if (self.curr_char == '/' and self.peek_char() == '*') {
+                // Skip block comments /* ... */
+                self.read_char(); // consume /
+                self.read_char(); // consume *
+                while (self.curr_char != 0) {
+                    if (self.curr_char == '*' and self.peek_char() == '/') {
+                        self.read_char(); // consume *
+                        self.read_char(); // consume /
+                        break;
+                    }
+                    self.read_char();
+                }
             } else {
                 break;
             }
@@ -194,11 +214,17 @@ pub const Lexer = struct {
     fn read_string(self: *@This()) []const u8 {
         self.read_char(); // consume opening "
         const start = self.curr_position;
-        while (self.curr_char != '"' and self.curr_char != 0) {
-            self.read_char();
+        while (self.curr_char != 0) {
+            if (self.curr_char == '"') break;
+            if (self.curr_char == '\\') {
+                self.read_char(); // skip backslash
+                if (self.curr_char != 0) self.read_char(); // skip escaped char (including \")
+            } else {
+                self.read_char();
+            }
         }
         const result = self.input[start..self.curr_position];
-        self.read_char(); // consume closing "
+        if (self.curr_char == '"') self.read_char(); // consume closing "
         return result;
     }
 
@@ -213,7 +239,15 @@ pub const Lexer = struct {
             ',' => tok.type = .comma,
             ':' => tok.type = .colon,
             ';' => tok.type = .semicolon,
-            '+' => tok.type = .plus,
+            '+' => {
+                if (self.peek_char() == '=') {
+                    const literal = self.input[start .. start + 2];
+                    self.read_char();
+                    self.read_char();
+                    return Token.init(.plus_assign, literal, start);
+                }
+                tok.type = .plus;
+            },
             '-' => {
                 if (self.peek_char() == '>') {
                     const literal = self.input[start .. start + 2];
@@ -221,10 +255,32 @@ pub const Lexer = struct {
                     self.read_char();
                     return Token.init(.arrow, literal, start);
                 }
+                if (self.peek_char() == '=') {
+                    const literal = self.input[start .. start + 2];
+                    self.read_char();
+                    self.read_char();
+                    return Token.init(.minus_assign, literal, start);
+                }
                 tok.type = .minus;
             },
-            '*' => tok.type = .asterisk,
-            '/' => tok.type = .fslash,
+            '*' => {
+                if (self.peek_char() == '=') {
+                    const literal = self.input[start .. start + 2];
+                    self.read_char();
+                    self.read_char();
+                    return Token.init(.star_assign, literal, start);
+                }
+                tok.type = .asterisk;
+            },
+            '/' => {
+                if (self.peek_char() == '=') {
+                    const literal = self.input[start .. start + 2];
+                    self.read_char();
+                    self.read_char();
+                    return Token.init(.slash_assign, literal, start);
+                }
+                tok.type = .fslash;
+            },
             '{' => tok.type = .lbrace,
             '}' => tok.type = .rbrace,
             '[' => tok.type = .lbracket,

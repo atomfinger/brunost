@@ -41,6 +41,20 @@ Use `open` whenever you need to update a variable over time — loop counters, a
 To test equality, use `erSameSom`, not `er`. Using `er` in an expression context assigns rather than compares.
 :::
 
+## Compound assignment operators
+
+Mutable variables support shorthand update operators:
+
+```brunost
+open score er 10
+score += 5   // score is now 15
+score -= 3   // score is now 12
+score *= 2   // score is now 24
+score /= 4   // score is now 6
+```
+
+These are equivalent to writing `score er score + 5` etc., but shorter.
+
 ## Scope
 
 Variables follow lexical (block) scoping. A variable declared inside a block is not visible outside it:

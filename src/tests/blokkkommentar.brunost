@@ -1,0 +1,8 @@
+bruk terminal
+
+/* dette er ein blokkkommentar */
+terminal.skriv("før")
+/* kommentar
+   på fleire
+   linjer */
+terminal.skriv("etter")

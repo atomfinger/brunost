@@ -46,6 +46,16 @@ terminal.skriv(matte.modulus(7, 2))    // 1
 terminal.skriv(matte.modulus(8, 4))    // 0
 ```
 
+### `matte.potens(base, exponent)`
+
+Returns `base` raised to the power of `exponent` as a float.
+
+```brunost
+terminal.skriv(matte.potens(2.0, 10.0))   // 1024
+terminal.skriv(matte.potens(3.0, 3.0))    // 27
+terminal.skriv(matte.potens(4.0, 0.5))    // 2  (square root)
+```
+
 ### `matte.tilfeldig()`  /  `matte.tilfeldig(max)`  /  `matte.tilfeldig(min, max)`
 
 Returns a random integer. Behaviour depends on the number of arguments:

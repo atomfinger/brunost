@@ -18,6 +18,8 @@ pub const Node = union(enum) {
     module_decl: ModuleDecl,
     struct_decl: StructDecl,
     field_assign: FieldAssign,
+    break_stmt: BreakStmt,
+    continue_stmt: ContinueStmt,
     // Expressions
     integer_lit: IntegerLit,
     float_lit: FloatLit,
@@ -33,6 +35,7 @@ pub const Node = union(enum) {
     lambda_expr: LambdaExpr,
     struct_lit: StructLit,
     field_access: FieldAccess,
+    index_expr: IndexExpr,
 };
 
 pub const Program = struct {
@@ -193,6 +196,15 @@ pub const StructLitField = struct {
 pub const StructLit = struct {
     type_name: []const u8,
     fields: []StructLitField,
+};
+
+pub const BreakStmt = struct {};
+pub const ContinueStmt = struct {};
+
+/// list[index] or map["key"]
+pub const IndexExpr = struct {
+    object: *Node,
+    index: *Node,
 };
 
 /// instans.felt  (read)

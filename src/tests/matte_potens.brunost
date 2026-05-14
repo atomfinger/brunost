@@ -1,0 +1,6 @@
+bruk terminal
+bruk matte
+
+terminal.skriv(matte.potens(2.0, 10.0))
+terminal.skriv(matte.potens(3.0, 3.0))
+terminal.skriv(matte.potens(4.0, 0.5))

@@ -1,0 +1,14 @@
+bruk terminal
+
+open tal er 10
+tal += 5
+terminal.skriv(tal)
+
+tal -= 3
+terminal.skriv(tal)
+
+tal *= 2
+terminal.skriv(tal)
+
+tal /= 4
+terminal.skriv(tal)

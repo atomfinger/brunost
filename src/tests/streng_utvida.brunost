@@ -1,0 +1,11 @@
+bruk terminal
+bruk streng
+
+terminal.skriv(streng.del("a,b,c", ","))
+terminal.skriv(streng.trim("  hei  "))
+terminal.skriv(streng.tilStoreBokstavar("hei"))
+terminal.skriv(streng.tilSmåBokstavar("HEI"))
+terminal.skriv(streng.byt("hei verd", "verd", "Noreg"))
+terminal.skriv(streng.startarMed("brunost", "bru"))
+terminal.skriv(streng.slutarMed("brunost", "ost"))
+terminal.skriv(streng.format("Hei, {namn}!", {"namn": "Ola"}))

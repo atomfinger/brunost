@@ -44,6 +44,77 @@ terminal.skriv(streng.inneheld("God dag", "dag"))   // sant
 terminal.skriv(streng.inneheld("hello", "xyz"))     // usant
 ```
 
+### `streng.del(str, separator)`
+
+Splits `str` by `separator` and returns a list of strings.
+
+```brunost
+terminal.skriv(streng.del("a,b,c", ","))   // [a, b, c]
+terminal.skriv(streng.del("hei", ""))      // [h, e, i]
+```
+
+### `streng.trim(str)`
+
+Returns `str` with leading and trailing whitespace removed.
+
+```brunost
+terminal.skriv(streng.trim("  hei  "))   // hei
+```
+
+### `streng.tilStoreBokstavar(str)`
+
+Returns `str` converted to uppercase. Handles ASCII and Norwegian letters (æøå → ÆØÅ).
+
+```brunost
+terminal.skriv(streng.tilStoreBokstavar("hei"))   // HEI
+terminal.skriv(streng.tilStoreBokstavar("åre"))   // ÅRE
+```
+
+### `streng.tilSmåBokstavar(str)`
+
+Returns `str` converted to lowercase. Handles ASCII and Norwegian letters (ÆØÅ → æøå).
+
+```brunost
+terminal.skriv(streng.tilSmåBokstavar("HEI"))   // hei
+```
+
+### `streng.byt(str, from, to)`
+
+Returns a new string with all occurrences of `from` replaced by `to`.
+
+```brunost
+terminal.skriv(streng.byt("hei verd", "verd", "Noreg"))   // hei Noreg
+terminal.skriv(streng.byt("aabbaa", "aa", "x"))            // xbbx
+```
+
+### `streng.startarMed(str, prefix)`
+
+Returns `sant` if `str` starts with `prefix`.
+
+```brunost
+terminal.skriv(streng.startarMed("brunost", "bru"))   // sant
+terminal.skriv(streng.startarMed("brunost", "ost"))   // usant
+```
+
+### `streng.slutarMed(str, suffix)`
+
+Returns `sant` if `str` ends with `suffix`.
+
+```brunost
+terminal.skriv(streng.slutarMed("brunost", "ost"))   // sant
+```
+
+### `streng.format(template, map)`
+
+Replaces `{key}` placeholders in `template` with values from `map`. Unrecognised keys are left unchanged.
+
+```brunost
+bruk streng
+
+låst melding er streng.format("Hei, {namn}! Du er {alder} år.", {"namn": "Ola", "alder": "42"})
+terminal.skriv(melding)   // Hei, Ola! Du er 42 år.
+```
+
 ## String concatenation
 
 String concatenation is done with `+` and doesn't require this module:

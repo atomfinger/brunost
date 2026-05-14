@@ -134,3 +134,17 @@ Returnerer det fyrste elementet som samsvarar med `predikat`, eller `inkje` om i
 låst fyrste er liste.finn([1, 5, 3, 8]) { x -> x erStørreEnn 4 }
 terminal.skriv(fyrste)   // 5
 ```
+
+### `liste.sorter(liste)` / `liste.sorter(liste, komparator)`
+
+Returnerer ei ny sortert liste. Utan komparator vert heiltal og desimaltal sortert numerisk og strengar leksikografisk. Med ein komparator `fn(a, b) → boolean` returnerer funksjonen `sant` når `a` skal kome før `b`.
+
+```brunost
+terminal.skriv(liste.sorter([3, 1, 4, 1, 5]))   // [1, 1, 3, 4, 5]
+terminal.skriv(liste.sorter(["banan", "eple", "appelsin"]))
+// [appelsin, banan, eple]
+
+// Synkande rekkjefølgje med eigen komparator
+låst synkande er liste.sorter([3, 1, 4]) { fyrste, andre -> fyrste erStørreEnn andre }
+terminal.skriv(synkande)   // [4, 3, 1]
+```

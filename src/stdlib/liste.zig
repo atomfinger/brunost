@@ -8,6 +8,7 @@ const ModuleMember = interp_mod.ModuleMember;
 pub fn make(alloc: std.mem.Allocator) EvalError!Value {
     const members = try alloc.dupe(ModuleMember, &[_]ModuleMember{
         .{ .name = "lengd", .value = .{ .builtin_fn = lengd } },
+        .{ .name = "sorter", .value = .{ .builtin_fn = sorter } },
         .{ .name = "leggTil", .value = .{ .builtin_fn = legg_til } },
         .{ .name = "fyrste", .value = .{ .builtin_fn = fyrste } },
         .{ .name = "siste", .value = .{ .builtin_fn = siste } },
@@ -169,4 +170,55 @@ fn reduser(args: []const Value, interp: *Interpreter) EvalError!Value {
         if (interp.signal != null) return Value{ .null_val = {} };
     }
     return acc;
+}
+
+const SortCtx = struct {
+    interp: *Interpreter,
+    comparator: Value,
+    err: ?EvalError = null,
+};
+
+fn sort_less_than(ctx: *SortCtx, a: Value, b: Value) bool {
+    if (ctx.err != null) return false;
+    const cb_args = [_]Value{ a, b };
+    const result = ctx.interp.call_callable(ctx.comparator, &cb_args) catch |err| {
+        ctx.err = err;
+        return false;
+    };
+    return result.is_truthy();
+}
+
+fn default_less_than(_: void, a: Value, b: Value) bool {
+    return switch (a) {
+        .integer => |ai| switch (b) {
+            .integer => |bi| ai < bi,
+            .float => |bf| @as(f64, @floatFromInt(ai)) < bf,
+            else => false,
+        },
+        .float => |af| switch (b) {
+            .float => |bf| af < bf,
+            .integer => |bi| af < @as(f64, @floatFromInt(bi)),
+            else => false,
+        },
+        .string => |as| switch (b) {
+            .string => |bs| std.mem.lessThan(u8, as, bs),
+            else => false,
+        },
+        else => false,
+    };
+}
+
+fn sorter(args: []const Value, interp: *Interpreter) EvalError!Value {
+    if (args.len < 1 or args.len > 2) return EvalError.TypeError;
+    const list = try args[0].as_list();
+    const sorted = interp.str_alloc().alloc(Value, list.len) catch return EvalError.OutOfMemory;
+    @memcpy(sorted, list);
+    if (args.len == 2) {
+        var ctx = SortCtx{ .interp = interp, .comparator = args[1], .err = null };
+        std.sort.pdq(Value, sorted, &ctx, sort_less_than);
+        if (ctx.err) |err| return err;
+    } else {
+        std.sort.pdq(Value, sorted, {}, default_less_than);
+    }
+    return Value{ .list = .{ .items = sorted, .cap = sorted.len } };
 }

@@ -41,6 +41,20 @@ Bruk `open` når du treng å oppdatere ein variabel over tid — løkkjeteljerar
 For å teste likskap, bruk `erSameSom`, ikkje `er`. Å bruke `er` i ein uttrykkskontekst tilordnar i staden for å samanlikne.
 :::
 
+## Samansette tilordningsoperatorar
+
+Foranderlege variablar støttar kortskriftoperatorar for oppdatering:
+
+```brunost
+open poeng er 10
+poeng += 5   // poeng er no 15
+poeng -= 3   // poeng er no 12
+poeng *= 2   // poeng er no 24
+poeng /= 4   // poeng er no 6
+```
+
+Dette er det same som å skrive `poeng er poeng + 5` osb., men kortare.
+
 ## Omfang
 
 Variablar fylgjer leksikalsk (blokk)omfang. Ein variabel deklarert inne i ein blokk er ikkje synleg utanfor han:

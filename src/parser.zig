@@ -116,8 +116,20 @@ pub const Parser = struct {
             .import_op => self.parse_import(),
             .module_op => self.parse_module_decl(),
             .type_op => self.parse_struct_decl(),
+            .break_op => self.parse_break(),
+            .continue_op => self.parse_continue(),
             else => self.parse_assign_or_expr(),
         };
+    }
+
+    fn parse_break(self: *Parser) ParseError!*ast.Node {
+        self.advance(); // consume bryt
+        return self.alloc_node(.{ .break_stmt = .{} });
+    }
+
+    fn parse_continue(self: *Parser) ParseError!*ast.Node {
+        self.advance(); // consume fortset
+        return self.alloc_node(.{ .continue_stmt = .{} });
     }
 
     fn parse_var_decl(self: *Parser, mutable: bool) ParseError!*ast.Node {
@@ -378,6 +390,25 @@ pub const Parser = struct {
             const fa = try self.alloc_node(.{ .field_access = .{ .object = obj, .field = member } });
             return self.alloc_node(.{ .expr_stmt = .{ .expr = fa } });
         }
+        // Compound assignment: name += expr, name -= expr, etc.
+        if (self.curr.type == .identifier) {
+            const name = self.curr.literal;
+            const compound_op: ?[]const u8 = switch (self.peek.type) {
+                .plus_assign => "+",
+                .minus_assign => "-",
+                .star_assign => "*",
+                .slash_assign => "/",
+                else => null,
+            };
+            if (compound_op) |op| {
+                self.advance(); // consume identifier
+                self.advance(); // consume compound assignment token
+                const rhs = try self.parse_expr(0);
+                const name_node = try self.alloc_node(.{ .identifier = .{ .name = name } });
+                const bin_node = try self.alloc_node(.{ .infix_expr = .{ .op = op, .left = name_node, .right = rhs } });
+                return self.alloc_node(.{ .assign_stmt = .{ .name = name, .value = bin_node } });
+            }
+        }
         // Simple variable assignment: name er expr
         if (self.curr.type == .identifier and self.peek.type == .assign) {
             const name = self.curr.literal;
@@ -420,6 +451,15 @@ pub const Parser = struct {
     pub fn parse_expr(self: *Parser, min_prec: u8) ParseError!*ast.Node {
         var left = try self.parse_primary();
         while (true) {
+            // Subscript: expr[index]
+            if (self.curr.type == .lbracket) {
+                self.advance(); // consume [
+                const index = try self.parse_expr(0);
+                if (self.curr.type != .rbracket) return ParseError.ExpectedCloseBracket;
+                self.advance(); // consume ]
+                left = try self.alloc_node(.{ .index_expr = .{ .object = left, .index = index } });
+                continue;
+            }
             const prec = infix_precedence(self.curr.type);
             if (prec <= min_prec) break;
             const op_tok = self.curr;

@@ -8,6 +8,7 @@ const stdlib_streng = @import("stdlib/streng.zig");
 const stdlib_liste = @import("stdlib/liste.zig");
 const stdlib_prosess = @import("stdlib/prosess.zig");
 const stdlib_kart = @import("stdlib/kart.zig");
+const stdlib_test = @import("stdlib/test.zig");
 
 pub const Io = if (@import("builtin").cpu.arch != .wasm32) std.Io else void;
 
@@ -52,6 +53,8 @@ pub const EvalError = error{
 pub const Signal = union(enum) {
     return_val: Value,
     thrown: Value,
+    break_loop: void,
+    continue_loop: void,
 };
 
 pub const Function = struct {
@@ -551,9 +554,12 @@ pub const Interpreter = struct {
             .field_assign => |a| self.eval_field_assign(a, env),
             .struct_lit => |l| self.eval_struct_lit(l, env),
             .field_access => |a| self.eval_field_access(a, env),
+            .break_stmt => self.eval_break(),
+            .continue_stmt => self.eval_continue(),
+            .index_expr => |i| self.eval_index_expr(i, env),
             .integer_lit => |i| Value{ .integer = i.value },
             .float_lit => |f| Value{ .float = f.value },
-            .string_lit => |s| Value{ .string = s.value },
+            .string_lit => |s| self.eval_string_lit(s.value),
             .bool_lit => |b| Value{ .boolean = b.value },
             .list_lit => |l| self.eval_list(l, env),
             .hashmap_lit => |h| self.eval_hashmap(h, env),
@@ -649,6 +655,62 @@ pub const Interpreter = struct {
         return Value{ .null_val = {} };
     }
 
+    fn eval_break(self: *Interpreter) EvalError!Value {
+        self.signal = .{ .break_loop = {} };
+        return Value{ .null_val = {} };
+    }
+
+    fn eval_continue(self: *Interpreter) EvalError!Value {
+        self.signal = .{ .continue_loop = {} };
+        return Value{ .null_val = {} };
+    }
+
+    fn eval_string_lit(self: *Interpreter, raw: []const u8) EvalError!Value {
+        if (std.mem.indexOf(u8, raw, "\\") == null) return Value{ .string = raw };
+        const alloc = self.str_alloc();
+        var buf: std.ArrayList(u8) = .empty;
+        var i: usize = 0;
+        while (i < raw.len) {
+            if (raw[i] == '\\' and i + 1 < raw.len) {
+                const c: u8 = switch (raw[i + 1]) {
+                    'n' => '\n',
+                    't' => '\t',
+                    'r' => '\r',
+                    '\\' => '\\',
+                    '"' => '"',
+                    else => {
+                        buf.append(alloc, raw[i]) catch return EvalError.OutOfMemory;
+                        i += 1;
+                        continue;
+                    },
+                };
+                buf.append(alloc, c) catch return EvalError.OutOfMemory;
+                i += 2;
+            } else {
+                buf.append(alloc, raw[i]) catch return EvalError.OutOfMemory;
+                i += 1;
+            }
+        }
+        return Value{ .string = buf.toOwnedSlice(alloc) catch return EvalError.OutOfMemory };
+    }
+
+    fn eval_index_expr(self: *Interpreter, expr: ast.IndexExpr, env: *Environment) EvalError!Value {
+        const obj = try self.eval(expr.object, env);
+        const index = try self.eval(expr.index, env);
+        switch (obj) {
+            .list => |bl| {
+                const idx = try index.as_int();
+                if (idx < 0 or idx >= bl.items.len) return EvalError.IndexOutOfBounds;
+                return bl.items[@intCast(idx)];
+            },
+            .hashmap => |h| {
+                const key = try index.as_str();
+                return h.get(key) orelse EvalError.KeyNotFound;
+            },
+            else => return EvalError.TypeError,
+        }
+    }
+
     fn eval_while(self: *Interpreter, stmt: ast.WhileStmt, env: *Environment) EvalError!Value {
         var iteration: usize = 0;
         while (true) {
@@ -659,7 +721,11 @@ pub const Interpreter = struct {
             var child_env = Environment.init(self.alloc, env);
             defer child_env.deinit();
             _ = try self.eval(stmt.body, &child_env);
-            if (self.signal != null) break;
+            if (self.signal) |sig| switch (sig) {
+                .break_loop => { self.signal = null; break; },
+                .continue_loop => { self.signal = null; continue; },
+                else => break,
+            };
         }
         return Value{ .null_val = {} };
     }
@@ -675,7 +741,11 @@ pub const Interpreter = struct {
                     defer child_env.deinit();
                     try child_env.define(stmt.iterator_name, .{ .value = item, .mutable = false });
                     _ = try self.eval(stmt.body, &child_env);
-                    if (self.signal != null) break;
+                    if (self.signal) |sig| switch (sig) {
+                        .break_loop => { self.signal = null; break; },
+                        .continue_loop => { self.signal = null; continue; },
+                        else => break,
+                    };
                 }
             },
             else => return EvalError.TypeError,
@@ -804,6 +874,7 @@ pub const Interpreter = struct {
             .{ .name = "liste", .make = stdlib_liste.make },
             .{ .name = "prosess", .make = stdlib_prosess.make },
             .{ .name = "kart", .make = stdlib_kart.make },
+            .{ .name = "test", .make = stdlib_test.make },
         };
 
         for (builtins) |b| {
@@ -1013,6 +1084,8 @@ pub const Interpreter = struct {
                     self.signal = null;
                     return v;
                 },
+                // break/continue cannot escape function boundaries
+                .break_loop, .continue_loop => self.signal = null,
                 else => {},
             }
         }

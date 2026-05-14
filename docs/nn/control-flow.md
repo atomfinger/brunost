@@ -62,6 +62,43 @@ forKvart person i personar {
 
 Løkkevariabelen (`person` ovanfor) vert bunden til kvart element i rekkjefølgje. Det finst ingen innebygd indeksvariabel; dersom du treng indeksen, bruk `liste.reduser` eller ei `medan`-løkke med ein teljar.
 
+## Bryt og fortset — `bryt` / `fortset`
+
+Bruk `bryt` for å avbryte ei løkke umiddelbart, og `fortset` for å hoppe over resten av den gjeldande iterasjonen:
+
+```brunost
+open teljar er 0
+medan (teljar erMindreEnn 10) gjer {
+  viss (teljar erSameSom 5) gjer {
+    bryt
+  }
+  terminal.skriv(teljar)
+  teljar += 1
+}
+// skriv ut 0 1 2 3 4
+
+forKvart tal i [1, 2, 3, 4, 5] {
+  viss (tal erSameSom 3) gjer {
+    fortset
+  }
+  terminal.skriv(tal)
+}
+// skriv ut 1 2 4 5
+```
+
+Begge nøkkelorda fungerer i både `medan`- og `forKvart`-løkker. Dei kan ikkje flukte over funksjonsgrenser — `bryt` inne i ein funksjon som vert kalla frå ei løkke, bryt ikkje den ytre løkka.
+
+## Kommentarar
+
+Linjekommentarar startar med `//`. Blokkkommentarar bruker `/* ... */` og kan gå over fleire linjer:
+
+```brunost
+// Dette er ein linjekommentar
+
+/* Dette er ein
+   blokkkommentar */
+```
+
 ## Samanlikningsoperatorar
 
 | Operator | Tyding |

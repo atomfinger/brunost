@@ -17,6 +17,7 @@ bruk liste
 | [`streng`](./streng) | ✓ | String manipulation |
 | [`liste`](./liste) | ✓ | List operations and higher-order functions |
 | [`kart`](./kart) | ✓ | Hashmap operations |
+| [`test`](./test) | ✓ | Assertion utilities |
 | [`prosess`](./prosess) | — | Sleep / process control |
 | [`fil`](./fil) | — | File system access |
 | [`nettverk`](./nettverk) | — | TCP networking |
