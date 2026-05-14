@@ -616,6 +616,101 @@ test "prøv/fang: feil utanfor fangar ikkje" {
     , error.KeyNotFound);
 }
 
+test "endelig køyrer utan feil" {
+    const out = try run_script(
+        \\bruk terminal
+        \\prøv {
+        \\  terminal.skriv("prøv")
+        \\} fang (feil) {
+        \\  terminal.skriv("aldri nådd")
+        \\} endelig {
+        \\  terminal.skriv("endelig")
+        \\}
+        \\terminal.skriv("etter")
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("prøv\nendelig\netter\n", out);
+}
+
+test "endelig køyrer etter fang" {
+    const out = try run_script(
+        \\bruk terminal
+        \\prøv {
+        \\  kast "feil"
+        \\} fang (e) {
+        \\  terminal.skriv("fanga: " + e)
+        \\} endelig {
+        \\  terminal.skriv("endelig")
+        \\}
+        \\terminal.skriv("etter")
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("fanga: feil\nendelig\netter\n", out);
+}
+
+test "prøv/endelig utan catch, ingen feil" {
+    const out = try run_script(
+        \\bruk terminal
+        \\prøv {
+        \\  terminal.skriv("prøv")
+        \\} endelig {
+        \\  terminal.skriv("endelig")
+        \\}
+        \\terminal.skriv("etter")
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("prøv\nendelig\netter\n", out);
+}
+
+test "prøv/endelig forplantar eval-feil" {
+    try expect_error(
+        \\bruk kart
+        \\låst minKart er {}
+        \\prøv {
+        \\  låst verdi er kart.hent(minKart, "nøkkel")
+        \\} endelig {
+        \\}
+    , error.KeyNotFound);
+}
+
+test "gjevTilbake gjennom endelig" {
+    const out = try run_script(
+        \\bruk terminal
+        \\gjer sjekk() {
+        \\  prøv {
+        \\    gjevTilbake 42
+        \\  } fang (e) {
+        \\    terminal.skriv("aldri nådd")
+        \\  } endelig {
+        \\    terminal.skriv("endelig")
+        \\  }
+        \\  gjevTilbake 0
+        \\}
+        \\terminal.skriv(sjekk())
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("endelig\n42\n", out);
+}
+
+test "endelig overstyrer med kast" {
+    const out = try run_script(
+        \\bruk terminal
+        \\prøv {
+        \\  prøv {
+        \\    kast "original"
+        \\  } fang (e) {
+        \\    terminal.skriv("fanga: " + e)
+        \\  } endelig {
+        \\    kast "ny feil"
+        \\  }
+        \\} fang (e) {
+        \\  terminal.skriv("ytre fang: " + e)
+        \\}
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("fanga: original\nytre fang: ny feil\n", out);
+}
+
 test "type: les felt" {
     const out = try run_script(@embedFile("tests/type_grunnleggjande.brunost"));
     defer std.testing.allocator.free(out);

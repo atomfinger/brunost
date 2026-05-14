@@ -623,31 +623,68 @@ pub const Interpreter = struct {
         var try_env = Environment.init(self.alloc, env);
         defer try_env.deinit();
 
-        // Evaluate the try body, intercepting both `kast` signals and runtime
-        // EvalErrors so they can both be caught by the `fang` block.
-        const maybe_caught: ?Value = caught: {
-            _ = self.eval(stmt.body, &try_env) catch |err| {
-                // Convert a Zig EvalError into a string value delivered to fang.
-                const s = std.fmt.allocPrint(self.str_alloc(), "{s}", .{@errorName(err)}) catch return EvalError.OutOfMemory;
-                break :caught Value{ .string = s };
-            };
+        const ErrorKind = union(enum) {
+            eval_err: EvalError,
+            thrown: Value,
+        };
+
+        // ── 1. Run try body, capture any error ───────────────────────────
+        var caught_error: ?ErrorKind = null;
+        _ = self.eval(stmt.body, &try_env) catch |err| {
+            caught_error = .{ .eval_err = err };
+        };
+        if (caught_error == null) {
             if (self.signal) |sig| switch (sig) {
-                .thrown => |err_val| {
+                .thrown => |v| {
                     self.signal = null;
-                    break :caught err_val;
+                    caught_error = .{ .thrown = v };
                 },
                 else => {},
             };
-            break :caught null;
-        };
+        }
 
-        if (maybe_caught) |err_val| {
+        // ── 2. Run catch block if present and error occurred ─────────────
+        var result: Value = .{ .null_val = {} };
+        if (caught_error != null and stmt.catch_body != null) {
+            const err_val: Value = switch (caught_error.?) {
+                .eval_err => |e| blk: {
+                    const s = std.fmt.allocPrint(self.str_alloc(), "{s}", .{@errorName(e)}) catch return EvalError.OutOfMemory;
+                    break :blk Value{ .string = s };
+                },
+                .thrown => |v| v,
+            };
+            caught_error = null; // error is handled
             var catch_env = Environment.init(self.alloc, env);
             defer catch_env.deinit();
             try catch_env.define(stmt.error_name, .{ .value = err_val, .mutable = false });
-            return self.eval(stmt.catch_body, &catch_env);
+            result = try self.eval(stmt.catch_body.?, &catch_env);
         }
-        return Value{ .null_val = {} };
+
+        // ── 3. Run finally block, preserving signals from try/catch ──────
+        if (stmt.finally_body) |finally_node| {
+            const saved_signal = self.signal;
+            self.signal = null;
+            var finally_env = Environment.init(self.alloc, env);
+            defer finally_env.deinit();
+            _ = self.eval(finally_node, &finally_env) catch |err| {
+                return err; // finally error supersedes everything
+            };
+            if (self.signal != null) {
+                return Value{ .null_val = {} }; // finally signal supersedes
+            }
+            self.signal = saved_signal;
+        }
+
+        // ── 4. Re-propagate uncaught errors (no-catch path) ──────────────
+        if (caught_error) |ek| switch (ek) {
+            .eval_err => |e| return e,
+            .thrown => |v| {
+                self.signal = Signal{ .thrown = v };
+                return Value{ .null_val = {} };
+            },
+        };
+
+        return result;
     }
 
     fn eval_import(self: *Interpreter, stmt: ast.ImportStmt, env: *Environment) EvalError!Value {

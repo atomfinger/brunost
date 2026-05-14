@@ -316,20 +316,37 @@ pub const Parser = struct {
     fn parse_try(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume prøv
         const body = try self.parse_block();
-        if (self.curr.type != .catch_op) return ParseError.UnexpectedToken;
-        self.advance();
-        if (self.curr.type != .lparen) return ParseError.ExpectedOpenParen;
-        self.advance();
-        if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
-        const error_name = self.curr.literal;
-        self.advance();
-        if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
-        self.advance();
-        const catch_body = try self.parse_block();
+
+        var error_name: []const u8 = "";
+        var catch_body: ?*ast.Node = null;
+        var finally_body: ?*ast.Node = null;
+
+        if (self.curr.type == .catch_op) {
+            self.advance();
+            if (self.curr.type != .lparen) return ParseError.ExpectedOpenParen;
+            self.advance();
+            if (self.curr.type != .identifier) return ParseError.ExpectedIdentifier;
+            error_name = self.curr.literal;
+            self.advance();
+            if (self.curr.type != .rparen) return ParseError.ExpectedCloseParen;
+            self.advance();
+            catch_body = try self.parse_block();
+        }
+
+        if (self.curr.type == .finally_op) {
+            self.advance();
+            finally_body = try self.parse_block();
+        }
+
+        if (catch_body == null and finally_body == null) {
+            return ParseError.UnexpectedToken;
+        }
+
         return self.alloc_node(.{ .try_stmt = .{
             .body = body,
             .error_name = error_name,
             .catch_body = catch_body,
+            .finally_body = finally_body,
         } });
     }
 
