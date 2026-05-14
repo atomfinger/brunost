@@ -776,7 +776,7 @@
 				</p>
 
 				<div class="header-cta">
-					<a href="./documentation/en/" class="btn-docs" data-i18n="header-docs">Dokumentasjon</a>
+					<a href="./documentation/en/" class="btn-docs" data-i18n="header-docs" data-docs-link>Dokumentasjon</a>
 					<a href="https://github.com/atomfinger/brunost" class="btn-github">GitHub</a>
 				</div>
 
@@ -977,7 +977,7 @@
 					<a href="https://github.com/atomfinger/brunost">GitHub</a>
 				</p>
 				<p>
-					<a href="./documentation/" data-i18n="footer-docs">Dokumentasjon</a>
+					<a href="./documentation/en/" data-i18n="footer-docs" data-docs-link>Dokumentasjon</a>
 				</p>
 			</footer>
 		</div>
@@ -1156,6 +1156,9 @@
 													document.title = t["page-title"];
 													document.getElementById("langToggle").textContent =
 													t["lang-toggle"];
+													document.querySelectorAll("[data-docs-link]").forEach((el) => {
+														el.href = "./documentation/" + lang + "/";
+													});
 													document.querySelectorAll("[data-i18n]").forEach((el) => {
 														const key = el.dataset.i18n;
 														if (!(key in t)) return;
