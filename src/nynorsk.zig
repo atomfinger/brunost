@@ -94,24 +94,39 @@ pub fn isValidIdentifier(ident: []const u8) bool {
 
     var segment_buf: [256]u8 = undefined;
     var seg_len: usize = 0;
+    var seg_all_upper: bool = true;
 
     while (iter.nextCodepoint()) |cp| {
         const upper = isUpper(cp);
         const snake = cp == '_';
         const digit = cp >= '0' and cp <= '9';
 
-        if (upper and seg_len > 0) {
-            // camelCase boundary
+        if (upper and seg_len > 0 and !seg_all_upper) {
+            // camelCase boundary: lowercase word → uppercase
             if (!isValidWordForm(segment_buf[0..seg_len])) return false;
             seg_len = 0;
+            seg_all_upper = true;
+        } else if (!upper and !snake and !digit and seg_all_upper and seg_len >= 2) {
+            // All-uppercase acronym run ended (e.g. "BMI" before "reknar")
+            if (seg_len > 5) {
+                if (!isValidWordForm(segment_buf[0..seg_len])) return false;
+            }
+            seg_len = 0;
+            seg_all_upper = false;
         } else if (snake) {
             // snake_case boundary
             if (seg_len > 0) {
-                if (!isValidWordForm(segment_buf[0..seg_len])) return false;
+                const is_acronym = seg_all_upper and seg_len >= 2 and seg_len <= 5;
+                if (!is_acronym) {
+                    if (!isValidWordForm(segment_buf[0..seg_len])) return false;
+                }
                 seg_len = 0;
+                seg_all_upper = true;
             }
             continue; // skip the '_'
         }
+
+        if (!upper and !snake and !digit) seg_all_upper = false;
 
         if (!digit and !snake) {
             const lower_cp = toLower(cp);
@@ -127,7 +142,10 @@ pub fn isValidIdentifier(ident: []const u8) bool {
     }
 
     if (seg_len > 0) {
-        if (!isValidWordForm(segment_buf[0..seg_len])) return false;
+        const is_acronym = seg_all_upper and seg_len >= 2 and seg_len <= 5;
+        if (!is_acronym) {
+            if (!isValidWordForm(segment_buf[0..seg_len])) return false;
+        }
     }
 
     return true;
