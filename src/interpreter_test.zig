@@ -361,6 +361,40 @@ test "plural identifiers are accepted when the lemma exists in the dictionary" {
     try std.testing.expectEqualStrings("", out);
 }
 
+test "acronyms (2-5 uppercase letters) are accepted as identifiers" {
+    const out = try run_script(
+        \\låst BMI er 22
+        \\låst CPU er 4
+        \\låst API er 1
+        \\
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("", out);
+}
+
+test "acronyms embedded in camelCase identifiers are accepted" {
+    const out = try run_script(
+        \\låst reknarBMI er 1
+        \\låst BMIreknar er reknarBMI
+        \\
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("", out);
+}
+
+test "feil: akronym med meir enn 5 teikn er ikkje gyldig" {
+    _ = try expect_parse_error("låst NASDAQ er 1", error.NotNynorsk);
+}
+
+test "camelCase words starting with one uppercase letter still work" {
+    const out = try run_script(
+        \\låst raudBil er 1
+        \\
+    );
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("", out);
+}
+
 test "feil: ukjend modul" {
     try expect_error("bruk ukjendmodul", error.UnknownModule);
 }
