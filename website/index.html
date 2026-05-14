@@ -126,6 +126,52 @@
 				width: 100%;
 				margin-top: 1rem;
 			}
+
+			.header-cta {
+				display: flex;
+				gap: 1rem;
+				justify-content: center;
+				flex-wrap: wrap;
+				margin: 1.25rem 0 0;
+			}
+
+			.btn-docs {
+				display: inline-block;
+				padding: 0.55rem 1.6rem;
+				border: 1px solid var(--gold);
+				color: var(--gold-lt);
+				text-decoration: none;
+				font-family: 'Lora', serif;
+				font-size: 0.9rem;
+				font-weight: 600;
+				border-radius: 4px;
+				letter-spacing: 0.04em;
+				transition: background 0.2s, color 0.2s, border-color 0.2s;
+			}
+
+			.btn-docs:hover {
+				background: rgba(200, 136, 26, 0.12);
+				color: var(--parchment);
+				border-color: var(--gold-lt);
+			}
+
+			.btn-github {
+				display: inline-block;
+				padding: 0.55rem 1.6rem;
+				border: 1px solid rgba(122, 78, 26, 0.55);
+				color: #d9c9a8;
+				text-decoration: none;
+				font-family: 'Lora', serif;
+				font-size: 0.9rem;
+				border-radius: 4px;
+				letter-spacing: 0.04em;
+				transition: border-color 0.2s, color 0.2s;
+			}
+
+			.btn-github:hover {
+				border-color: var(--gold);
+				color: var(--parchment);
+			}
 			
 			.blurb {
 				background: linear-gradient(135deg, #2e1608 0%, #1e0d05 100%);
@@ -729,6 +775,11 @@
 					Programmeringsspråket med smak av Noreg
 				</p>
 
+				<div class="header-cta">
+					<a href="./documentation/en/" class="btn-docs" data-i18n="header-docs">Dokumentasjon</a>
+					<a href="https://github.com/atomfinger/brunost" class="btn-github">GitHub</a>
+				</div>
+
 				<!-- Bottom rosemaling border (mirrored) -->
 				<svg class="rosemaling-bottom"
 				     viewBox="0 0 700 60"
@@ -963,6 +1014,7 @@
 					"footer-made-by":
 					"Laga med kjærleik og altfor mykje brunost av",
 					"footer-read-more": "Les meir om Brunost på",
+					"header-docs": "Dokumentasjon",
 					"footer-docs": "Dokumentasjon",
 					"lang-toggle": "🇬🇧 English",
 					},
@@ -994,6 +1046,7 @@
 						"footer-made-by":
 						"Made with love and way too much brunost by",
 						"footer-read-more": "Read more about Brunost on",
+						"header-docs": "Documentation",
 						"footer-docs": "Documentation",
 						"lang-toggle": "🇳🇴 Nynorsk",
 						},
