@@ -134,6 +134,12 @@ pub const Lexer = struct {
             .input = input,
         };
         lexer.read_char();
+        // Skip a shebang (#!) line, but only at the very start of the file
+        if (lexer.curr_char == '#' and lexer.peek_char() == '!') {
+            while (lexer.curr_char != '\n' and lexer.curr_char != 0) {
+                lexer.read_char();
+            }
+        }
         return lexer;
     }
 

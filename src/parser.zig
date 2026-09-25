@@ -127,7 +127,6 @@ pub const Parser = struct {
         self.advance(); // consume bryt
         return self.alloc_node(.{ .break_stmt = .{} });
     }
-
     fn parse_continue(self: *Parser) ParseError!*ast.Node {
         self.advance(); // consume fortset
         return self.alloc_node(.{ .continue_stmt = .{} });
