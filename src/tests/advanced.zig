@@ -13,6 +13,19 @@ test "blokkkommentar /* ... */" {
     try std.testing.expectEqualStrings("før\netter\n", out);
 }
 
+test "shebang (#!) på første linje vert hoppa over" {
+    const out = try h.run_script(@embedFile("shebang.brunost"));
+    defer std.testing.allocator.free(out);
+    try std.testing.expectEqualStrings("hei frå shebang\n", out);
+}
+
+test "#! etter første linje er ikkje ein kommentar" {
+    _ = try h.expect_parse_error(
+        \\bruk terminal
+        \\#!ikkje ein kommentar
+    , error.UnexpectedToken);
+}
+
 test "bryt og fortset i løkker" {
     const out = try h.run_script(@embedFile("bryt_haldfram.brunost"));
     defer std.testing.allocator.free(out);

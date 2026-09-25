@@ -1,0 +1,4 @@
+#!/usr/bin/env brunost
+bruk terminal
+
+terminal.skriv("hei frå shebang")
